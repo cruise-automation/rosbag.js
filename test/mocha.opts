@@ -1,0 +1,5 @@
+--bail
+--require test/init.js
+--check-leaks
+--reporter spec
+--timeout 10000
