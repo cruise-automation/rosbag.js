@@ -126,30 +126,36 @@ describe("MessageReader", () => {
 
     describe("typed arrays", () => {
       it("uint8[] uses the same backing buffer", () => {
-        const reader = buildReader("uint8[] values");
-        const buffer = Buffer.from([0x03, 0x00, 0x00, 0x00, 0x01, 0x02, 0x03]);
+        const reader = buildReader("uint8[] values\nuint8 after");
+        const buffer = Buffer.from([0x03, 0x00, 0x00, 0x00, 0x01, 0x02, 0x03, 0x04]);
         const result = reader.readMessage(buffer);
-        const { values } = result;
+        const { values, after } = result;
         expect(values instanceof Uint8Array).to.equal(true);
         expect(values.buffer).to.equal(buffer.buffer);
         expect(values.length).to.equal(3);
         expect(values[0]).to.equal(1);
         expect(values[1]).to.equal(2);
         expect(values[2]).to.equal(3);
+
+        // Ensure the next value after the array gets read properly
+        expect(after).to.equal(4);
         expect(values.buffer.byteLength).to.be.greaterThan(3);
       });
 
       it("int8[] uses the same backing buffer", () => {
-        const reader = buildReader("int8[] values");
-        const buffer = new Buffer([0x03, 0x00, 0x00, 0x00, 0x01, 0x02, 0x03]);
+        const reader = buildReader("int8[] values\nint8 after");
+        const buffer = new Buffer([0x03, 0x00, 0x00, 0x00, 0x01, 0x02, 0x03, 0x04]);
         const result = reader.readMessage(buffer);
-        const { values } = result;
+        const { values, after } = result;
         expect(values instanceof Int8Array).to.equal(true);
         expect(values.buffer).to.equal(buffer.buffer);
         expect(values.length).to.equal(3);
         expect(values[0]).to.equal(1);
         expect(values[1]).to.equal(2);
         expect(values[2]).to.equal(3);
+
+        // Ensure the next value after the array gets read properly
+        expect(after).to.equal(4);
         expect(values.buffer.byteLength).to.be.greaterThan(3);
       });
     });
