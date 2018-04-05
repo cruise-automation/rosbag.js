@@ -1,7 +1,6 @@
 {
   "name": "rosbag",
-  "version": "1.3.2",
-  "private": true,
+  "version": "0.9.0",
   "license": "Apache-2.0",
   "dependencies": {
     "bluebird": "3.5.0",
@@ -15,6 +14,7 @@
   "main": "es5",
   "module": "lib",
   "scripts": {
+    "prepack": "npm run build",
     "lint": "eslint lib test",
     "lint-prettier": "prettier -l '{lib,test}/**/*.js'",
     "mocha": "mocha test/*.js",
@@ -26,6 +26,7 @@
     "babel-cli": "6.24.0",
     "babel-core": "6.24.0",
     "babel-eslint": "7.2.1",
+    "babel-plugin-syntax-async-functions": "6.13.0",
     "babel-plugin-transform-es2015-modules-commonjs": "6.24.0",
     "babel-register": "6.24.0",
     "chai": "4.0.2",
