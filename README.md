@@ -8,6 +8,12 @@
 npm install rosbag
 ```
 
+or
+
+```
+yarn add rosbag
+```
+
 ## Quick start
 
 The most common way to interact with a rosbag is to read data records for a specific set of topics. The rosbag format [encodes type information for topics](http://wiki.ros.org/msg), and `rosbag` reads this type information and parses the data records into JavaScript objects and arrays.
@@ -205,6 +211,10 @@ class Time {
 ```
 
 You can import the Time module like this: `const { Time } = require('rosbag')`
+
+## Supported platforms
+
+Currently rosbag is used & heavily tested in `node@8.x` as well as google chrome (via webpack).  It should also work under all modern browsers which have the [FileReader](https://caniuse.com/#feat=filereader) and [typed array](https://caniuse.com/#feat=typedarrays) APIs available.  If you run into issues with Firefox, Edge, or Safari please feel free to open an issue or submit a pull request with a fix.
 
 ## LICENSE
 
