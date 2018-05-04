@@ -48,7 +48,7 @@ rules:
   no-param-reassign: [error, {props: false}]
   no-tabs: error
   no-trailing-spaces: error
-  no-unused-vars: [error, {args: none}]
+  no-unused-vars: [error]
   no-var: error
   prefer-const: error
   quotes: [error, double]
