@@ -24,8 +24,8 @@ describe("browser reader", () => {
   it("calls back with an error if read is called twice", (done) => {
     const buffer = new Buffer([0x00, 0x01, 0x02, 0x03, 0x04]);
     const reader = new Reader(buffer);
-    reader.read(0, 2, (err, res) => {});
-    reader.read(0, 2, (err, res) => {
+    reader.read(0, 2, () => {});
+    reader.read(0, 2, (err) => {
       expect(err instanceof Error).to.equal(true);
       done();
     });
