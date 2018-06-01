@@ -96,13 +96,16 @@ const bagOptions = {
   // the default is undefined which will apply no filter
   endTime? Time,
 
-  // decompression callbacks
-  // if your bag is compressed you can supply a callback to decompress
+  // decompression callbacks:
+  // if your bag is compressed you can supply a callback to decompress it
   // based on the compression type. The callback should accept a buffer of compressed bytes
-  // and return a buffer of uncompressed bytes
+  // and return a buffer of uncompressed bytes.  For examples on how to decompress lz4 and bz2 compressed bags
+  // please see the tests here: https://github.com/cruise-automation/rosbag.js/blob/master/test/rosbag.js#L139
+  // The decompression callback is also passed the uncompressedByteLength which is stored in the bag.
+  // This byte length can be used with some decompression libraries to increase decompression efficiency.
   decompress?: {|
-    bz2?: (buffer: Buffer) => Buffer,
-    lz4?: (buffer: Buffer) => Buffer,
+    bz2?: (buffer: Buffer, uncompressedByteLength: number) => Buffer,
+    lz4?: (buffer: Buffer, uncompressedByteLength: number) => Buffer,
   |}
 
   // by default the individual parsed binary messages will be parsed based on their [ROS message definition](http://wiki.ros.org/msg)
