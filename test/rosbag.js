@@ -175,5 +175,19 @@ describe("rosbag - high-level api", () => {
       expect(topics).to.have.length(1351);
       topics.forEach((topic) => expect(topic).to.equal("/turtle1/color_sensor"));
     });
+
+    it("calls decompress with the chunk size", async () => {
+      await fullyReadBag("example-lz4", {
+        startTime: new Time(1396293887, 846735850),
+        endTime: new Time(1396293887, 846735850),
+        topics: ["/turtle1/color_sensor"],
+        decompress: {
+          lz4: (buffer, size) => {
+            expect(size).to.equal(743449);
+            return new Buffer(lz4.decompress(buffer));
+          },
+        },
+      });
+    });
   });
 });
