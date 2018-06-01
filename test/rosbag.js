@@ -184,7 +184,9 @@ describe("rosbag - high-level api", () => {
         decompress: {
           lz4: (buffer, size) => {
             expect(size).to.equal(743449);
-            return new Buffer(lz4.decompress(buffer));
+            const buff = new Buffer(lz4.decompress(buffer));
+            expect(buff.byteLength).to.equal(size);
+            return buff;
           },
         },
       });
