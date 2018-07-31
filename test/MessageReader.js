@@ -5,7 +5,7 @@
 // You may not use this file except in compliance with the License.
 
 import { expect } from "chai";
-import MessageReader from "../lib/MessageReader";
+import MessageReader, { getTypes } from "../lib/MessageReader";
 
 const getStringBuffer = (str) => {
   const data = new Buffer(str, "utf8");
@@ -17,6 +17,24 @@ const getStringBuffer = (str) => {
 const buildReader = (def) => new MessageReader(def);
 
 describe("MessageReader", () => {
+  it("lets you get just the types", () => {
+    const types = getTypes("string name");
+    expect(types).to.eql([
+      {
+        definitions: [
+          {
+            arrayLength: undefined,
+            isArray: false,
+            isComplex: false,
+            name: "name",
+            type: "string",
+          },
+        ],
+        name: undefined,
+      },
+    ]);
+  });
+
   describe("simple type", () => {
     const testNum = (type, size, expected, cb) => {
       const buffer = new Buffer(size);
