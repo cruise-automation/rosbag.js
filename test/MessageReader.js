@@ -17,22 +17,60 @@ const getStringBuffer = (str) => {
 const buildReader = (def) => new MessageReader(def);
 
 describe("MessageReader", () => {
-  it("lets you get just the types", () => {
-    const types = getTypes("string name");
-    expect(types).to.eql([
-      {
-        definitions: [
-          {
-            arrayLength: undefined,
-            isArray: false,
-            isComplex: false,
-            name: "name",
-            type: "string",
-          },
-        ],
-        name: undefined,
-      },
-    ]);
+  describe("getTypes", () => {
+    it("lets you get just the types", () => {
+      const types = getTypes("string name");
+      expect(types).to.eql([
+        {
+          definitions: [
+            {
+              arrayLength: undefined,
+              isArray: false,
+              isComplex: false,
+              name: "name",
+              type: "string",
+            },
+          ],
+          name: undefined,
+        },
+      ]);
+    });
+
+    it("resolves unqualified names", () => {
+      const messageDefinition = `
+        Point[] points
+        ============
+        MSG: geometry_msgs/Point
+        float64 x
+      `;
+      const types = getTypes(messageDefinition);
+      expect(types).to.eql([
+        {
+          definitions: [
+            {
+              arrayLength: undefined,
+              isArray: true,
+              isComplex: true,
+              name: "points",
+              type: "geometry_msgs/Point",
+            },
+          ],
+          name: undefined,
+        },
+        {
+          definitions: [
+            {
+              arrayLength: undefined,
+              isArray: false,
+              isComplex: false,
+              name: "x",
+              type: "float64",
+            },
+          ],
+          name: "geometry_msgs/Point",
+        },
+      ]);
+    });
   });
 
   describe("simple type", () => {
