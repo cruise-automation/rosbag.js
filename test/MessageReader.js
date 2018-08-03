@@ -71,6 +71,31 @@ describe("MessageReader", () => {
         },
       ]);
     });
+
+    it("normalizes aliases", () => {
+      const types = getTypes("char x\nbyte y");
+      expect(types).to.eql([
+        {
+          definitions: [
+            {
+              arrayLength: undefined,
+              isArray: false,
+              isComplex: false,
+              name: "x",
+              type: "uint8",
+            },
+            {
+              arrayLength: undefined,
+              isArray: false,
+              isComplex: false,
+              name: "y",
+              type: "int8",
+            },
+          ],
+          name: undefined,
+        },
+      ]);
+    });
   });
 
   describe("simple type", () => {
