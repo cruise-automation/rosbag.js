@@ -41,7 +41,7 @@ describe("MessageReader", () => {
         Point[] points
         ============
         MSG: geometry_msgs/Point
-        float64 x
+        float64 x # blah = blah
       `;
       const types = getTypes(messageDefinition);
       expect(types).to.eql([
@@ -90,6 +90,61 @@ describe("MessageReader", () => {
               isComplex: false,
               name: "y",
               type: "int8",
+            },
+          ],
+          name: undefined,
+        },
+      ]);
+    });
+
+    it("returns constants", () => {
+      const messageDefinition = `
+        uint32 foo = 55
+        int32 bar=-11 # Comment # another comment
+        float32 baz= \t -32.25
+        bool someBoolean = 0
+        string fooStr = Foo    ${""}
+        string EXAMPLE="#comments" are ignored, and leading and trailing whitespace removed
+      `;
+      const types = getTypes(messageDefinition);
+      expect(types).to.eql([
+        {
+          definitions: [
+            {
+              name: "foo",
+              type: "uint32",
+              isConstant: true,
+              value: 55,
+            },
+            {
+              name: "bar",
+              type: "int32",
+              isConstant: true,
+              value: -11,
+            },
+            {
+              name: "baz",
+              type: "float32",
+              isConstant: true,
+              value: -32.25,
+            },
+            {
+              name: "someBoolean",
+              type: "bool",
+              isConstant: true,
+              value: false,
+            },
+            {
+              name: "fooStr",
+              type: "string",
+              isConstant: true,
+              value: "Foo",
+            },
+            {
+              name: "EXAMPLE",
+              type: "string",
+              isConstant: true,
+              value: '"#comments" are ignored, and leading and trailing whitespace removed', // eslint-disable-line quotes
             },
           ],
           name: undefined,
