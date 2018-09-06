@@ -35,6 +35,7 @@
     "eslint-plugin-jsx-a11y": "5.0.1",
     "eslint-plugin-react": "7.1.0",
     "jest": "23.5.0",
+    "jest-junit": "5.1.0",
     "lz4js": "0.2.0",
     "prettier": "1.10.2"
   },
@@ -43,5 +44,11 @@
     "jsxBracketSameLine": true,
     "printWidth": 120,
     "trailingComma": "es5"
+  },
+  "jest": {
+    "reporters": [
+      "default",
+      "jest-junit"
+    ]
   }
 }

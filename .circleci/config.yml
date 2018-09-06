@@ -29,6 +29,12 @@ jobs:
           key: v1-dependencies-{{ checksum "package.json" }}
 
       # run tests!
-      - run: yarn test
+      - run:
+          name: "yarn test"
+          command: yarn test
+          environment:
+              JEST_JUNIT_OUTPUT: "reports/junit/js-test-results.xml"
 
-
+      # tell circle there are junit reports to process
+      - store_test_results:
+          path: reports/junit
