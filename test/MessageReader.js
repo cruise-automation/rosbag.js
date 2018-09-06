@@ -5,7 +5,7 @@
 // You may not use this file except in compliance with the License.
 
 import { expect } from "chai";
-import MessageReader, { getTypes } from "../lib/MessageReader";
+import MessageReader from "../lib/MessageReader";
 
 const getStringBuffer = (str) => {
   const data = new Buffer(str, "utf8");
@@ -17,142 +17,6 @@ const getStringBuffer = (str) => {
 const buildReader = (def) => new MessageReader(def);
 
 describe("MessageReader", () => {
-  describe("getTypes", () => {
-    it("lets you get just the types", () => {
-      const types = getTypes("string name");
-      expect(types).to.eql([
-        {
-          definitions: [
-            {
-              arrayLength: undefined,
-              isArray: false,
-              isComplex: false,
-              name: "name",
-              type: "string",
-            },
-          ],
-          name: undefined,
-        },
-      ]);
-    });
-
-    it("resolves unqualified names", () => {
-      const messageDefinition = `
-        Point[] points
-        ============
-        MSG: geometry_msgs/Point
-        float64 x # blah = blah
-      `;
-      const types = getTypes(messageDefinition);
-      expect(types).to.eql([
-        {
-          definitions: [
-            {
-              arrayLength: undefined,
-              isArray: true,
-              isComplex: true,
-              name: "points",
-              type: "geometry_msgs/Point",
-            },
-          ],
-          name: undefined,
-        },
-        {
-          definitions: [
-            {
-              arrayLength: undefined,
-              isArray: false,
-              isComplex: false,
-              name: "x",
-              type: "float64",
-            },
-          ],
-          name: "geometry_msgs/Point",
-        },
-      ]);
-    });
-
-    it("normalizes aliases", () => {
-      const types = getTypes("char x\nbyte y");
-      expect(types).to.eql([
-        {
-          definitions: [
-            {
-              arrayLength: undefined,
-              isArray: false,
-              isComplex: false,
-              name: "x",
-              type: "uint8",
-            },
-            {
-              arrayLength: undefined,
-              isArray: false,
-              isComplex: false,
-              name: "y",
-              type: "int8",
-            },
-          ],
-          name: undefined,
-        },
-      ]);
-    });
-
-    it("returns constants", () => {
-      const messageDefinition = `
-        uint32 foo = 55
-        int32 bar=-11 # Comment # another comment
-        float32 baz= \t -32.25
-        bool someBoolean = 0
-        string fooStr = Foo    ${""}
-        string EXAMPLE="#comments" are ignored, and leading and trailing whitespace removed
-      `;
-      const types = getTypes(messageDefinition);
-      expect(types).to.eql([
-        {
-          definitions: [
-            {
-              name: "foo",
-              type: "uint32",
-              isConstant: true,
-              value: 55,
-            },
-            {
-              name: "bar",
-              type: "int32",
-              isConstant: true,
-              value: -11,
-            },
-            {
-              name: "baz",
-              type: "float32",
-              isConstant: true,
-              value: -32.25,
-            },
-            {
-              name: "someBoolean",
-              type: "bool",
-              isConstant: true,
-              value: false,
-            },
-            {
-              name: "fooStr",
-              type: "string",
-              isConstant: true,
-              value: "Foo",
-            },
-            {
-              name: "EXAMPLE",
-              type: "string",
-              isConstant: true,
-              value: '"#comments" are ignored, and leading and trailing whitespace removed', // eslint-disable-line quotes
-            },
-          ],
-          name: undefined,
-        },
-      ]);
-    });
-  });
-
   describe("simple type", () => {
     const testNum = (type, size, expected, cb) => {
       const buffer = new Buffer(size);
@@ -528,65 +392,6 @@ describe("MessageReader", () => {
       expect(level).to.equal(true);
       expect(status.level).to.equal(0);
       expect(status.name).to.equal("foo");
-    });
-  });
-
-  describe("custom parser", () => {
-    it("Point[] converts to custom type", () => {
-      const messageDefinition = `
-      geometry_msgs/Point[] points
-      ============
-      MSG: geometry_msgs/Point
-      float64 x
-      float64 y
-      float64 z
-      `;
-      const parsers = {
-        "geometry_msgs/Point[]": (reader) => {
-          const length = reader.uint32();
-          const result = new Float64Array(length * 3);
-          result[0] = reader.float64();
-          result[1] = reader.float64();
-          result[2] = reader.float64();
-          return result;
-        },
-      };
-      const reader = new MessageReader(messageDefinition, parsers);
-      const buffer = Buffer.from([
-        0x01,
-        0x00,
-        0x00,
-        0x00, // header
-        0x00, // x
-        0x00, // x
-        0x00, // x
-        0x00, // x
-        0x00, // x
-        0x00, // x
-        0xf0, // x
-        0x3f, // x = 1
-        0x00, // y
-        0x00, // y
-        0x00, // y
-        0x00, // y
-        0x00, // y
-        0x00, // y
-        0x00, // y
-        0x40, // y = 2
-        0x00, // z
-        0x00, // z
-        0x00, // z
-        0x00, // z
-        0x00, // z
-        0x00, // z
-        0x08, // z
-        0x40, // z = 3
-      ]);
-      const result = reader.readMessage(buffer);
-      const { points } = result;
-      expect(points[0]).to.eql(1);
-      expect(points[1]).to.eql(2);
-      expect(points[2]).to.eql(3);
     });
   });
 });
