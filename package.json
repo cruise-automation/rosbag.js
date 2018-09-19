@@ -14,9 +14,9 @@
   "module": "lib",
   "scripts": {
     "prepack": "npm run build",
-    "lint": "eslint lib test",
-    "lint-prettier": "prettier -l '{lib,test}/**/*.js'",
-    "unit": "jest --verbose",
+    "lint": "eslint lib",
+    "lint-prettier": "prettier -l 'lib/**/*.js'",
+    "unit": "jest --verbose lib",
     "test": "npm run unit && npm run lint && npm run lint-prettier",
     "build": "mkdir -p es5/ && babel --out-dir es5 lib"
   },
@@ -27,7 +27,6 @@
     "babel-plugin-syntax-async-functions": "6.13.0",
     "babel-plugin-transform-es2015-modules-commonjs": "6.24.0",
     "babel-register": "6.24.0",
-    "chai": "4.0.2",
     "compressjs": "1.0.3",
     "eslint": "3.19.0",
     "eslint-config-airbnb": "15.0.1",
