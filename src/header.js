@@ -4,12 +4,14 @@
 // found in the LICENSE file in the root directory of this source tree.
 // You may not use this file except in compliance with the License.
 
+// @flow
+
 import { extractFields } from "./fields";
-import { BagHeader, Chunk, MessageData, IndexData, Connection, ChunkInfo } from "./record";
+import { Record, BagHeader, Chunk, ChunkInfo, Connection, IndexData, MessageData } from "./record";
 
 // given a buffer parses out the record within the buffer
 // based on the opcode type bit
-function parseHeader(buffer) {
+export function parseHeader(buffer: Buffer): Record {
   const fields = extractFields(buffer);
   if (fields.op === undefined) {
     throw new Error("Header is missing 'op' field.");
@@ -33,5 +35,3 @@ function parseHeader(buffer) {
       throw new Error(`Unknown header type: ${opcode}`);
   }
 }
-
-export { parseHeader }; // eslint-disable-line import/prefer-default-export

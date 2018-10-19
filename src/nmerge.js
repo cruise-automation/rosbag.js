@@ -4,10 +4,12 @@
 // found in the LICENSE file in the root directory of this source tree.
 // You may not use this file except in compliance with the License.
 
+// @flow
+
 import Heap from "heap";
 
-function nmerge(key, ...iterables) {
-  const heap = new Heap((a, b) => {
+function nmerge<T>(key: (a: T, b: T) => number, ...iterables: Array<Iterator<T>>) {
+  const heap: Heap<{ i: number, value: T }> = new Heap((a, b) => {
     return key(a.value, b.value);
   });
   for (let i = 0; i < iterables.length; i++) {

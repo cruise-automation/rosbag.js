@@ -4,15 +4,37 @@
 // found in the LICENSE file in the root directory of this source tree.
 // You may not use this file except in compliance with the License.
 
+// @flow
+
+import Buffer from "buffer/";
 import int53 from "int53";
 import { extractTime } from "./fields";
-import { parseMessageDefinition } from "./parseMessageDefinition";
+import { parseMessageDefinition, type RosMsgDefinition, type NamedRosMsgDefinition } from "./parseMessageDefinition";
+
+type TypedArrayConstructor = (
+  buffer: ArrayBuffer,
+  byteOffset: number,
+  length: number
+) =>
+  | Int8Array
+  | Uint8Array
+  | Int16Array
+  | Uint16Array
+  | Int32Array
+  | Uint32Array
+  | Uint8ClampedArray
+  | Float32Array
+  | Float64Array;
 
 // this has hard-coded buffer reading functions for each
 // of the standard message types http://docs.ros.org/api/std_msgs/html/index-msg.html
 // eventually custom types decompose into these standard types
 class StandardTypeReader {
-  constructor(buffer) {
+  buffer: Buffer;
+  offset: number;
+  view: DataView;
+
+  constructor(buffer: Buffer) {
     this.buffer = buffer;
     this.offset = 0;
     this.view = new DataView(buffer.buffer, buffer.byteOffset);
@@ -48,9 +70,9 @@ class StandardTypeReader {
     return this.view.getUint8(this.offset++);
   }
 
-  typedArray(len, ArrayType) {
-    const arrayLength = len || this.uint32();
-    const data = new ArrayType(this.view.buffer, this.offset + this.view.byteOffset, arrayLength);
+  typedArray(len: ?number, arrayType: TypedArrayConstructor) {
+    const arrayLength = len == null ? this.uint32() : len;
+    const data = new arrayType(this.view.buffer, this.offset + this.view.byteOffset, arrayLength);
     this.offset += arrayLength;
 
     return data;
@@ -117,7 +139,8 @@ class StandardTypeReader {
   }
 }
 
-const findTypeByName = (types, name = "") => {
+const findTypeByName = (types: RosMsgDefinition[], name = ""): NamedRosMsgDefinition => {
+  let foundName = "";
   const matches = types.filter((type) => {
     const typeName = type.name || "";
     // if the search is empty, return unnamed types
@@ -127,15 +150,16 @@ const findTypeByName = (types, name = "") => {
     // return if the search is in the type name
     // or matches exactly if a fully-qualified name match is passed to us
     const nameEnd = name.indexOf("/") > -1 ? name : `/${name}`;
+    foundName = typeName;
     return typeName.endsWith(nameEnd);
   });
   if (matches.length !== 1) {
     throw new Error(`Expected 1 top level type definition for '${name}' but found ${matches.length}`);
   }
-  return matches[0];
+  return { ...matches[0], name: foundName };
 };
 
-const constructorBody = (type) => {
+const constructorBody = (type: $ReadOnly<RosMsgDefinition>) => {
   return type.definitions
     .filter((def) => !def.isConstant)
     .map((def) => {
@@ -144,9 +168,9 @@ const constructorBody = (type) => {
     .join(";\n");
 };
 
-const friendlyName = (name) => name.replace("/", "_");
+const friendlyName = (name: string) => name.replace("/", "_");
 
-const createParser = (types) => {
+const createParser = (types: RosMsgDefinition[]) => {
   const unnamedTypes = types.filter((type) => !type.name);
   if (unnamedTypes.length !== 1) {
     throw new Error("multiple unnamed types");
@@ -154,7 +178,7 @@ const createParser = (types) => {
 
   const [unnamedType] = unnamedTypes;
 
-  const namedTypes = types.filter((type) => !!type.name);
+  const namedTypes: NamedRosMsgDefinition[] = (types.filter((type) => !!type.name): any[]);
 
   let js = `
   var Record = function () {
@@ -169,22 +193,16 @@ Record.${friendlyName(t.name)} = function() {
   });
 
   let stack = 0;
-  const getReaderLines = (type, fieldName = "record") => {
-    let readerLines = [];
+  const getReaderLines = (type: RosMsgDefinition | NamedRosMsgDefinition, fieldName = "record") => {
+    let readerLines: string[] = [];
     type.definitions.forEach((def) => {
       if (def.isConstant) {
         return;
       }
       if (def.isArray) {
         if (def.type === "uint8" || def.type === "int8") {
-          let arrayType;
-          if (def.type === "uint8") {
-            arrayType = "Uint8Array";
-          } else if (def.type === "int8") {
-            arrayType = "Int8Array";
-          }
-
-          readerLines.push(`${fieldName}.${def.name} = reader.typedArray(${def.arrayLength}, ${arrayType});`);
+          const arrayType = def.type === "uint8" ? "Uint8Array" : "Int8Array";
+          readerLines.push(`${fieldName}.${def.name} = reader.typedArray(${String(def.arrayLength)}, ${arrayType});`);
           return;
         }
         // because we might have nested arrays
@@ -243,30 +261,32 @@ Record.${friendlyName(t.name)} = function() {
 
   js += readerFn;
 
-  let _read;
+  let _read: (reader: StandardTypeReader) => any;
   try {
-    _read = eval(`(function buildReader() { ${js} })()`); // eslint-disable-line
+    _read = eval(`(function buildReader() { ${js} })()`);
   } catch (e) {
     console.error("error building parser:", js); // eslint-disable-line
     throw e;
   }
 
-  return function(buffer) {
+  return function(buffer: Buffer) {
     const reader = new StandardTypeReader(buffer);
     return _read(reader);
   };
 };
 
-export default class MessageReader {
+export class MessageReader {
+  reader: (buffer: Buffer) => any;
+
   // takes a multi-line string message definition and returns
   // a message reader which can be used to read messages based
   // on the message definition
-  constructor(messageDefinition = "") {
+  constructor(messageDefinition: string) {
     const definitions = parseMessageDefinition(messageDefinition);
     this.reader = createParser(definitions);
   }
 
-  readMessage(buffer) {
+  readMessage(buffer: Buffer) {
     return this.reader(buffer);
   }
 }

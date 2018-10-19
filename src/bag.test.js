@@ -4,12 +4,16 @@
 // found in the LICENSE file in the root directory of this source tree.
 // You may not use this file except in compliance with the License.
 
+// @flow
+
+import compress from "compressjs";
 import fs from "fs";
 import lz4 from "lz4js";
-import compress from "compressjs";
 
-import Bag from "./bag";
-import { Time } from ".";
+import type { ReadOptions, ReadOptionsWithMapEach } from "./bag";
+import Bag from "./node";
+import ReadResult from "./ReadResult";
+import { Time } from "./Time";
 
 const FILENAME = "example";
 
@@ -17,17 +21,27 @@ function getFixture(filename = FILENAME) {
   return `${__dirname}/../fixtures/${filename}.bag`;
 }
 
-async function fullyReadBag(name, opts) {
+async function fullyReadBag<T>(
+  name: string,
+  opts: ReadOptions | ReadOptionsWithMapEach<T>
+): Promise<ReadResult<any>[] | T[]> {
   const filename = getFixture(name);
   expect(fs.existsSync(filename)).toBe(true);
   const bag = await Bag.open(filename);
-  const messages = [];
-  await bag.readMessages(opts, (msg) => messages.push(msg));
+  const messages: Array<ReadResult<any> | T> = [];
+  await bag.readMessages(opts, (msg) => {
+    messages.push(msg);
+  });
   return messages;
 }
 
 describe("rosbag - high-level api", () => {
-  const testNumberOfMessages = (name, expected, opts = {}, done) => {
+  const testNumberOfMessages = <T: { timestamp: Time }>(
+    name: string,
+    expected: number,
+    opts: ReadOptions | ReadOptionsWithMapEach<T>,
+    done?: (messages: any[]) => void
+  ) => {
     it(`finds ${expected} messages in ${name} with ${JSON.stringify(opts)}`, async () => {
       const messages = await fullyReadBag(name, opts);
       expect(messages).toHaveLength(expected);
@@ -61,14 +75,14 @@ describe("rosbag - high-level api", () => {
     FILENAME,
     8647,
     {
-      mapEach: ({ topic, header, timestamp }) => {
+      mapEach: ({ topic, timestamp }: ReadResult<any>) => {
         calledMapEach++;
-        return { topic, header, timestamp };
+        return { topic, timestamp };
       },
     },
     (messages) => {
-      // assert that only topic, header, and timestamp were retained
-      expect(Object.keys(messages[0]).length).toBe(3);
+      // assert that only topic and timestamp were retained
+      expect(Object.keys(messages[0]).length).toBe(2);
       // assert that the mapEach function was only invoked once
       expect(calledMapEach).toBe(8647);
     }
@@ -77,15 +91,17 @@ describe("rosbag - high-level api", () => {
   it("returns chunkOffset and totalChunks on read results", async () => {
     const filename = getFixture();
     const bag = await Bag.open(filename);
-    const messages = [];
-    await bag.readMessages({}, (msg) => messages.push(msg));
+    const messages: Array<ReadResult<any>> = [];
+    await bag.readMessages({}, (msg) => {
+      messages.push(msg);
+    });
     expect(messages[0].chunkOffset).toBe(0);
     expect(messages[0].totalChunks).toBe(1);
   });
 
   it("reads topics", async () => {
     const bag = await Bag.open(getFixture());
-    const topics = Object.values(bag.connections).map((con) => con.topic);
+    const topics = Object.keys(bag.connections).map((con: any) => bag.connections[con].topic);
     expect(topics).toEqual([
       "/rosout",
       "/turtle1/color_sensor",
@@ -152,7 +168,7 @@ describe("rosbag - high-level api", () => {
       const messages = await fullyReadBag("example-bz2", {
         topics: ["/turtle1/color_sensor"],
         decompress: {
-          bz2: (buffer) => {
+          bz2: (buffer: Buffer) => {
             const arr = compress.Bzip2.decompressFile(buffer);
             return Buffer.from(arr);
           },
@@ -167,7 +183,7 @@ describe("rosbag - high-level api", () => {
       const messages = await fullyReadBag("example-lz4", {
         topics: ["/turtle1/color_sensor"],
         decompress: {
-          lz4: (buffer) => new Buffer(lz4.decompress(buffer)),
+          lz4: (buffer: Buffer) => new Buffer(lz4.decompress(buffer)),
         },
       });
       const topics = messages.map((msg) => msg.topic);
@@ -181,7 +197,7 @@ describe("rosbag - high-level api", () => {
         endTime: new Time(1396293887, 846735850),
         topics: ["/turtle1/color_sensor"],
         decompress: {
-          lz4: (buffer, size) => {
+          lz4: (buffer: Buffer, size: number) => {
             expect(size).toBe(743449);
             const buff = new Buffer(lz4.decompress(buffer));
             expect(buff.byteLength).toBe(size);

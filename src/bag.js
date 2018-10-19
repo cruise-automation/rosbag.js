@@ -4,11 +4,26 @@
 // found in the LICENSE file in the root directory of this source tree.
 // You may not use this file except in compliance with the License.
 
-import BagReader from "./BagReader";
-import MessageReader from "./MessageReader";
+// @flow
+
+import BagReader, { type Decompress } from "./BagReader";
+import { MessageReader } from "./MessageReader";
 import ReadResult from "./ReadResult";
-import Reader from "./readers";
-import Time from "./Time";
+import { BagHeader, ChunkInfo, Connection, MessageData } from "./record";
+import { Time } from "./Time";
+
+export type ReadOptions = {|
+  decompress?: Decompress,
+  noParse?: boolean,
+  topics?: string[],
+  startTime?: Time,
+  endTime?: Time,
+  mapEach?: void,
+|};
+export type ReadOptionsWithMapEach<T> = {|
+  ...ReadOptions,
+  mapEach: (msg: ReadResult<any>) => T,
+|};
 
 // the high level rosbag interface
 // create a new bag by calling:
@@ -19,19 +34,16 @@ import Time from "./Time";
 // `await bag.readMessages({ topics: ['/foo'] },
 //    (result) => console.log(result.topic, result.message))`
 export default class Bag {
-  // you can optionally create a bag manually passing in a bagReader instance
-  constructor(bagReader) {
-    this.reader = bagReader;
-  }
+  reader: BagReader;
+  header: BagHeader;
+  connections: { [conn: number]: Connection };
+  chunkInfos: ChunkInfo[];
+  startTime: Time;
+  endTime: Time;
 
-  // creates, opens, and returns a new bag reading
-  // the given File object (browser) or path to file (node)
-  static async open(pathOrFile) {
-    const fileReader = new Reader(pathOrFile);
-    const reader = new BagReader(fileReader);
-    const bag = new Bag(reader);
-    await bag.open();
-    return bag;
+  // you can optionally create a bag manually passing in a bagReader instance
+  constructor(bagReader: BagReader) {
+    this.reader = bagReader;
   }
 
   // if the bag is manually created with the constructor, you must call `await open()` on the bag
@@ -56,20 +68,22 @@ export default class Bag {
     }
   }
 
-  async readMessages(opts, callback) {
+  async readMessages<T>(opts: ReadOptions | ReadOptionsWithMapEach<T>, callback: (msg: T | ReadResult<any>) => void) {
     const connections = this.connections;
 
     const startTime = opts.startTime || new Time(0, 0);
     const endTime = opts.endTime || new Time(Number.MAX_VALUE, Number.MAX_VALUE);
     const topics =
       opts.topics ||
-      Object.keys(connections).map((id) => {
+      Object.keys(connections).map((id: any) => {
         return connections[id].topic;
       });
 
-    const filteredConnections = Object.keys(connections).filter((id) => {
-      return topics.indexOf(connections[id].topic) !== -1;
-    });
+    const filteredConnections = Object.keys(connections)
+      .filter((id: any) => {
+        return topics.indexOf(connections[id].topic) !== -1;
+      })
+      .map((id) => +id);
 
     const { decompress = {} } = opts;
 
@@ -78,7 +92,7 @@ export default class Bag {
       return Time.compare(info.startTime, endTime) <= 0 && Time.compare(startTime, info.endTime) <= 0;
     });
 
-    function parseMsg(msg, chunkOffset) {
+    function parseMsg(msg: MessageData, chunkOffset: number): ReadResult<any> {
       const connection = connections[msg.conn];
       const { topic } = connection;
       const { data, time: timestamp } = msg;
@@ -99,7 +113,7 @@ export default class Bag {
         startTime,
         endTime,
         decompress,
-        (msg) => {
+        (msg: MessageData) => {
           const parsedMsg = parseMsg(msg, i);
           return (opts.mapEach && opts.mapEach(parsedMsg)) || parsedMsg;
         }

@@ -4,7 +4,9 @@
 // found in the LICENSE file in the root directory of this source tree.
 // You may not use this file except in compliance with the License.
 
-import { parseMessageDefinition } from "../lib/parseMessageDefinition";
+// @flow
+
+import { parseMessageDefinition } from "./parseMessageDefinition";
 
 describe("parseMessageDefinition", () => {
   it("parses a single field from a single message", () => {
@@ -254,7 +256,7 @@ describe("parseMessageDefinition", () => {
             name: "EXAMPLE",
             type: "string",
             isConstant: true,
-            value: '"#comments" are ignored, and leading and trailing whitespace removed', // eslint-disable-line quotes
+            value: '"#comments" are ignored, and leading and trailing whitespace removed',
           },
         ],
         name: undefined,

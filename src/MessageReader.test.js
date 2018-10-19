@@ -4,20 +4,22 @@
 // found in the LICENSE file in the root directory of this source tree.
 // You may not use this file except in compliance with the License.
 
-import MessageReader from "./MessageReader";
+// @flow
 
-const getStringBuffer = (str) => {
+import { MessageReader } from "./MessageReader";
+
+const getStringBuffer = (str: string) => {
   const data = new Buffer(str, "utf8");
   const len = new Buffer(4);
-  len.writeInt32LE(data.byteLength);
+  len.writeInt32LE(data.byteLength, 0);
   return Buffer.concat([len, data]);
 };
 
-const buildReader = (def) => new MessageReader(def);
+const buildReader = (def: string) => new MessageReader(def);
 
 describe("MessageReader", () => {
   describe("simple type", () => {
-    const testNum = (type, size, expected, cb) => {
+    const testNum = (type: string, size: number, expected: any, cb: (buffer: Buffer) => any) => {
       const buffer = new Buffer(size);
       cb(buffer);
       it(`parses buffer ${JSON.stringify(buffer)} containing ${type}`, () => {
@@ -28,14 +30,14 @@ describe("MessageReader", () => {
       });
     };
 
-    testNum("int8", 1, -3, (buffer) => buffer.writeInt8(-3));
-    testNum("uint8", 1, 13, (buffer) => buffer.writeInt8(13));
-    testNum("int16", 2, -21, (buffer) => buffer.writeInt16LE(-21));
-    testNum("uint16", 2, 21, (buffer) => buffer.writeUInt16LE(21));
-    testNum("int32", 4, -210010, (buffer) => buffer.writeInt32LE(-210010));
-    testNum("uint32", 4, 210010, (buffer) => buffer.writeUInt32LE(210010));
-    testNum("float32", 4, 5.5, (buffer) => buffer.writeFloatLE(5.5));
-    testNum("float64", 8, 0xdeadbeefcafebabe, (buffer) => buffer.writeDoubleLE(0xdeadbeefcafebabe));
+    testNum("int8", 1, -3, (buffer) => buffer.writeInt8(-3, 0));
+    testNum("uint8", 1, 13, (buffer) => buffer.writeInt8(13, 0));
+    testNum("int16", 2, -21, (buffer) => buffer.writeInt16LE(-21, 0));
+    testNum("uint16", 2, 21, (buffer) => buffer.writeUInt16LE(21, 0));
+    testNum("int32", 4, -210010, (buffer) => buffer.writeInt32LE(-210010, 0));
+    testNum("uint32", 4, 210010, (buffer) => buffer.writeUInt32LE(210010, 0));
+    testNum("float32", 4, 5.5, (buffer) => buffer.writeFloatLE(5.5, 0));
+    testNum("float64", 8, 0xdeadbeefcafebabe, (buffer) => buffer.writeDoubleLE(0xdeadbeefcafebabe, 0));
 
     it("parses string", () => {
       const reader = buildReader("string name");
@@ -52,7 +54,7 @@ describe("MessageReader", () => {
       now.setSeconds(31);
       now.setMilliseconds(0);
       const seconds = Math.round(now.getTime() / 1000);
-      buff.writeUInt32LE(seconds);
+      buff.writeUInt32LE(seconds, 0);
       buff.writeUInt32LE(1000000, 4);
       now.setMilliseconds(1);
       expect(reader.readMessage(buff)).toEqual({
@@ -394,7 +396,7 @@ describe("MessageReader", () => {
       expect(status.name).toBe("foo");
 
       // We shouldn't expose constants on the message.
-      expect(Object.keys(message).includes("STALE")).toBe(false);
+      expect(Object.keys(message).some((key) => key === "STALE")).toBe(false);
     });
   });
 });

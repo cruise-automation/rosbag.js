@@ -4,10 +4,21 @@
 // found in the LICENSE file in the root directory of this source tree.
 // You may not use this file except in compliance with the License.
 
+// @flow
+
+import { Time } from "./Time";
+
 // represents a result passed to the callback from the high-level call:
 // bag.readMessages({ opts: any }, callback: (ReadResult) => void) => Promise<void>
-export default class ReadResult {
-  constructor(topic, message, timestamp, data, chunkOffset, totalChunks) {
+export default class ReadResult<T> {
+  topic: string;
+  message: T;
+  timestamp: Time;
+  data: Buffer;
+  chunkOffset: number;
+  totalChunks: number;
+
+  constructor(topic: string, message: T, timestamp: Time, data: Buffer, chunkOffset: number, totalChunks: number) {
     // string: the topic the message was on
     this.topic = topic;
 

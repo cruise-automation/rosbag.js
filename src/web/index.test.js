@@ -4,21 +4,15 @@
 // found in the LICENSE file in the root directory of this source tree.
 // You may not use this file except in compliance with the License.
 
-import Reader from "./browser";
+// @flow
 
-// tiny polyfill for the parts of the FileReader API we use
-global.FileReader = class FileReader {
-  readAsArrayBuffer(buffer) {
-    this.result = buffer;
-    setImmediate(this.onload);
-  }
-};
+import { Reader } from ".";
 
 describe("browser reader", () => {
-  it("works in node with some polyfills", (done) => {
-    const buffer = new Buffer([0x00, 0x01, 0x02, 0x03, 0x04]);
+  it("works in node", (done) => {
+    const buffer = new Blob([Uint8Array.from([0x00, 0x01, 0x02, 0x03, 0x04])]);
     const reader = new Reader(buffer);
-    reader.read(0, 2, (err, res) => {
+    reader.read(0, 2, (err: Error | null, res: any) => {
       expect(err).toBeNull();
       expect(res).toHaveLength(2);
       expect(res instanceof Buffer).toBe(true);
@@ -29,10 +23,10 @@ describe("browser reader", () => {
   });
 
   it("calls back with an error if read is called twice", (done) => {
-    const buffer = new Buffer([0x00, 0x01, 0x02, 0x03, 0x04]);
+    const buffer = new Blob([Uint8Array.from([0x00, 0x01, 0x02, 0x03, 0x04])]);
     const reader = new Reader(buffer);
     reader.read(0, 2, () => {});
-    reader.read(0, 2, (err) => {
+    reader.read(0, 2, (err: Error | null) => {
       expect(err instanceof Error).toBe(true);
       done();
     });

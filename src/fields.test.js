@@ -4,9 +4,9 @@
 // found in the LICENSE file in the root directory of this source tree.
 // You may not use this file except in compliance with the License.
 
-import assert from "assert";
+// @flow
 
-import { extractFields } from "../lib/fields";
+import { extractFields } from "./fields";
 
 describe("fields", () => {
   it("should extract fields from a buffer", () => {
@@ -18,6 +18,6 @@ describe("fields", () => {
 
     const result = extractFields(buffer);
     const expected = { foo: new Buffer("bar"), key: new Buffer("value") };
-    assert.deepEqual(result, expected);
+    expect(result).toEqual(expected);
   });
 });
