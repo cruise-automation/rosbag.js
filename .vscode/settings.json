@@ -6,5 +6,6 @@
     "node_modules": true,
     "flow-typed": true
   },
-  "flow.useNPMPackagedFlow": true
+  "flow.useNPMPackagedFlow": true,
+  "javascript.validate.enable": false
 }
