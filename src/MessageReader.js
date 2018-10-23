@@ -6,11 +6,6 @@
 
 // @flow
 
-// Per the @feross/buffer documentation, the trailing slash "tells the node.js
-// module lookup algorithm (also used by browserify) to use the npm module named buffer
-// instead of the node.js core module named buffer".
-import Buffer from "buffer/";
-
 import int53 from "int53";
 import { extractTime } from "./fields";
 import { parseMessageDefinition, type RosMsgDefinition, type NamedRosMsgDefinition } from "./parseMessageDefinition";

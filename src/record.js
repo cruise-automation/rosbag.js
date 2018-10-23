@@ -28,6 +28,7 @@ export class Record {
 }
 
 export class BagHeader extends Record {
+  static opcode = 3;
   indexPosition: number;
   connectionCount: number;
   chunkCount: number;
@@ -41,6 +42,7 @@ export class BagHeader extends Record {
 }
 
 export class Chunk extends Record {
+  static opcode = 5;
   compression: string;
   size: number;
   data: Buffer;
@@ -64,6 +66,7 @@ const getField = (fields: { [key: string]: Buffer }, key: string) => {
 };
 
 export class Connection extends Record {
+  static opcode = 7;
   conn: number;
   topic: string;
   type: ?string;
@@ -97,6 +100,7 @@ export class Connection extends Record {
 }
 
 export class MessageData extends Record {
+  static opcode = 2;
   conn: number;
   time: Time;
   data: Buffer;
@@ -113,6 +117,7 @@ export class MessageData extends Record {
 }
 
 export class IndexData extends Record {
+  static opcode = 4;
   ver: number;
   conn: number;
   count: number;
@@ -137,6 +142,7 @@ export class IndexData extends Record {
 }
 
 export class ChunkInfo extends Record {
+  static opcode = 6;
   ver: number;
   chunkPosition: number;
   startTime: Time;

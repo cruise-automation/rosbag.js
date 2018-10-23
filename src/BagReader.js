@@ -27,16 +27,6 @@ export type Decompress = {
   [compression: string]: (buffer: Buffer, size: number) => Buffer,
 };
 
-function cast<T, U: T>(value: T, cls: Class<U> & { name: string }): U {
-  if (!(value instanceof cls)) {
-    throw new Error(`Expected ${cls.name}`);
-  }
-  return value;
-}
-function castArray<T, U: T>(values: T[], cls: Class<U> & { name: string }): U[] {
-  return values.map((x: T) => cast(x, cls));
-}
-
 const HEADER_READAHEAD = 4096;
 const HEADER_OFFSET = 13;
 
@@ -90,7 +80,7 @@ export default class BagReader {
         if (read < headerLength + 8) {
           return callback(new Error(`Record at position ${HEADER_OFFSET} header too large: ${headerLength}.`));
         }
-        const header = cast(this.readRecordFromBuffer(buffer, HEADER_OFFSET), BagHeader);
+        const header = this.readRecordFromBuffer(buffer, HEADER_OFFSET, BagHeader);
         return callback(null, header);
       });
     });
@@ -118,10 +108,12 @@ export default class BagReader {
         return callback(err || new Error("Missing both error and buffer"));
       }
 
-      const connections = castArray(this.readRecordsFromBuffer(buffer, connectionCount, fileOffset), Connection);
+      const connections = this.readRecordsFromBuffer(buffer, connectionCount, fileOffset, Connection);
       const connectionBlockLength = connections[connectionCount - 1].end - connections[0].offset;
-      const chunkInfos = castArray(
-        this.readRecordsFromBuffer(buffer.slice(connectionBlockLength), chunkCount, fileOffset + connectionBlockLength),
+      const chunkInfos = this.readRecordsFromBuffer(
+        buffer.slice(connectionBlockLength),
+        chunkCount,
+        fileOffset + connectionBlockLength,
         ChunkInfo
       );
 
@@ -207,7 +199,7 @@ export default class BagReader {
       }
 
       const messages = entries.map((entry, i) => {
-        const msg = cast(this.readRecordFromBuffer(chunk.data.slice(entry.offset), chunk.dataOffset), MessageData);
+        const msg = this.readRecordFromBuffer(chunk.data.slice(entry.offset), chunk.dataOffset, MessageData);
         return (each && each(msg, i)) || msg;
       });
 
@@ -259,7 +251,7 @@ export default class BagReader {
         return callback(err || new Error("Missing both error and buffer"));
       }
 
-      const chunk = cast(this.readRecordFromBuffer(buffer, chunkInfo.chunkPosition), Chunk);
+      const chunk = this.readRecordFromBuffer(buffer, chunkInfo.chunkPosition, Chunk);
       const { compression } = chunk;
       if (compression !== "none") {
         const decompressFn = decompress[compression];
@@ -269,8 +261,10 @@ export default class BagReader {
         const result = decompressFn(chunk.data, chunk.size);
         chunk.data = result;
       }
-      const indices = castArray(
-        this.readRecordsFromBuffer(buffer.slice(chunk.length), chunkInfo.count, chunkInfo.chunkPosition + chunk.length),
+      const indices = this.readRecordsFromBuffer(
+        buffer.slice(chunk.length),
+        chunkInfo.count,
+        chunkInfo.chunkPosition + chunk.length,
         IndexData
       );
 
@@ -280,11 +274,16 @@ export default class BagReader {
   }
 
   // reads count records from a buffer starting at fileOffset
-  readRecordsFromBuffer(buffer: Buffer, count: number, fileOffset: number): Record[] {
+  readRecordsFromBuffer<T: Record>(
+    buffer: Buffer,
+    count: number,
+    fileOffset: number,
+    cls: Class<T> & { opcode: number }
+  ): T[] {
     const records = [];
     let bufferOffset = 0;
     for (let i = 0; i < count; i++) {
-      const record = this.readRecordFromBuffer(buffer.slice(bufferOffset), fileOffset + bufferOffset);
+      const record = this.readRecordFromBuffer(buffer.slice(bufferOffset), fileOffset + bufferOffset, cls);
       bufferOffset += record.end - record.offset;
       records.push(record);
     }
@@ -292,9 +291,10 @@ export default class BagReader {
   }
 
   // read an individual record from a buffer
-  readRecordFromBuffer(buffer: Buffer, fileOffset: number): Record {
+  readRecordFromBuffer<T: Record>(buffer: Buffer, fileOffset: number, cls: Class<T> & { opcode: number }): T {
     const headerLength = buffer.readInt32LE(0);
-    const record = parseHeader(buffer.slice(4, 4 + headerLength));
+    const record = parseHeader(buffer.slice(4, 4 + headerLength), cls);
+
     const dataOffset = 4 + headerLength + 4;
     const dataLength = buffer.readInt32LE(4 + headerLength);
     const data = buffer.slice(dataOffset, dataOffset + dataLength);

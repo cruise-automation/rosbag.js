@@ -7,31 +7,19 @@
 // @flow
 
 import { extractFields } from "./fields";
-import { Record, BagHeader, Chunk, ChunkInfo, Connection, IndexData, MessageData } from "./record";
+import { Record } from "./record";
 
 // given a buffer parses out the record within the buffer
 // based on the opcode type bit
-export function parseHeader(buffer: Buffer): Record {
+export function parseHeader<T: Record>(buffer: Buffer, cls: Class<T> & { opcode: number }): T {
   const fields = extractFields(buffer);
   if (fields.op === undefined) {
     throw new Error("Header is missing 'op' field.");
   }
   const opcode = fields.op.readUInt8(0);
-
-  switch (opcode) {
-    case 2:
-      return new MessageData(fields);
-    case 3:
-      return new BagHeader(fields);
-    case 4:
-      return new IndexData(fields);
-    case 5:
-      return new Chunk(fields);
-    case 6:
-      return new ChunkInfo(fields);
-    case 7:
-      return new Connection(fields);
-    default:
-      throw new Error(`Unknown header type: ${opcode}`);
+  if (opcode !== cls.opcode) {
+    throw new Error(`Expected ${cls.name} (${cls.opcode}) but found ${opcode}`);
   }
+
+  return new cls(fields);
 }
