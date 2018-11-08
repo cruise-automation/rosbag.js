@@ -14,6 +14,17 @@ or
 yarn add rosbag
 ```
 
+Then, depending on your environment, you can `import {open} from 'rosbag'` or `require('rosbag')`.
+
+If you're not running your code in node.js or building for the browser using a package manager like webpack, you can import the script directly into the page:
+
+```html
+<script src="node_modules/rosbag/dist/web/index.js"></script>
+<script>
+  // use rosbag.open() here...
+</script>
+```
+
 ## Quick start
 
 The most common way to interact with a rosbag is to read data records for a specific set of topics. The rosbag format [encodes type information for topics](http://wiki.ros.org/msg), and `rosbag` reads this type information and parses the data records into JavaScript objects and arrays.
@@ -100,7 +111,7 @@ const bagOptions = {
   // if your bag is compressed you can supply a callback to decompress it
   // based on the compression type. The callback should accept a buffer of compressed bytes
   // and return a buffer of uncompressed bytes.  For examples on how to decompress lz4 and bz2 compressed bags
-  // please see the tests here: https://github.com/cruise-automation/rosbag.js/blob/master/test/rosbag.js#L139
+  // please see the tests here: https://github.com/cruise-automation/rosbag.js/blob/545529344c8c2a0b3a3126646d065043c2d67d84/src/bag.test.js#L167-L192
   // The decompression callback is also passed the uncompressedByteLength which is stored in the bag.
   // This byte length can be used with some decompression libraries to increase decompression efficiency.
   decompress?: {|
