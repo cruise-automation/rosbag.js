@@ -120,7 +120,7 @@ describe("rosbag - high-level api", () => {
 
   it.only("reads correct fields on /tf message", async () => {
     const messages = await fullyReadBag(FILENAME, { topics: ["/tf"] });
-    expect(messages[0]).toMatchSnapshot();
+    expect(messages[0].message).toMatchSnapshot();
   });
 
   it("reads poses", async () => {
