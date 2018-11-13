@@ -118,6 +118,11 @@ describe("rosbag - high-level api", () => {
     ]);
   });
 
+  it("reads correct fields on /tf message", async () => {
+    const messages = await fullyReadBag(FILENAME, { topics: ["/tf"] });
+    expect(messages[0].message).toMatchSnapshot();
+  });
+
   it("reads poses", async () => {
     const opts = { topics: ["/turtle1/cmd_vel"] };
     const messages = await fullyReadBag(FILENAME, opts);
