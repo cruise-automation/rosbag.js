@@ -23,17 +23,23 @@ function getFixture(filename = FILENAME) {
 
 async function fullyReadBag<T>(
   name: string,
-  opts: ReadOptions | ReadOptionsWithMapEach<T>
+  opts?: ReadOptions | ReadOptionsWithMapEach<T>
 ): Promise<ReadResult<any>[] | T[]> {
   const filename = getFixture(name);
   expect(fs.existsSync(filename)).toBe(true);
   const bag = await Bag.open(filename);
   const messages: Array<ReadResult<any> | T> = [];
-  await bag.readMessages(opts, (msg) => {
+  await bag.readMessages(opts || {}, (msg) => {
     messages.push(msg);
   });
   return messages;
 }
+
+describe("basics", () => {
+  expect(Bag.open(getFixture("NON_EXISTENT_FILE"))).rejects.toThrow("no such file or directory");
+  expect(Bag.open(getFixture("empty-file"))).rejects.toThrow("Missing file header.");
+  expect(fullyReadBag("no-messages")).resolves.toEqual([]);
+});
 
 describe("rosbag - high-level api", () => {
   const testNumberOfMessages = <T: { timestamp: Time }>(
