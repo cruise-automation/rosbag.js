@@ -139,7 +139,7 @@ class StandardTypeReader {
 }
 
 const findTypeByName = (types: RosMsgDefinition[], name = ""): NamedRosMsgDefinition => {
-  let foundName = "";
+  let foundName = ""; // track name separately in a non-null variable to appease Flow
   const matches = types.filter((type) => {
     const typeName = type.name || "";
     // if the search is empty, return unnamed types
@@ -149,8 +149,11 @@ const findTypeByName = (types: RosMsgDefinition[], name = ""): NamedRosMsgDefini
     // return if the search is in the type name
     // or matches exactly if a fully-qualified name match is passed to us
     const nameEnd = name.indexOf("/") > -1 ? name : `/${name}`;
-    foundName = typeName;
-    return typeName.endsWith(nameEnd);
+    if (typeName.endsWith(nameEnd)) {
+      foundName = typeName;
+      return true;
+    }
+    return false;
   });
   if (matches.length !== 1) {
     throw new Error(`Expected 1 top level type definition for '${name}' but found ${matches.length}`);
