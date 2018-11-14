@@ -46,12 +46,12 @@ export default class BagReader {
 
   verifyBagHeader(callback: Callback<BagHeader>, next: () => void) {
     this._file.read(0, HEADER_OFFSET, (error: Error | null, buffer?: Buffer) => {
-      if (this._file.size() < HEADER_OFFSET) {
-        return callback(new Error("Missing file header."));
-      }
-
       if (error || !buffer) {
         return callback(error || new Error("Missing both error and buffer"));
+      }
+
+      if (this._file.size() < HEADER_OFFSET) {
+        return callback(new Error("Missing file header."));
       }
 
       if (buffer.toString() !== "#ROSBAG V2.0\n") {
@@ -106,6 +106,10 @@ export default class BagReader {
     this._file.read(fileOffset, this._file.size() - fileOffset, (err: Error | null, buffer?: Buffer) => {
       if (err || !buffer) {
         return callback(err || new Error("Missing both error and buffer"));
+      }
+
+      if (connectionCount === 0) {
+        return callback(null, { connections: [], chunkInfos: [] });
       }
 
       const connections = this.readRecordsFromBuffer(buffer, connectionCount, fileOffset, Connection);
