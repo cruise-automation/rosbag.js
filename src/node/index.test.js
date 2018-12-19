@@ -8,6 +8,7 @@
 
 import assert from "assert";
 import path from "path";
+import fs from "fs";
 
 import { Reader } from ".";
 
@@ -18,7 +19,7 @@ describe("Reader", () => {
     const reader = new Reader(fixture);
     reader.read(5, 10, (err: Error | null, buff: any) => {
       assert(!err);
-      assert.equal(reader.size(), 21);
+      assert.equal(reader.size(), fs.statSync(fixture).size);
       assert.equal("6789012345", buff.toString());
       reader.close(done);
     });
