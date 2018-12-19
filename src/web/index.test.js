@@ -31,4 +31,28 @@ describe("browser reader", () => {
       done();
     });
   });
+
+  it("reports browser FileReader errors", (done) => {
+    const buffer = new Blob([Uint8Array.from([0x00, 0x01, 0x02, 0x03, 0x04])]);
+    const reader = new Reader(buffer);
+
+    // mock readAsArrayBuffer to emulate an error
+    reader._fileReader.readAsArrayBuffer = function() {
+      setTimeout(() => {
+        Object.defineProperty(this, "error", {
+          get() { return "fake error"; }
+        });
+
+        expect(typeof this.onerror).toBe("function");
+        this.onerror(this);
+      });
+    };
+
+    reader.read(0, 2, (err: Error | null) => {
+      expect(err instanceof Error).toBe(true);
+      expect(err.message).toBe("fake error");
+      done();
+    });
+
+  });
 });
