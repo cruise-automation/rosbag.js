@@ -51,6 +51,7 @@
     "flow-copy-source": "2.0.2",
     "flow-typed": "2.5.1",
     "jest": "23.6.0",
+    "jest-cli": "23.6.0",
     "jest-junit": "5.2.0",
     "lz4js": "0.2.0",
     "prettier": "1.14.3",
