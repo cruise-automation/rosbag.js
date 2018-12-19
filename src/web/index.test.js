@@ -40,9 +40,9 @@ describe("browser reader", () => {
     // $FlowFixMe - readAsArrayBuffer is not writeable
     reader._fileReader.readAsArrayBuffer = function() {
       setTimeout(() => {
+        // $FlowFixMe - `value` is missing in object literal
         Object.defineProperty(this, "error", {
-          get() { return "fake error"; },
-          value: null
+          get() { return "fake error"; }
         });
 
         expect(typeof this.onerror).toBe("function");
