@@ -33,14 +33,17 @@ export class Reader {
     }
 
     reader.onload = function() {
+
       // $FlowFixMe - flow doesn't allow null
       reader.onload = null;
+      // $FlowFixMe - flow doesn't allow null
       reader.onerror = null;
       setImmediate(cb, null, Buffer.from(reader.result));
     };
     reader.onerror = function () {
       // $FlowFixMe - flow doesn't allow null
       reader.onload = null;
+      // $FlowFixMe - flow doesn't allow null
       reader.onerror = null;
       setImmediate(cb, new Error(reader.error));
     };

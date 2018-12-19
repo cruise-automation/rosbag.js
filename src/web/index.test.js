@@ -37,10 +37,12 @@ describe("browser reader", () => {
     const reader = new Reader(buffer);
 
     // mock readAsArrayBuffer to emulate an error
+    // $FlowFixMe - readAsArrayBuffer is not writeable
     reader._fileReader.readAsArrayBuffer = function() {
       setTimeout(() => {
         Object.defineProperty(this, "error", {
-          get() { return "fake error"; }
+          get() { return "fake error"; },
+          value: null
         });
 
         expect(typeof this.onerror).toBe("function");
@@ -50,6 +52,8 @@ describe("browser reader", () => {
 
     reader.read(0, 2, (err: Error | null) => {
       expect(err instanceof Error).toBe(true);
+
+      // $FlowFixMe - `message` is missing in null
       expect(err.message).toBe("fake error");
       done();
     });
