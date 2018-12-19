@@ -42,7 +42,9 @@ describe("browser reader", () => {
       setTimeout(() => {
         // $FlowFixMe - `value` is missing in object literal
         Object.defineProperty(this, "error", {
-          get() { return "fake error"; }
+          get() {
+            return "fake error";
+          },
         });
 
         expect(typeof this.onerror).toBe("function");
@@ -57,6 +59,5 @@ describe("browser reader", () => {
       expect(err.message).toBe("fake error");
       done();
     });
-
   });
 });
