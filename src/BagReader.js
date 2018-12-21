@@ -244,7 +244,6 @@ export default class BagReader {
       const lastReadResult = this._lastReadResult;
       return setImmediate(() => callback(null, lastReadResult));
     }
-    this._lastChunkInfo = chunkInfo;
     const { nextChunk } = chunkInfo;
 
     const readLength = nextChunk
@@ -273,6 +272,7 @@ export default class BagReader {
         IndexData
       );
 
+      this._lastChunkInfo = chunkInfo;
       this._lastReadResult = { chunk, indices };
       return callback(null, this._lastReadResult);
     });
