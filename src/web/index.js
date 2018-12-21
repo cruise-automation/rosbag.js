@@ -16,22 +16,16 @@ import BagReader from "../BagReader";
 export class Reader {
   _blob: Blob;
   _size: number;
-  _fileReader: FileReader;
 
   constructor(blob: Blob) {
     this._blob = blob;
     this._size = blob.size;
-    this._fileReader = new FileReader();
   }
 
   // read length (bytes) starting from offset (bytes)
   // callback(err, buffer)
   read(offset: number, length: number, cb: Callback<Buffer>) {
-    const reader = this._fileReader;
-    if (reader.onload) {
-      return cb(new Error("Bag reader is already reading"));
-    }
-
+    const reader = new FileReader();
     reader.onload = function() {
       // $FlowFixMe - flow doesn't allow null
       reader.onload = null;

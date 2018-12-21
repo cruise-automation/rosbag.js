@@ -22,37 +22,37 @@ describe("browser reader", () => {
     });
   });
 
-  it("calls back with an error if read is called twice", (done) => {
+  it("allows multiple read operations at once", async () => {
     const buffer = new Blob([Uint8Array.from([0x00, 0x01, 0x02, 0x03, 0x04])]);
     const reader = new Reader(buffer);
-    reader.read(0, 2, () => {});
-    reader.read(0, 2, (err: Error | null) => {
-      expect(err instanceof Error).toBe(true);
-      done();
-    });
+    const read1 = new Promise((resolve, reject) => reader.read(0, 2, (err) => (err ? reject(err) : resolve())));
+    const read2 = new Promise((resolve, reject) => reader.read(0, 2, (err) => (err ? reject(err) : resolve())));
+    await Promise.all([read1, read2]);
   });
 
   it("reports browser FileReader errors", (done) => {
     const buffer = new Blob([Uint8Array.from([0x00, 0x01, 0x02, 0x03, 0x04])]);
     const reader = new Reader(buffer);
+    const actualFileReader = global.FileReader;
+    global.FileReader = class FailReader {
+      onerror: any;
+      readAsArrayBuffer() {
+        setTimeout(() => {
+          // $FlowFixMe - `value` is missing in object literal
+          Object.defineProperty(this, "error", {
+            get() {
+              return "fake error";
+            },
+          });
 
-    // mock readAsArrayBuffer to emulate an error
-    // $FlowFixMe - readAsArrayBuffer is not writeable
-    reader._fileReader.readAsArrayBuffer = function() {
-      setTimeout(() => {
-        // $FlowFixMe - `value` is missing in object literal
-        Object.defineProperty(this, "error", {
-          get() {
-            return "fake error";
-          },
+          expect(typeof this.onerror).toBe("function");
+          this.onerror(this);
         });
-
-        expect(typeof this.onerror).toBe("function");
-        this.onerror(this);
-      });
+      }
     };
 
     reader.read(0, 2, (err: Error | null) => {
+      global.FileReader = actualFileReader;
       expect(err instanceof Error).toBe(true);
 
       // $FlowFixMe - `message` is missing in null
