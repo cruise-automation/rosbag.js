@@ -1,3 +1,4 @@
+// @flow
 // Copyright (c) 2018-present, GM Cruise LLC
 
 // This source code is licensed under the Apache License, Version 2.0,
@@ -7,7 +8,7 @@
 const path = require("path");
 const nodeExternals = require("webpack-node-externals");
 
-const target = process.env.ROSBAG_TARGET;
+const target = process.env.ROSBAG_TARGET || "";
 
 module.exports = {
   entry: `./src/${target}/index.js`,
@@ -28,6 +29,8 @@ module.exports = {
     path: path.resolve(__dirname, `dist/${target}`),
     library: "rosbag",
     libraryTarget: "umd",
+    // https://github.com/webpack/webpack/issues/6525#issuecomment-417580843
+    globalObject: "typeof self !== 'undefined' ? self : this",
   },
   target,
   externals: target === "node" ? [nodeExternals()] : undefined,
