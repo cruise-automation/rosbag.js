@@ -29,9 +29,9 @@ module.exports = {
     path: path.resolve(__dirname, `dist/${target}`),
     library: "rosbag",
     libraryTarget: "umd",
+    // https://github.com/webpack/webpack/issues/6525#issuecomment-417580843
     globalObject: "typeof self !== 'undefined' ? self : this",
   },
   target,
-  // https://github.com/webpack/webpack/issues/6525#issuecomment-417580843
   externals: target === "node" ? [nodeExternals()] : undefined,
 };
