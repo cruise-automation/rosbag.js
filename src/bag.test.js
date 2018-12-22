@@ -129,6 +129,20 @@ describe("rosbag - high-level api", () => {
     expect(messages[0].message).toMatchSnapshot();
   });
 
+  it("can read bag twice at once", async () => {
+    const bag = await Bag.open(getFixture());
+    const messages1 = [];
+    const messages2 = [];
+    const readPromise1 = bag.readMessages({ topics: ["/tf"] }, (msg) => {
+      messages1.push(msg);
+    });
+    const readPromise2 = bag.readMessages({ topics: ["/tf"] }, (msg) => {
+      messages2.push(msg);
+    });
+    await Promise.all([readPromise1, readPromise2]);
+    expect(messages1).toEqual(messages2);
+  });
+
   it("reads poses", async () => {
     const opts = { topics: ["/turtle1/cmd_vel"] };
     const messages = await fullyReadBag(FILENAME, opts);

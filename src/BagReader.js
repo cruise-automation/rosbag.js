@@ -238,12 +238,12 @@ export default class BagReader {
     // if we're reading the same chunk a second time return the cached version
     // to avoid doing decompression on the same chunk multiple times which is
     // expensive
-    if (chunkInfo === this._lastChunkInfo) {
+    if (chunkInfo === this._lastChunkInfo && this._lastReadResult) {
       // always callback async, even if we have the result
       // https://oren.github.io/blog/zalgo.html
-      return setImmediate(() => callback(null, this._lastReadResult));
+      const lastReadResult = this._lastReadResult;
+      return setImmediate(() => callback(null, lastReadResult));
     }
-    this._lastChunkInfo = chunkInfo;
     const { nextChunk } = chunkInfo;
 
     const readLength = nextChunk
@@ -272,6 +272,7 @@ export default class BagReader {
         IndexData
       );
 
+      this._lastChunkInfo = chunkInfo;
       this._lastReadResult = { chunk, indices };
       return callback(null, this._lastReadResult);
     });
