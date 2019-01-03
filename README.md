@@ -181,51 +181,40 @@ class Connection {
 
 ### Time
 
-The ROS format represents time to the nanosecond granularity. In JavaScript it is stored as an instance of the Time class. The time class has conversion helper methods to go to and from JavaScript dates.
+ROS represents time with nanosecond granularity. In JavaScript, a ROS Time value is stored as an object containing `sec` and `nsec` fields. The `TimeUtil` module has various utility methods for comparison, arithmetic, and conversion to/from JavaScript Date objects.
 
 ```js
 // @flow signature
-class Time {
-  // the seconds portion of the unix epoc
-  sec: number,
-
-  // the number of nanoseconds past the second of the unix epoc
-  nsec: number,
-
-  // the constructor expects a number for both the sec and nsec values
-  constructor(sec: number, nsec: number),
-
-  // convert this Time instance to a JavaScript date object
+interface TimeUtil {
+  // convert a Time object to a JavaScript Date object
   // note: this is a lossy conversion as JavaScript dates do not store nanoseconds
-  toDate(): Date,
+  toDate(Time): Date,
 
-  // helper method to build a time instance from a JavaScript date object
-  static fromDate(Date): Time,
+  // build a time instance from a JavaScript date object
+  fromDate(Date): Time,
 
   // returns a positive number if left is greater than right
   // returns a negative number if right is greater than left
   // returns 0 if the times are the same
   // useful to sort an array of times:
-  // const times = [new Time(1, 1000), new Time(2, 2000), new Time(0, 100)]
+  // const times = [{sec: 1, nsec: 1000}, {sec: 2, nsec: 2000}, {sec: 0, nsec: 100}]
   // const sortedTimes = times.sort(Time.compare)
-  static compare(left: Time, right: Time): number,
+  compare(left: Time, right: Time): number,
 
   // returns true if left is less than right, otherwise false
-  static isLessThan(left: Time, right: Time): boolean,
+  isLessThan(left: Time, right: Time): boolean,
 
   // returns true if left is greater than right, otherwise false
-  static isGreaterThan(left: Time, right: Time): boolean,
+  isGreaterThan(left: Time, right: Time): boolean,
 
   // returns true if the times are the same, otherwise false
-  static areSame(left: Time, right: Time): boolean,
+  areSame(left: Time, right: Time): boolean,
 
   // computes the sum of two times and returns a new time
-  static add(left: Time, right: Time): Time,
+  add(left: Time, right: Time): Time,
 }
 ```
 
-You can import the Time module like this: `const { Time } = require('rosbag')`
-
 ## Supported platforms
 
-Currently rosbag is used & heavily tested in `node@8.x` as well as google chrome (via webpack).  It should also work under all modern browsers which have the [FileReader](https://caniuse.com/#feat=filereader) and [typed array](https://caniuse.com/#feat=typedarrays) APIs available.  If you run into issues with Firefox, Edge, or Safari please feel free to open an issue or submit a pull request with a fix.
+Currently rosbag is used & heavily tested in `node@10.x` as well as google chrome (via webpack).  It should also work under all modern browsers which have the [FileReader](https://caniuse.com/#feat=filereader) and [typed array](https://caniuse.com/#feat=typedarrays) APIs available.  If you run into issues with Firefox, Edge, or Safari please feel free to open an issue or submit a pull request with a fix.

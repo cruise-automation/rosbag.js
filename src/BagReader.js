@@ -6,12 +6,12 @@
 
 // @flow
 
-import { type Callback } from "./types";
+import type { Time, Callback } from "./types";
 
 import { parseHeader } from "./header";
 import nmerge from "./nmerge";
 import { Record, BagHeader, Chunk, ChunkInfo, Connection, IndexData, MessageData } from "./record";
-import { Time } from "./Time";
+import * as TimeUtil from "./TimeUtil";
 
 interface ChunkReadResult {
   chunk: Chunk;
@@ -158,11 +158,11 @@ export default class BagReader {
     startTime: Time | null,
     endTime: Time | null,
     decompress: Decompress,
-    each: (msg: MessageData, i: number) => T,
+    each: ?(msg: MessageData, i: number) => T,
     callback: Callback<T[]>
   ) {
-    const start = startTime || new Time(0, 0);
-    const end = endTime || new Time(Number.MAX_VALUE, Number.MAX_VALUE);
+    const start = startTime || { sec: 0, nsec: 0 };
+    const end = endTime || { sec: Number.MAX_VALUE, nsec: Number.MAX_VALUE };
     const conns =
       connections ||
       chunkInfo.connections.map((connection) => {
@@ -186,23 +186,24 @@ export default class BagReader {
         // $FlowFixMe https://github.com/facebook/flow/issues/1163
         return indices[conn].indices[Symbol.iterator]();
       });
-      const iter = nmerge((a, b) => Time.compare(a.time, b.time), ...iterables);
+      const iter = nmerge((a, b) => TimeUtil.compare(a.time, b.time), ...iterables);
 
       const entries = [];
       let item = iter.next();
       while (!item.done) {
         const { value } = item;
         item = iter.next();
-        if (!value || Time.isGreaterThan(start, value.time)) {
+        if (!value || TimeUtil.isGreaterThan(start, value.time)) {
           continue;
         }
-        if (Time.isGreaterThan(value.time, end)) {
+        if (TimeUtil.isGreaterThan(value.time, end)) {
           break;
         }
         entries.push(value);
       }
 
-      const messages = entries.map((entry, i) => {
+      // cheating Flow here because whether messages is T[] or MessageData[] depends on whether each was null
+      const messages: any[] = entries.map((entry, i) => {
         const msg = this.readRecordFromBuffer(chunk.data.slice(entry.offset), chunk.dataOffset, MessageData);
         return (each && each(msg, i)) || msg;
       });
@@ -218,7 +219,7 @@ export default class BagReader {
     startTime: Time,
     endTime: Time,
     decompress: Decompress,
-    each: (msg: MessageData, i: number) => T
+    each?: (msg: MessageData, i: number) => T
   ): Promise<T[]> {
     return new Promise((resolve, reject) => {
       this.readChunkMessages(

@@ -7,7 +7,7 @@
 // @flow
 
 import { Buffer } from "buffer";
-import { MessageReader, parseMessageDefinition, rosPrimitiveTypes, Time } from "../index";
+import { MessageReader, parseMessageDefinition, rosPrimitiveTypes, TimeUtil } from "../index";
 import { type Callback } from "../types";
 import Bag from "../bag";
 import BagReader from "../BagReader";
@@ -49,14 +49,18 @@ export class Reader {
   }
 }
 
-const open = async (file: File) => {
+const open = async (file: File | string) => {
+  if (!(file instanceof Blob)) {
+    throw new Error(
+      "Expected file to be a File or Blob. Make sure you are correctly importing the node or web version of Bag."
+    );
+  }
   const bag = new Bag(new BagReader(new Reader(file)));
   await bag.open();
   return bag;
 };
+Bag.open = open;
 
-const BrowserBag: typeof Bag & { open(file: File): Promise<Bag> } = (Bag: any);
-(BrowserBag: any).open = open;
-
-export { Time, BagReader, MessageReader, open, parseMessageDefinition, rosPrimitiveTypes };
-export default BrowserBag;
+export { Time } from "../types";
+export { TimeUtil, BagReader, MessageReader, open, parseMessageDefinition, rosPrimitiveTypes };
+export default Bag;

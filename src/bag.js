@@ -10,7 +10,8 @@ import BagReader, { type Decompress } from "./BagReader";
 import { MessageReader } from "./MessageReader";
 import ReadResult from "./ReadResult";
 import { BagHeader, ChunkInfo, Connection, MessageData } from "./record";
-import { Time } from "./Time";
+import type { Time } from "./types";
+import * as TimeUtil from "./TimeUtil";
 
 export type ReadOptions = {|
   decompress?: Decompress,
@@ -46,6 +47,13 @@ export default class Bag {
     this.reader = bagReader;
   }
 
+  // eslint-disable-next-line no-unused-vars
+  static open = (file: File | string) => {
+    throw new Error(
+      "This method should have been overridden based on the environment. Make sure you are correctly importing the node or web version of Bag."
+    );
+  };
+
   // if the bag is manually created with the constructor, you must call `await open()` on the bag
   // generally this is called for you if you're using `const bag = await Bag.open()`
   async open() {
@@ -71,8 +79,8 @@ export default class Bag {
   async readMessages<T>(opts: ReadOptions | ReadOptionsWithMapEach<T>, callback: (msg: T | ReadResult<any>) => void) {
     const connections = this.connections;
 
-    const startTime = opts.startTime || new Time(0, 0);
-    const endTime = opts.endTime || new Time(Number.MAX_VALUE, Number.MAX_VALUE);
+    const startTime = opts.startTime || { sec: 0, nsec: 0 };
+    const endTime = opts.endTime || { sec: Number.MAX_VALUE, nsec: Number.MAX_VALUE };
     const topics =
       opts.topics ||
       Object.keys(connections).map((id: any) => {
@@ -89,7 +97,7 @@ export default class Bag {
 
     // filter chunks to those which fall within the time range we're attempting to read
     const chunkInfos = this.chunkInfos.filter((info) => {
-      return Time.compare(info.startTime, endTime) <= 0 && Time.compare(startTime, info.endTime) <= 0;
+      return TimeUtil.compare(info.startTime, endTime) <= 0 && TimeUtil.compare(startTime, info.endTime) <= 0;
     });
 
     function parseMsg(msg: MessageData, chunkOffset: number): ReadResult<any> {

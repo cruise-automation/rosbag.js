@@ -6,8 +6,11 @@
 
 // @flow
 
+import * as TimeUtil from "./TimeUtil";
+
 export * from "./bag";
 export * from "./BagReader";
 export * from "./MessageReader";
 export * from "./parseMessageDefinition";
-export * from "./Time";
+export { Time } from "./types";
+export { TimeUtil };
