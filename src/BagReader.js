@@ -152,14 +152,13 @@ export default class BagReader {
   // read individual raw messages from the bag at a given chunk
   // filters to a specific set of connection ids, start time, & end time
   // generally the records will be of type MessageData
-  readChunkMessages<T>(
+  readChunkMessages(
     chunkInfo: ChunkInfo,
     connections: number[],
     startTime: Time | null,
     endTime: Time | null,
     decompress: Decompress,
-    each: ?(msg: MessageData, i: number) => T,
-    callback: Callback<T[]>
+    callback: Callback<MessageData[]>
   ) {
     const start = startTime || { sec: 0, nsec: 0 };
     const end = endTime || { sec: Number.MAX_VALUE, nsec: Number.MAX_VALUE };
@@ -202,10 +201,8 @@ export default class BagReader {
         entries.push(value);
       }
 
-      // cheating Flow here because whether messages is T[] or MessageData[] depends on whether each was null
-      const messages: any[] = entries.map((entry, i) => {
-        const msg = this.readRecordFromBuffer(chunk.data.slice(entry.offset), chunk.dataOffset, MessageData);
-        return (each && each(msg, i)) || msg;
+      const messages = entries.map((entry) => {
+        return this.readRecordFromBuffer(chunk.data.slice(entry.offset), chunk.dataOffset, MessageData);
       });
 
       return callback(null, messages);
@@ -213,14 +210,13 @@ export default class BagReader {
   }
 
   // promisified version of readChunkMessages
-  readChunkMessagesAsync<T>(
+  readChunkMessagesAsync(
     chunkInfo: ChunkInfo,
     connections: number[],
     startTime: Time,
     endTime: Time,
-    decompress: Decompress,
-    each?: (msg: MessageData, i: number) => T
-  ): Promise<T[]> {
+    decompress: Decompress
+  ): Promise<MessageData[]> {
     return new Promise((resolve, reject) => {
       this.readChunkMessages(
         chunkInfo,
@@ -228,8 +224,7 @@ export default class BagReader {
         startTime,
         endTime,
         decompress,
-        each,
-        (err: Error | null, messages?: T[]) => (err || !messages ? reject(err) : resolve(messages))
+        (err: Error | null, messages?: MessageData[]) => (err || !messages ? reject(err) : resolve(messages))
       );
     });
   }

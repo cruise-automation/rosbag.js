@@ -19,11 +19,6 @@ export type ReadOptions = {|
   topics?: string[],
   startTime?: Time,
   endTime?: Time,
-  mapEach?: void,
-|};
-export type ReadOptionsWithMapEach<T> = {|
-  ...ReadOptions,
-  mapEach: (msg: ReadResult<any>) => T,
 |};
 
 // the high level rosbag interface
@@ -76,7 +71,7 @@ export default class Bag {
     }
   }
 
-  async readMessages<T>(opts: ReadOptions | ReadOptionsWithMapEach<T>, callback: (msg: T | ReadResult<any>) => void) {
+  async readMessages(opts: ReadOptions, callback: (msg: ReadResult<any>) => void) {
     const connections = this.connections;
 
     const startTime = opts.startTime || { sec: 0, nsec: 0 };
@@ -120,13 +115,9 @@ export default class Bag {
         filteredConnections,
         startTime,
         endTime,
-        decompress,
-        (msg: MessageData) => {
-          const parsedMsg = parseMsg(msg, i);
-          return (opts.mapEach && opts.mapEach(parsedMsg)) || parsedMsg;
-        }
+        decompress
       );
-      messages.forEach((msg) => callback(msg));
+      messages.forEach((msg) => callback(parseMsg(msg, i)));
     }
   }
 }
