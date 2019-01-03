@@ -6,12 +6,12 @@
 
 // @flow
 
-import { type Callback } from "./types";
+import type { Time, Callback } from "./types";
 
 import { parseHeader } from "./header";
 import nmerge from "./nmerge";
 import { Record, BagHeader, Chunk, ChunkInfo, Connection, IndexData, MessageData } from "./record";
-import { Time } from "./Time";
+import * as TimeUtil from "./TimeUtil";
 
 interface ChunkReadResult {
   chunk: Chunk;
@@ -152,17 +152,16 @@ export default class BagReader {
   // read individual raw messages from the bag at a given chunk
   // filters to a specific set of connection ids, start time, & end time
   // generally the records will be of type MessageData
-  readChunkMessages<T>(
+  readChunkMessages(
     chunkInfo: ChunkInfo,
     connections: number[],
     startTime: Time | null,
     endTime: Time | null,
     decompress: Decompress,
-    each: (msg: MessageData, i: number) => T,
-    callback: Callback<T[]>
+    callback: Callback<MessageData[]>
   ) {
-    const start = startTime || new Time(0, 0);
-    const end = endTime || new Time(Number.MAX_VALUE, Number.MAX_VALUE);
+    const start = startTime || { sec: 0, nsec: 0 };
+    const end = endTime || { sec: Number.MAX_VALUE, nsec: Number.MAX_VALUE };
     const conns =
       connections ||
       chunkInfo.connections.map((connection) => {
@@ -186,25 +185,24 @@ export default class BagReader {
         // $FlowFixMe https://github.com/facebook/flow/issues/1163
         return indices[conn].indices[Symbol.iterator]();
       });
-      const iter = nmerge((a, b) => Time.compare(a.time, b.time), ...iterables);
+      const iter = nmerge((a, b) => TimeUtil.compare(a.time, b.time), ...iterables);
 
       const entries = [];
       let item = iter.next();
       while (!item.done) {
         const { value } = item;
         item = iter.next();
-        if (!value || Time.isGreaterThan(start, value.time)) {
+        if (!value || TimeUtil.isGreaterThan(start, value.time)) {
           continue;
         }
-        if (Time.isGreaterThan(value.time, end)) {
+        if (TimeUtil.isGreaterThan(value.time, end)) {
           break;
         }
         entries.push(value);
       }
 
-      const messages = entries.map((entry, i) => {
-        const msg = this.readRecordFromBuffer(chunk.data.slice(entry.offset), chunk.dataOffset, MessageData);
-        return (each && each(msg, i)) || msg;
+      const messages = entries.map((entry) => {
+        return this.readRecordFromBuffer(chunk.data.slice(entry.offset), chunk.dataOffset, MessageData);
       });
 
       return callback(null, messages);
@@ -212,14 +210,13 @@ export default class BagReader {
   }
 
   // promisified version of readChunkMessages
-  readChunkMessagesAsync<T>(
+  readChunkMessagesAsync(
     chunkInfo: ChunkInfo,
     connections: number[],
     startTime: Time,
     endTime: Time,
-    decompress: Decompress,
-    each: (msg: MessageData, i: number) => T
-  ): Promise<T[]> {
+    decompress: Decompress
+  ): Promise<MessageData[]> {
     return new Promise((resolve, reject) => {
       this.readChunkMessages(
         chunkInfo,
@@ -227,8 +224,7 @@ export default class BagReader {
         startTime,
         endTime,
         decompress,
-        each,
-        (err: Error | null, messages?: T[]) => (err || !messages ? reject(err) : resolve(messages))
+        (err: Error | null, messages?: MessageData[]) => (err || !messages ? reject(err) : resolve(messages))
       );
     });
   }

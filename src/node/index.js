@@ -8,8 +8,8 @@
 
 import { Buffer } from "buffer";
 import * as fs from "fs";
-import { MessageReader, parseMessageDefinition, rosPrimitiveTypes, Time } from "../index";
-import { type Callback } from "../types";
+import { MessageReader, parseMessageDefinition, rosPrimitiveTypes, TimeUtil } from "../index";
+import type { Callback } from "../types";
 import Bag from "../bag";
 import BagReader from "../BagReader";
 
@@ -74,14 +74,18 @@ export class Reader {
   }
 }
 
-const open = async (filename: string) => {
+const open = async (filename: File | string) => {
+  if (typeof filename !== "string") {
+    throw new Error(
+      "Expected filename to be a string. Make sure you are correctly importing the node or web version of Bag."
+    );
+  }
   const bag = new Bag(new BagReader(new Reader(filename)));
   await bag.open();
   return bag;
 };
+Bag.open = open;
 
-const NodeBag: typeof Bag & { open(filename: string): Promise<Bag> } = (Bag: any);
-(NodeBag: any).open = open;
-
-export { Time, BagReader, MessageReader, open, parseMessageDefinition, rosPrimitiveTypes };
-export default NodeBag;
+export { Time } from "../types";
+export { TimeUtil, BagReader, MessageReader, open, parseMessageDefinition, rosPrimitiveTypes };
+export default Bag;

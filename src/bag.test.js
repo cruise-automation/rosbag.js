@@ -10,10 +10,10 @@ import compress from "compressjs";
 import fs from "fs";
 import lz4 from "lz4js";
 
-import type { ReadOptions, ReadOptionsWithMapEach } from "./bag";
+import type { ReadOptions } from "./bag";
 import Bag from "./node";
 import ReadResult from "./ReadResult";
-import { Time } from "./Time";
+import * as TimeUtil from "./TimeUtil";
 
 const FILENAME = "example";
 
@@ -21,14 +21,11 @@ function getFixture(filename = FILENAME) {
   return `${__dirname}/../fixtures/${filename}.bag`;
 }
 
-async function fullyReadBag<T>(
-  name: string,
-  opts?: ReadOptions | ReadOptionsWithMapEach<T>
-): Promise<ReadResult<any>[] | T[]> {
+async function fullyReadBag(name: string, opts?: ReadOptions): Promise<ReadResult<any>[]> {
   const filename = getFixture(name);
   expect(fs.existsSync(filename)).toBe(true);
   const bag = await Bag.open(filename);
-  const messages: Array<ReadResult<any> | T> = [];
+  const messages = [];
   await bag.readMessages(opts || {}, (msg) => {
     messages.push(msg);
   });
@@ -42,11 +39,11 @@ describe("basics", () => {
 });
 
 describe("rosbag - high-level api", () => {
-  const testNumberOfMessages = <T: { timestamp: Time }>(
+  const testNumberOfMessages = (
     name: string,
     expected: number,
-    opts: ReadOptions | ReadOptionsWithMapEach<T>,
-    done?: (messages: any[]) => void
+    opts: ReadOptions,
+    done?: (messages: ReadResult<any>[]) => void
   ) => {
     it(`finds ${expected} messages in ${name} with ${JSON.stringify(opts)}`, async () => {
       const messages = await fullyReadBag(name, opts);
@@ -62,42 +59,24 @@ describe("rosbag - high-level api", () => {
     });
   };
 
-  testNumberOfMessages(FILENAME, 8647, { startTime: new Time(-1, -1) });
-  testNumberOfMessages(FILENAME, 8647, { startTime: new Time(0, 0) });
+  testNumberOfMessages(FILENAME, 8647, { startTime: { sec: -1, nsec: -1 } });
+  testNumberOfMessages(FILENAME, 8647, { startTime: { sec: 0, nsec: 0 } });
   testNumberOfMessages(FILENAME, 1, {
-    startTime: new Time(1396293887, 846735850),
-    endTime: new Time(1396293887, 846735850),
+    startTime: { sec: 1396293887, nsec: 846735850 },
+    endTime: { sec: 1396293887, nsec: 846735850 },
   });
   testNumberOfMessages(FILENAME, 319, {
-    startTime: new Time(1396293886, 846735850),
-    endTime: new Time(1396293888, 846735850),
+    startTime: { sec: 1396293886, nsec: 846735850 },
+    endTime: { sec: 1396293888, nsec: 846735850 },
   });
-  testNumberOfMessages(FILENAME, 0, { endTime: new Time(0, 0) });
-  testNumberOfMessages(FILENAME, 0, { startTime: Time.fromDate(new Date()) });
-  testNumberOfMessages(FILENAME, 0, { endTime: new Time(-1, -1) });
-
-  let calledMapEach = 0;
-  testNumberOfMessages(
-    FILENAME,
-    8647,
-    {
-      mapEach: ({ topic, timestamp }: ReadResult<any>) => {
-        calledMapEach++;
-        return { topic, timestamp };
-      },
-    },
-    (messages) => {
-      // assert that only topic and timestamp were retained
-      expect(Object.keys(messages[0]).length).toBe(2);
-      // assert that the mapEach function was only invoked once
-      expect(calledMapEach).toBe(8647);
-    }
-  );
+  testNumberOfMessages(FILENAME, 0, { endTime: { sec: 0, nsec: 0 } });
+  testNumberOfMessages(FILENAME, 0, { startTime: TimeUtil.fromDate(new Date()) });
+  testNumberOfMessages(FILENAME, 0, { endTime: { sec: -1, nsec: -1 } });
 
   it("returns chunkOffset and totalChunks on read results", async () => {
     const filename = getFixture();
     const bag = await Bag.open(filename);
-    const messages: Array<ReadResult<any>> = [];
+    const messages = [];
     await bag.readMessages({}, (msg) => {
       messages.push(msg);
     });
@@ -218,8 +197,8 @@ describe("rosbag - high-level api", () => {
 
     it("calls decompress with the chunk size", async () => {
       await fullyReadBag("example-lz4", {
-        startTime: new Time(1396293887, 846735850),
-        endTime: new Time(1396293887, 846735850),
+        startTime: { sec: 1396293887, nsec: 846735850 },
+        endTime: { sec: 1396293887, nsec: 846735850 },
         topics: ["/turtle1/color_sensor"],
         decompress: {
           lz4: (buffer: Buffer, size: number) => {

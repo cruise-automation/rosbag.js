@@ -8,7 +8,7 @@ Record {
       "header": Object {
         "frame_id": "world",
         "seq": 0,
-        "stamp": Time {
+        "stamp": Object {
           "nsec": 56065082,
           "sec": 1396293888,
         },
