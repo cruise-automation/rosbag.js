@@ -34,8 +34,8 @@ export default class Bag {
   header: BagHeader;
   connections: { [conn: number]: Connection };
   chunkInfos: ChunkInfo[];
-  startTime?: Time;
-  endTime?: Time;
+  startTime: ?Time;
+  endTime: ?Time;
 
   // you can optionally create a bag manually passing in a bagReader instance
   constructor(bagReader: BagReader) {
