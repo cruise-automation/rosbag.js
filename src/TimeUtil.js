@@ -41,14 +41,26 @@ export function areSame(left: Time, right: Time) {
   return left.sec === right.sec && left.nsec === right.nsec;
 }
 
+function toString(time: Time) {
+  return `{${time.sec}, ${time.nsec}}`;
+}
+
 // computes the sum of two times or durations and returns a new time
+// throws an exception if the resulting time is negative
 export function add(left: Time, right: Time) {
-  const sec = left.sec + right.sec;
-  const nsec = left.nsec + right.nsec;
-  if (nsec < 1e9) {
-    return { sec, nsec };
+  const durationNanos = left.nsec + right.nsec;
+  const secsFromNanos = Math.floor(durationNanos / 1e9);
+  const newSecs = left.sec + right.sec + secsFromNanos;
+  const remainingDurationNanos = durationNanos % 1e9;
+  // use Math.abs here to prevent -0 when there is exactly 1 second of negative nanoseconds passed in
+  const newNanos = Math.abs(
+    Math.sign(remainingDurationNanos) === -1 ? 1e9 + remainingDurationNanos : remainingDurationNanos
+  );
+  const result = { sec: newSecs, nsec: newNanos };
+  if (result.sec < 0 || result.nsec < 0) {
+    throw new Error(
+      `Invalid time: ${toString(result)} produced from TimeUtil.add(${toString(left)}, ${toString(right)}})`
+    );
   }
-  const rollover = Math.floor(nsec / 1e9);
-  const remainder = nsec % 1e9;
-  return { sec: sec + rollover, nsec: remainder };
+  return result;
 }
