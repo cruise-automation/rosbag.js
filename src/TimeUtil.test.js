@@ -59,10 +59,30 @@ describe("TimeUtil", () => {
     expect(TimeUtil.areSame(min, oneNano)).toBe(false);
   });
 
+  const testAddition = (left, right, expected) => {
+    expect(TimeUtil.add(left, right)).toEqual(expected);
+    expect(TimeUtil.add(right, left)).toEqual(expected);
+  };
+
   it("can add two times together", () => {
-    expect(TimeUtil.add({ sec: 0, nsec: 0 }, { sec: 0, nsec: 0 })).toEqual({ sec: 0, nsec: 0 });
-    expect(TimeUtil.add({ sec: 1, nsec: 100 }, { sec: 2, nsec: 200 })).toEqual({ sec: 3, nsec: 300 });
-    expect(TimeUtil.add({ sec: 0, nsec: 1e9 - 1 }, { sec: 0, nsec: 1 })).toEqual({ sec: 1, nsec: 0 });
-    expect(TimeUtil.add({ sec: 0, nsec: 1e9 - 1 }, { sec: 0, nsec: 101 })).toEqual({ sec: 1, nsec: 100 });
+    testAddition({ sec: 0, nsec: 0 }, { sec: 0, nsec: 0 }, { sec: 0, nsec: 0 });
+    testAddition({ sec: 1, nsec: 100 }, { sec: 2, nsec: 200 }, { sec: 3, nsec: 300 });
+    testAddition({ sec: 0, nsec: 1e9 - 1 }, { sec: 0, nsec: 1 }, { sec: 1, nsec: 0 });
+    testAddition({ sec: 0, nsec: 1e9 - 1 }, { sec: 0, nsec: 101 }, { sec: 1, nsec: 100 });
+    testAddition({ sec: 3, nsec: 0 }, { sec: 0, nsec: 2 * -1e9 }, { sec: 1, nsec: 0 });
+    testAddition({ sec: 1, nsec: 1 }, { sec: 0, nsec: -2 }, { sec: 0, nsec: 1e9 - 1 });
+    testAddition({ sec: 1, nsec: 1 }, { sec: 0, nsec: -2 }, { sec: 0, nsec: 1e9 - 1 });
+    testAddition({ sec: 3, nsec: 1 }, { sec: -2, nsec: -2 }, { sec: 0, nsec: 1e9 - 1 });
+    testAddition({ sec: 1, nsec: 0 }, { sec: 0, nsec: -1e9 }, { sec: 0, nsec: 0 });
+    testAddition({ sec: 3, nsec: 1 }, { sec: 1, nsec: -2 }, { sec: 3, nsec: 1e9 - 1 });
+    testAddition({ sec: 3, nsec: 0 }, { sec: 0, nsec: -(2 * 1e9) + 1 }, { sec: 1, nsec: 1 });
+    testAddition({ sec: 10, nsec: 0 }, { sec: 10, nsec: 10 * 1e9 }, { sec: 30, nsec: 0 });
+    testAddition({ sec: 10, nsec: 0 }, { sec: 10, nsec: -10 * 1e9 }, { sec: 10, nsec: 0 });
+    testAddition({ sec: 0, nsec: 0 }, { sec: 10, nsec: -10 * 1e9 }, { sec: 0, nsec: 0 });
+  });
+
+  it("throws when addition results in negative time", () => {
+    expect(() => TimeUtil.add({ sec: 0, nsec: 0 }, { sec: -1, nsec: 0 })).toThrow();
+    expect(() => TimeUtil.add({ sec: 0, nsec: 0 }, { sec: 0, nsec: -1 })).toThrow();
   });
 });
