@@ -36,8 +36,8 @@ export class BagHeader extends Record {
   constructor(fields: { [key: string]: Buffer }) {
     super(fields);
     this.indexPosition = readUInt64LE(fields.index_pos);
-    this.connectionCount = fields.conn_count.readInt16LE(0);
-    this.chunkCount = fields.chunk_count.readInt16LE(0);
+    this.connectionCount = fields.conn_count.readInt32LE(0);
+    this.chunkCount = fields.chunk_count.readInt32LE(0);
   }
 }
 
