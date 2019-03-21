@@ -114,6 +114,7 @@ describe("BagReader", () => {
 
     it("parses header correctly with large int32 values", (done: (?Error) => void) => {
       const filelike = new FakeHeaderFilelike();
+      // 100000, 200000, 300000 etc overflow an Int16, but fit in Int32.
       filelike.indexPosition = 100000;
       filelike.connectionCount = 200000;
       filelike.chunkCount = 300000;
