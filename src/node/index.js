@@ -86,6 +86,6 @@ const open = async (filename: File | string) => {
 };
 Bag.open = open;
 
-export { Time } from "../types";
+export * from "../types";
 export { TimeUtil, BagReader, MessageReader, open, parseMessageDefinition, rosPrimitiveTypes };
 export default Bag;

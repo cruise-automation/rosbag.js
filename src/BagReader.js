@@ -6,7 +6,7 @@
 
 // @flow
 
-import type { Time, Callback } from "./types";
+import type { Time, Callback, Filelike } from "./types";
 
 import { parseHeader } from "./header";
 import nmerge from "./nmerge";
@@ -16,11 +16,6 @@ import * as TimeUtil from "./TimeUtil";
 interface ChunkReadResult {
   chunk: Chunk;
   indices: IndexData[];
-}
-
-interface Filelike {
-  read(offset: number, length: number, callback: Callback<Buffer>): void;
-  size(): number;
 }
 
 export type Decompress = {

@@ -17,3 +17,8 @@ export interface Time {
   // additional nanoseconds past the sec value
   nsec: number;
 }
+
+export interface Filelike {
+  read(offset: number, length: number, callback: Callback<Buffer>): void;
+  size(): number;
+}
