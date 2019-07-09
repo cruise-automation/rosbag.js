@@ -108,14 +108,15 @@ export default class Bag {
       return new ReadResult(topic, message, timestamp, data, chunkOffset, chunkInfos.length);
     }
 
-    for (let i = 0; i < chunkInfos.length; i++) {
+    for (let i = 0, l = chunkInfos.length; i < l; i++) {
       const info = chunkInfos[i];
       const messages = await this.reader.readChunkMessagesAsync(
         info,
         filteredConnections,
         startTime,
         endTime,
-        decompress
+        decompress,
+        i === l - 1 // cache the chunk if it's the last one
       );
       messages.forEach((msg) => callback(parseMsg(msg, i)));
     }

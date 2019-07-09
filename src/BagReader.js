@@ -225,7 +225,7 @@ export default class BagReader {
   }
 
   // reads a single chunk record && its index records given a chunkInfo
-  readChunk(chunkInfo: ChunkInfo, decompress: Decompress, callback: Callback<ChunkReadResult>) {
+  readChunk(chunkInfo: ChunkInfo, decompress: Decompress, callback: Callback<ChunkReadResult>, doCache: boolean) {
     // if we're reading the same chunk a second time return the cached version
     // to avoid doing decompression on the same chunk multiple times which is
     // expensive
@@ -241,7 +241,7 @@ export default class BagReader {
       ? nextChunk.chunkPosition - chunkInfo.chunkPosition
       : this._file.size() - chunkInfo.chunkPosition;
 
-    this._file.read(chunkInfo.chunkPosition, readLength, (err: Error | null, buffer?: Buffer) => {
+    this._file.read(chunkInfo.chunkPosition, readLength, async (err: Error | null, buffer?: Buffer) => {
       if (err || !buffer) {
         return callback(err || new Error("Missing both error and buffer"));
       }
@@ -253,7 +253,7 @@ export default class BagReader {
         if (!decompressFn) {
           return callback(new Error(`Unsupported compression type ${chunk.compression}`));
         }
-        const result = decompressFn(chunk.data, chunk.size);
+        const result = await decompressFn(chunk.data, chunk.size);
         chunk.data = result;
       }
       const indices = this.readRecordsFromBuffer(
@@ -263,8 +263,10 @@ export default class BagReader {
         IndexData
       );
 
-      this._lastChunkInfo = chunkInfo;
-      this._lastReadResult = { chunk, indices };
+      if (doCache) {
+        this._lastChunkInfo = chunkInfo;
+        this._lastReadResult = { chunk, indices };
+      }
       return callback(null, this._lastReadResult);
     });
   }
