@@ -19,7 +19,7 @@ interface ChunkReadResult {
 }
 
 export type Decompress = {
-  [compression: string]: (buffer: Buffer, size: number) => Buffer,
+  [compression: string]: (buffer: Buffer, size: number) => Buffer | Promise<Buffer>,
 };
 
 const HEADER_READAHEAD = 4096;

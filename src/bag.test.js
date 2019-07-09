@@ -183,6 +183,25 @@ describe("rosbag - high-level api", () => {
       topics.forEach((topic) => expect(topic).toBe("/turtle1/color_sensor"));
     });
 
+    it("asynchronously reads bz2 with supplied decompression callback", async () => {
+      const messages = await fullyReadBag("example-bz2", {
+        topics: ["/turtle1/color_sensor"],
+        decompress: {
+          bz2: (buffer: Buffer) => {
+            return new Promise((resolve) => {
+              setTimeout(() => {
+                const arr = compress.Bzip2.decompressFile(buffer);
+                resolve(Buffer.from(arr));
+              }, 100);
+            });
+          },
+        },
+      });
+      const topics = messages.map((msg) => msg.topic);
+      expect(topics).toHaveLength(1351);
+      topics.forEach((topic) => expect(topic).toBe("/turtle1/color_sensor"));
+    });
+
     it("reads lz4 with supplied decompression callback", async () => {
       const messages = await fullyReadBag("example-lz4", {
         topics: ["/turtle1/color_sensor"],
