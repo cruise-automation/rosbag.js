@@ -112,6 +112,8 @@ export default class Bag {
     // Process the list of chunks such that no more than a maximum amount of bytes are being used and at
     // least one chunk is processed at a time
     function* processChunks(chunkInfos, processedCb) {
+      const messageArray = new Array(chunkInfos.length).fill();
+      let nextIndex = 0;
       let activeBytesProcessing = 0;
       let activeProcessing = 0;
       for (let i = 0, l = chunkInfos.length; i < l; i++) {
@@ -126,6 +128,8 @@ export default class Bag {
         // Wait until other chunks have finished processing
         while (activeProcessing !== 0 && activeBytesProcessing + chunkSize > maxBytes ) yield;
 
+        activeProcessing++;
+        activeBytesProcessing += chunkSize;
         const promise = this.reader.readChunkMessagesAsync(
           info,
           filteredConnections,
@@ -135,17 +139,26 @@ export default class Bag {
           i === l - 1 // cache the chunk if it's the last one
         );
 
-        activeProcessing++;
-        activeBytesProcessing += chunkSize;
         promise.then((messages) => {
-          activeProcessing--;
-          activeBytesProcessing -= chunkSize;
+          const info = {
+            chunkSize,
+            messages
+          };
 
-          processedCb(null, messages, index);
+          messageArray[index] = info;
+
+          // Process the messages in order if they're available to be processed
+          while (messageArray[nextIndex]) {
+            const nextMessages = messageArray[nextIndex];
+            activeProcessing --;
+            activeBytesProcessing -= nextMessages.chunkSize;
+
+            processedCb(null, nextMessages.messages);
+            messageArray[nextIndex] = null;
+            nextIndex ++;
+          }
         }).catch((err) => {
-          activeProcessing--;
-          activeBytesProcessing -= chunkSize;
-          processedCb(err, null, index);
+          processedCb(err);
         });
       }
     }
@@ -158,35 +171,26 @@ export default class Bag {
         // Start the task for processing all the chunk data and try to process more
         // once a chunk has finished processing
         let totalResolved = 0;
-        let nextIndex = 0;
         let rejected = false;
-        const messageArray = new Array(chunkInfos.length).fill();
-        const task = processChunks.call(this, chunkInfos, (err, messages, index) => {
+        const task = processChunks.call(this, chunkInfos, (err: Error | null, messages?: MessageData[]) => {
+          // If we've already thrown an error then don't bother doing any more work.
           if (rejected) {
             return;
           }
-          
-          if (err) {
+
+          if (err || !messages) {
             rejected = true;
-            reject(err);
-            return;
-          }
+            reject(err || new Error("Missing both error and messages"));
+          } else {
+            messages.forEach((msg) => callback(parseMsg(msg, totalResolved)));
+            totalResolved++;
 
-          totalResolved++;
-          messageArray[index] = messages;
+            if (totalResolved === chunkInfos.length) {
+              resolve();
+            }
 
-          // Process the messages in order if possible
-          while (messageArray[nextIndex]) {
-            const nextMessages = messageArray[nextIndex];
-
-            nextMessages.forEach((msg) => callback(parseMsg(msg, nextIndex)));
-            messageArray[nextIndex] = null;
-            nextIndex ++;
+            task.next();
           }
-          if (totalResolved === messageArray.length) {
-            resolve();
-          }
-          task.next();
         });
         task.next();
       });
