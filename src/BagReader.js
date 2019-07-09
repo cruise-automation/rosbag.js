@@ -153,7 +153,8 @@ export default class BagReader {
     startTime: Time | null,
     endTime: Time | null,
     decompress: Decompress,
-    callback: Callback<MessageData[]>
+    callback: Callback<MessageData[]>,
+    doCache: boolean
   ) {
     const start = startTime || { sec: 0, nsec: 0 };
     const end = endTime || { sec: Number.MAX_VALUE, nsec: Number.MAX_VALUE };
@@ -201,7 +202,7 @@ export default class BagReader {
       });
 
       return callback(null, messages);
-    });
+    }, doCache);
   }
 
   // promisified version of readChunkMessages
@@ -210,7 +211,8 @@ export default class BagReader {
     connections: number[],
     startTime: Time,
     endTime: Time,
-    decompress: Decompress
+    decompress: Decompress,
+    doCache: boolean
   ): Promise<MessageData[]> {
     return new Promise((resolve, reject) => {
       this.readChunkMessages(
@@ -219,7 +221,8 @@ export default class BagReader {
         startTime,
         endTime,
         decompress,
-        (err: Error | null, messages?: MessageData[]) => (err || !messages ? reject(err) : resolve(messages))
+        (err: Error | null, messages?: MessageData[]) => (err || !messages ? reject(err) : resolve(messages)),
+        doCache
       );
     });
   }
@@ -243,7 +246,8 @@ export default class BagReader {
 
     this._file.read(chunkInfo.chunkPosition, readLength, async (err: Error | null, buffer?: Buffer) => {
       if (err || !buffer) {
-        return callback(err || new Error("Missing both error and buffer"));
+        callback(err || new Error("Missing both error and buffer"));
+        return;
       }
 
       const chunk = this.readRecordFromBuffer(buffer, chunkInfo.chunkPosition, Chunk);
@@ -251,7 +255,8 @@ export default class BagReader {
       if (compression !== "none") {
         const decompressFn = decompress[compression];
         if (!decompressFn) {
-          return callback(new Error(`Unsupported compression type ${chunk.compression}`));
+          callback(new Error(`Unsupported compression type ${chunk.compression}`));
+          return;
         }
         const result = await decompressFn(chunk.data, chunk.size);
         chunk.data = result;
@@ -263,11 +268,12 @@ export default class BagReader {
         IndexData
       );
 
+      const readResult = { chunk, indices };
       if (doCache) {
         this._lastChunkInfo = chunkInfo;
-        this._lastReadResult = { chunk, indices };
+        this._lastReadResult = readResult;
       }
-      return callback(null, this._lastReadResult);
+      callback(null, readResult);
     });
   }
 
