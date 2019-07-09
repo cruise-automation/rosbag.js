@@ -24,9 +24,9 @@
     "lint": "yarn run flow && eslint src && prettier -l 'src/**/*.js'",
     "test": "yarn run jest --verbose && yarn run lint",
     "clean": "rm -rf build dist",
-    "build": "yarn run clean && mkdir -p dist/ && yarn run flow && yarn run build-node && yarn run build-web && yarn run flow-copy-source src dist",
-    "build-node": "ROSBAG_TARGET=node webpack --mode development",
-    "build-web": "ROSBAG_TARGET=web webpack --mode development"
+    "build": "yarn run clean && mkdir -p dist && yarn run flow && yarn run build-node && yarn run build-web && yarn run flow-copy-source src dist",
+    "build-node": "cross-env ROSBAG_TARGET=node webpack --mode development",
+    "build-web": "cross-env ROSBAG_TARGET=web webpack --mode development"
   },
   "devDependencies": {
     "@babel/cli": "7.1.2",
@@ -40,6 +40,7 @@
     "babel-jest": "23.6.0",
     "babel-loader": "8.0.4",
     "compressjs": "1.0.3",
+    "cross-env": "5.2.0",
     "eslint": "5.7.0",
     "eslint-config-airbnb": "17.1.0",
     "eslint-config-prettier": "3.1.0",
