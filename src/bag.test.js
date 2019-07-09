@@ -200,6 +200,16 @@ describe("rosbag - high-level api", () => {
       const topics = messages.map((msg) => msg.topic);
       expect(topics).toHaveLength(1351);
       topics.forEach((topic) => expect(topic).toBe("/turtle1/color_sensor"));
+
+      for (let i = 1, l = messages.length; i < l; i ++) {
+        const lastMsg = messages[i - 1];
+        const msg = messages[i];
+
+        const lastStamp = lastMsg.timestamp;
+        const stamp = msg.timestamp;
+
+        expect(TimeUtil.compare(lastStamp, stamp)).toBeLessThanOrEqual(0);
+      }
     });
 
     it("reads lz4 with supplied decompression callback", async () => {
