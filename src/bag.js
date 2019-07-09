@@ -19,6 +19,7 @@ export type ReadOptions = {|
   topics?: string[],
   startTime?: Time,
   endTime?: Time,
+  maxBytes?: number,
 |};
 
 // the high level rosbag interface
@@ -88,7 +89,7 @@ export default class Bag {
       })
       .map((id) => +id);
 
-    const { decompress = {} } = opts;
+    const { decompress = {}, maxBytes = 0 } = opts;
 
     // filter chunks to those which fall within the time range we're attempting to read
     const chunkInfos = this.chunkInfos.filter((info) => {
@@ -123,7 +124,7 @@ export default class Bag {
           : this.reader._file.size() - info.chunkPosition;
 
         // Wait until other chunks have finished processing
-        while (activeProcessing !== 0 && activeBytesProcessing + chunkSize > 0 ) yield;
+        while (activeProcessing !== 0 && activeBytesProcessing + chunkSize > maxBytes ) yield;
 
         const promise = this.reader.readChunkMessagesAsync(
           info,
