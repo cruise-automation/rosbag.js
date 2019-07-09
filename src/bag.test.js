@@ -184,7 +184,11 @@ describe("rosbag - high-level api", () => {
     });
 
     it("asynchronously reads bz2 with supplied decompression callback", async () => {
-      const messages = await fullyReadBag("example-bz2", {
+      const filename = getFixture("example-bz2");
+      const bag = await Bag.open(filename);
+
+      const messages = [];
+      await bag.readMessages({
         topics: ["/turtle1/color_sensor"],
         decompress: {
           bz2: (buffer: Buffer) => {
@@ -196,7 +200,8 @@ describe("rosbag - high-level api", () => {
             });
           },
         },
-      });
+      }, (msg) => messages.push(msg));
+
       const topics = messages.map((msg) => msg.topic);
       expect(topics).toHaveLength(1351);
       topics.forEach((topic) => expect(topic).toBe("/turtle1/color_sensor"));
@@ -210,6 +215,8 @@ describe("rosbag - high-level api", () => {
 
         expect(TimeUtil.compare(lastStamp, stamp)).toBeLessThanOrEqual(0);
       }
+
+      expect(bag.reader._lastChunkInfo).toEqual(bag.chunkInfos[bag.chunkInfos.length - 1]);
     });
 
     it("reads lz4 with supplied decompression callback", async () => {
