@@ -164,45 +164,50 @@ export default class BagReader {
         return connection.conn;
       });
 
-    this.readChunk(chunkInfo, decompress, (error: Error | null, result?: ChunkReadResult) => {
-      if (error || !result) {
-        return callback(error || new Error("Missing both error and result"));
-      }
-
-      const chunk = result.chunk;
-      const indices: { [conn: number]: IndexData } = {};
-      result.indices.forEach((index) => {
-        indices[index.conn] = index;
-      });
-      const presentConnections = conns.filter((conn) => {
-        return indices[conn] !== undefined;
-      });
-      const iterables = presentConnections.map((conn) => {
-        // $FlowFixMe https://github.com/facebook/flow/issues/1163
-        return indices[conn].indices[Symbol.iterator]();
-      });
-      const iter = nmerge((a, b) => TimeUtil.compare(a.time, b.time), ...iterables);
-
-      const entries = [];
-      let item = iter.next();
-      while (!item.done) {
-        const { value } = item;
-        item = iter.next();
-        if (!value || TimeUtil.isGreaterThan(start, value.time)) {
-          continue;
+    this.readChunk(
+      chunkInfo,
+      decompress,
+      (error: Error | null, result?: ChunkReadResult) => {
+        if (error || !result) {
+          return callback(error || new Error("Missing both error and result"));
         }
-        if (TimeUtil.isGreaterThan(value.time, end)) {
-          break;
+
+        const chunk = result.chunk;
+        const indices: { [conn: number]: IndexData } = {};
+        result.indices.forEach((index) => {
+          indices[index.conn] = index;
+        });
+        const presentConnections = conns.filter((conn) => {
+          return indices[conn] !== undefined;
+        });
+        const iterables = presentConnections.map((conn) => {
+          // $FlowFixMe https://github.com/facebook/flow/issues/1163
+          return indices[conn].indices[Symbol.iterator]();
+        });
+        const iter = nmerge((a, b) => TimeUtil.compare(a.time, b.time), ...iterables);
+
+        const entries = [];
+        let item = iter.next();
+        while (!item.done) {
+          const { value } = item;
+          item = iter.next();
+          if (!value || TimeUtil.isGreaterThan(start, value.time)) {
+            continue;
+          }
+          if (TimeUtil.isGreaterThan(value.time, end)) {
+            break;
+          }
+          entries.push(value);
         }
-        entries.push(value);
-      }
 
-      const messages = entries.map((entry) => {
-        return this.readRecordFromBuffer(chunk.data.slice(entry.offset), chunk.dataOffset, MessageData);
-      });
+        const messages = entries.map((entry) => {
+          return this.readRecordFromBuffer(chunk.data.slice(entry.offset), chunk.dataOffset, MessageData);
+        });
 
-      return callback(null, messages);
-    }, doCache);
+        return callback(null, messages);
+      },
+      doCache
+    );
   }
 
   // promisified version of readChunkMessages

@@ -188,25 +188,28 @@ describe("rosbag - high-level api", () => {
       const bag = await Bag.open(filename);
 
       const messages = [];
-      await bag.readMessages({
-        topics: ["/turtle1/color_sensor"],
-        decompress: {
-          bz2: (buffer: Buffer) => {
-            return new Promise((resolve) => {
-              setTimeout(() => {
-                const arr = compress.Bzip2.decompressFile(buffer);
-                resolve(Buffer.from(arr));
-              }, 100);
-            });
+      await bag.readMessages(
+        {
+          topics: ["/turtle1/color_sensor"],
+          decompress: {
+            bz2: (buffer: Buffer) => {
+              return new Promise((resolve) => {
+                setTimeout(() => {
+                  const arr = compress.Bzip2.decompressFile(buffer);
+                  resolve(Buffer.from(arr));
+                }, 100);
+              });
+            },
           },
         },
-      }, (msg) => messages.push(msg));
+        (msg) => messages.push(msg)
+      );
 
       const topics = messages.map((msg) => msg.topic);
       expect(topics).toHaveLength(1351);
       topics.forEach((topic) => expect(topic).toBe("/turtle1/color_sensor"));
 
-      for (let i = 1, l = messages.length; i < l; i ++) {
+      for (let i = 1, l = messages.length; i < l; i++) {
         const lastMsg = messages[i - 1];
         const msg = messages[i];
 

@@ -117,7 +117,6 @@ export default class Bag {
       let activeBytesProcessing = 0;
       let activeProcessing = 0;
       for (let i = 0, l = chunkInfos.length; i < l; i++) {
-
         const index = i;
         const info = chunkInfos[i];
         const { nextChunk } = info;
@@ -126,7 +125,7 @@ export default class Bag {
           : this.reader._file.size() - info.chunkPosition;
 
         // Wait until other chunks have finished processing
-        while (activeProcessing !== 0 && activeBytesProcessing + chunkSize > maxBytes ) yield;
+        while (activeProcessing !== 0 && activeBytesProcessing + chunkSize > maxBytes) yield;
 
         activeProcessing++;
         activeBytesProcessing += chunkSize;
@@ -139,27 +138,29 @@ export default class Bag {
           i === l - 1 // cache the chunk if it's the last one
         );
 
-        promise.then((messages) => {
-          const info = {
-            chunkSize,
-            messages
-          };
+        promise
+          .then((messages) => {
+            const info = {
+              chunkSize,
+              messages,
+            };
 
-          messageArray[index] = info;
+            messageArray[index] = info;
 
-          // Process the messages in order if they're available to be processed
-          while (messageArray[nextIndex]) {
-            const nextMessages = messageArray[nextIndex];
-            activeProcessing --;
-            activeBytesProcessing -= nextMessages.chunkSize;
+            // Process the messages in order if they're available to be processed
+            while (messageArray[nextIndex]) {
+              const nextMessages = messageArray[nextIndex];
+              activeProcessing--;
+              activeBytesProcessing -= nextMessages.chunkSize;
 
-            processedCb(null, nextMessages.messages);
-            messageArray[nextIndex] = null;
-            nextIndex ++;
-          }
-        }).catch((err) => {
-          processedCb(err);
-        });
+              processedCb(null, nextMessages.messages);
+              messageArray[nextIndex] = null;
+              nextIndex++;
+            }
+          })
+          .catch((err) => {
+            processedCb(err);
+          });
       }
     }
 
@@ -167,7 +168,6 @@ export default class Bag {
       return;
     } else {
       await new Promise((resolve, reject) => {
-
         // Start the task for processing all the chunk data and try to process more
         // once a chunk has finished processing
         let totalResolved = 0;
