@@ -244,36 +244,38 @@ export default class BagReader {
       ? nextChunk.chunkPosition - chunkInfo.chunkPosition
       : this._file.size() - chunkInfo.chunkPosition;
 
-    this._file.read(chunkInfo.chunkPosition, readLength, async (err: Error | null, buffer?: Buffer) => {
-      if (err || !buffer) {
-        callback(err || new Error("Missing both error and buffer"));
-        return;
-      }
-
-      const chunk = this.readRecordFromBuffer(buffer, chunkInfo.chunkPosition, Chunk);
-      const { compression } = chunk;
-      if (compression !== "none") {
-        const decompressFn = decompress[compression];
-        if (!decompressFn) {
-          callback(new Error(`Unsupported compression type ${chunk.compression}`));
+    this._file.read(chunkInfo.chunkPosition, readLength, (err: Error | null, buffer?: Buffer) => {
+      (async () => {
+        if (err || !buffer) {
+          callback(err || new Error("Missing both error and buffer"));
           return;
         }
-        const result = await decompressFn(chunk.data, chunk.size);
-        chunk.data = result;
-      }
-      const indices = this.readRecordsFromBuffer(
-        buffer.slice(chunk.length),
-        chunkInfo.count,
-        chunkInfo.chunkPosition + chunk.length,
-        IndexData
-      );
 
-      const readResult = { chunk, indices };
-      if (doCache) {
-        this._lastChunkInfo = chunkInfo;
-        this._lastReadResult = readResult;
-      }
-      callback(null, readResult);
+        const chunk = this.readRecordFromBuffer(buffer, chunkInfo.chunkPosition, Chunk);
+        const { compression } = chunk;
+        if (compression !== "none") {
+          const decompressFn = decompress[compression];
+          if (!decompressFn) {
+            callback(new Error(`Unsupported compression type ${chunk.compression}`));
+            return;
+          }
+          const result = await decompressFn(chunk.data, chunk.size);
+          chunk.data = result;
+        }
+        const indices = this.readRecordsFromBuffer(
+          buffer.slice(chunk.length),
+          chunkInfo.count,
+          chunkInfo.chunkPosition + chunk.length,
+          IndexData
+        );
+
+        const readResult = { chunk, indices };
+        if (doCache) {
+          this._lastChunkInfo = chunkInfo;
+          this._lastReadResult = readResult;
+        }
+        callback(null, readResult);
+      }).call(this);
     });
   }
 
