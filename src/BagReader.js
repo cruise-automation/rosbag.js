@@ -75,8 +75,12 @@ export default class BagReader {
         if (read < headerLength + 8) {
           return callback(new Error(`Record at position ${HEADER_OFFSET} header too large: ${headerLength}.`));
         }
-        const header = this.readRecordFromBuffer(buffer, HEADER_OFFSET, BagHeader);
-        return callback(null, header);
+        try {
+          const header = this.readRecordFromBuffer(buffer, HEADER_OFFSET, BagHeader);
+          return callback(null, header);
+        } catch (e) {
+          return callback(new Error(`Could not read header from rosbag file buffer - ${e.message}`));
+        }
       });
     });
   }
