@@ -3426,10 +3426,10 @@ inquirer@^6.1.0:
     strip-ansi "^4.0.0"
     through "^2.3.6"
 
-int53@0.2.4:
-  version "0.2.4"
-  resolved "https://registry.yarnpkg.com/int53/-/int53-0.2.4.tgz#5ed8d7aad6c5c6567cae69aa7ffc4a109ee80f86"
-  integrity sha1-XtjXqtbFxlZ8rmmqf/xKEJ7oD4Y=
+int53@1.0.0:
+  version "1.0.0"
+  resolved "https://registry.yarnpkg.com/int53/-/int53-1.0.0.tgz#65eef2b8e25df0d8d137520f31c47da67c97aaa1"
+  integrity sha512-u8BMiMa05OPBgd32CKTead0CVTsFVgwFk23nNXo1teKPF6Sxcu0lXxEzP//zTcaKzXbGgPDXGmj/woyv+I4C5w==
 
 interpret@^1.1.0:
   version "1.1.0"

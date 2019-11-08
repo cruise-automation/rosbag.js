@@ -6,7 +6,7 @@
   "dependencies": {
     "buffer": "5.2.1",
     "heap": "0.2.6",
-    "int53": "0.2.4"
+    "int53": "1.0.0"
   },
   "engines": {
     "node": ">=8.0.0"
