@@ -263,4 +263,31 @@ describe("parseMessageDefinition", () => {
       },
     ]);
   });
+
+  it("works with python boolean values", () => {
+    const messageDefinition = `
+      bool Alive=True
+      bool Dead=False
+    `;
+    const types = parseMessageDefinition(messageDefinition);
+    expect(types).toEqual([
+      {
+        definitions: [
+          {
+            name: "Alive",
+            type: "bool",
+            isConstant: true,
+            value: true,
+          },
+          {
+            name: "Dead",
+            type: "bool",
+            isConstant: true,
+            value: false,
+          },
+        ],
+        name: undefined,
+      },
+    ]);
+  });
 });
