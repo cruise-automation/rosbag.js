@@ -112,6 +112,9 @@ const buildType = (lines: string[]): RosMsgDefinition => {
       }
       let value: any = matches[2];
       if (type !== "string") {
+        // handle special case of python bool values
+        value = value.replace(/True/gi, "true");
+        value = value.replace(/False/gi, "false");
         try {
           value = JSON.parse(value.replace(/\s*#.*/g, ""));
         } catch (error) {
