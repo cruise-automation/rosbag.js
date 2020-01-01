@@ -19,6 +19,7 @@ export type ReadOptions = {|
   topics?: string[],
   startTime?: Time,
   endTime?: Time,
+  freeze?: ?boolean,
 |};
 
 // the high level rosbag interface
@@ -102,10 +103,11 @@ export default class Bag {
       let message = null;
       if (!opts.noParse) {
         // lazily create a reader for this connection if it doesn't exist
-        connection.reader = connection.reader || new MessageReader(connection.messageDefinition);
+        connection.reader =
+          connection.reader || new MessageReader(connection.messageDefinition, { freeze: opts.freeze });
         message = connection.reader.readMessage(data);
       }
-      return new ReadResult(topic, message, timestamp, data, chunkOffset, chunkInfos.length);
+      return new ReadResult(topic, message, timestamp, data, chunkOffset, chunkInfos.length, opts.freeze);
     }
 
     for (let i = 0; i < chunkInfos.length; i++) {

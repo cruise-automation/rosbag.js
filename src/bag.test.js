@@ -138,6 +138,27 @@ describe("rosbag - high-level api", () => {
     });
   });
 
+  it("freezes when requested", async () => {
+    const [notFrozenMsg] = await fullyReadBag(FILENAME, { topics: ["/turtle1/cmd_vel"] });
+    expect(notFrozenMsg.message.linear).toEqual({ x: 2, y: 0, z: 0 });
+    notFrozenMsg.message.linear.z = 100;
+    expect(notFrozenMsg.message.linear).toEqual({ x: 2, y: 0, z: 100 });
+
+    const [frozenMsg] = await fullyReadBag(FILENAME, { topics: ["/turtle1/cmd_vel"], freeze: true });
+    expect(frozenMsg.message.linear).toEqual({ x: 2, y: 0, z: 0 });
+    expect(() => {
+      frozenMsg.message.linear.z = 100;
+    }).toThrow();
+    expect(() => {
+      frozenMsg.timestamp.sec = 0;
+    }).toThrow();
+    expect(() => {
+      // $FlowFixMe - adding invalid field
+      frozenMsg.test = "test";
+    }).toThrow();
+    // As far as I can tell, we can't make the Buffer / underlying ArrayBuffer immutable. :(
+  });
+
   it("reads messages filtered to a specific topic", async () => {
     const messages = await fullyReadBag(FILENAME, { topics: ["/turtle1/color_sensor"] });
     const topics = messages.map((msg) => msg.topic);

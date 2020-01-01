@@ -15,15 +15,13 @@ const getStringBuffer = (str: string) => {
   return Buffer.concat([len, data]);
 };
 
-const buildReader = (def: string) => new MessageReader(def);
-
 describe("MessageReader", () => {
   describe("simple type", () => {
     const testNum = (type: string, size: number, expected: any, cb: (buffer: Buffer) => any) => {
       const buffer = new Buffer(size);
       cb(buffer);
       it(`parses buffer ${JSON.stringify(buffer)} containing ${type}`, () => {
-        const reader = buildReader(`${type} foo`);
+        const reader = new MessageReader(`${type} foo`);
         expect(reader.readMessage(buffer)).toEqual({
           foo: expected,
         });
@@ -40,7 +38,7 @@ describe("MessageReader", () => {
     testNum("float64", 8, 0xdeadbeefcafebabe, (buffer) => buffer.writeDoubleLE(0xdeadbeefcafebabe, 0));
 
     it("parses string", () => {
-      const reader = buildReader("string name");
+      const reader = new MessageReader("string name");
       const buff = getStringBuffer("test");
       expect(reader.readMessage(buff)).toEqual({
         name: "test",
@@ -48,7 +46,7 @@ describe("MessageReader", () => {
     });
 
     it("parses time", () => {
-      const reader = buildReader("time right_now");
+      const reader = new MessageReader("time right_now");
       const buff = new Buffer(8);
       const now = new Date();
       now.setSeconds(31);
@@ -75,7 +73,7 @@ describe("MessageReader", () => {
     ### foo bar baz?
     string lastName
     `;
-    const reader = buildReader(messageDefinition);
+    const reader = new MessageReader(messageDefinition);
     const buffer = Buffer.concat([getStringBuffer("foo"), getStringBuffer("bar")]);
     expect(reader.readMessage(buffer)).toEqual({
       firstName: "foo",
@@ -85,7 +83,7 @@ describe("MessageReader", () => {
 
   describe("array", () => {
     it("parses variable length string array", () => {
-      const reader = buildReader("string[] names");
+      const reader = new MessageReader("string[] names");
       const buffer = Buffer.concat([
         // variable length array has int32 as first entry
         new Buffer([0x03, 0x00, 0x00, 0x00]),
@@ -99,9 +97,9 @@ describe("MessageReader", () => {
     });
 
     it("parses fixed length arrays", () => {
-      const parser1 = buildReader("string[1] names");
-      const parser2 = buildReader("string[2] names");
-      const parser3 = buildReader("string[3] names");
+      const parser1 = new MessageReader("string[1] names");
+      const parser2 = new MessageReader("string[2] names");
+      const parser3 = new MessageReader("string[3] names");
       const buffer = Buffer.concat([getStringBuffer("foo"), getStringBuffer("bar"), getStringBuffer("baz")]);
       expect(parser1.readMessage(buffer)).toEqual({
         names: ["foo"],
@@ -115,7 +113,7 @@ describe("MessageReader", () => {
     });
 
     it("uses an empty array for a 0 length array", () => {
-      const reader = buildReader("string[] names");
+      const reader = new MessageReader("string[] names");
       const buffer = Buffer.concat([
         // variable length array has int32 as first entry
         new Buffer([0x00, 0x00, 0x00, 0x00]),
@@ -127,7 +125,7 @@ describe("MessageReader", () => {
 
     describe("typed arrays", () => {
       it("uint8[] uses the same backing buffer", () => {
-        const reader = buildReader("uint8[] values\nuint8 after");
+        const reader = new MessageReader("uint8[] values\nuint8 after");
         const buffer = Buffer.from([0x03, 0x00, 0x00, 0x00, 0x01, 0x02, 0x03, 0x04]);
         const result = reader.readMessage(buffer);
         const { values, after } = result;
@@ -144,7 +142,7 @@ describe("MessageReader", () => {
       });
 
       it("parses uint8[] with a fixed length", () => {
-        const reader = buildReader("uint8[3] values\nuint8 after");
+        const reader = new MessageReader("uint8[3] values\nuint8 after");
         const buffer = Buffer.from([0x01, 0x02, 0x03, 0x04]);
         const result = reader.readMessage(buffer);
         const { values, after } = result;
@@ -161,7 +159,7 @@ describe("MessageReader", () => {
       });
 
       it("int8[] uses the same backing buffer", () => {
-        const reader = buildReader("int8[] values\nint8 after");
+        const reader = new MessageReader("int8[] values\nint8 after");
         const buffer = new Buffer([0x03, 0x00, 0x00, 0x00, 0x01, 0x02, 0x03, 0x04]);
         const result = reader.readMessage(buffer);
         const { values, after } = result;
@@ -178,7 +176,7 @@ describe("MessageReader", () => {
       });
 
       it("parses int8[] with a fixed length", () => {
-        const reader = buildReader("int8[3] values\nint8 after");
+        const reader = new MessageReader("int8[3] values\nint8 after");
         const buffer = new Buffer([0x01, 0x02, 0x03, 0x04]);
         const result = reader.readMessage(buffer);
         const { values, after } = result;
@@ -195,7 +193,7 @@ describe("MessageReader", () => {
       });
 
       it("parses combinations of typed arrays", () => {
-        const reader = buildReader("int8[] first\nuint8[2] second");
+        const reader = new MessageReader("int8[] first\nuint8[2] second");
         const buffer = new Buffer([0x02, 0x00, 0x00, 0x00, 0x01, 0x02, 0x03, 0x04]);
         const result = reader.readMessage(buffer);
         const { first, second } = result;
@@ -217,7 +215,7 @@ describe("MessageReader", () => {
 
   describe("complex types", () => {
     it("parses single complex type", () => {
-      const reader = buildReader("string firstName \n string lastName\nuint16 age");
+      const reader = new MessageReader("string firstName \n string lastName\nuint16 age");
       const buffer = Buffer.concat([getStringBuffer("foo"), getStringBuffer("bar"), new Buffer([0x05, 0x00])]);
       expect(reader.readMessage(buffer)).toEqual({
         firstName: "foo",
@@ -235,7 +233,7 @@ describe("MessageReader", () => {
       string name
       uint16 id
       `;
-      const reader = buildReader(messageDefinition);
+      const reader = new MessageReader(messageDefinition);
       const buffer = Buffer.concat([getStringBuffer("foo"), getStringBuffer("bar"), new Buffer([100, 0x00])]);
       expect(reader.readMessage(buffer)).toEqual({
         username: "foo",
@@ -255,7 +253,7 @@ describe("MessageReader", () => {
       string name
       uint16 id
       `;
-      const reader = buildReader(messageDefinition);
+      const reader = new MessageReader(messageDefinition);
       const buffer = Buffer.concat([
         getStringBuffer("foo"),
         // uint32LE length of array (2)
@@ -296,7 +294,7 @@ describe("MessageReader", () => {
       uint8 id
       `;
 
-      const reader = buildReader(messageDefinition);
+      const reader = new MessageReader(messageDefinition);
       const buffer = Buffer.concat([
         getStringBuffer("foo"),
         // uint32LE length of Account array (2)
@@ -386,7 +384,7 @@ describe("MessageReader", () => {
       string name # a description of the test/component reporting`;
 
     it("parses bytes and constants", () => {
-      const reader = buildReader(withBytesAndBools);
+      const reader = new MessageReader(withBytesAndBools);
       const buffer = Buffer.concat([Buffer.from([0x01]), Buffer.from([0x00]), getStringBuffer("foo")]);
 
       const message = reader.readMessage(buffer);
@@ -397,6 +395,16 @@ describe("MessageReader", () => {
 
       // We shouldn't expose constants on the message.
       expect(Object.keys(message).some((key) => key === "STALE")).toBe(false);
+    });
+
+    it("freezes the resulting message if requested", () => {
+      const reader = new MessageReader("string firstName \n string lastName\nuint16 age", { freeze: true });
+      const buffer = Buffer.concat([getStringBuffer("foo"), getStringBuffer("bar"), new Buffer([0x05, 0x00])]);
+      const output = reader.readMessage(buffer);
+      expect(output).toEqual({ firstName: "foo", lastName: "bar", age: 5 });
+      expect(() => {
+        output.firstName = "boooo";
+      }).toThrow();
     });
   });
 });
