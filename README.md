@@ -34,19 +34,23 @@ Here is an example of reading messages from a rosbag in node.js:
 ```js
 const { open } = require('rosbag');
 
-// open a new bag at a given file location:
-const bag = await open('../path/to/ros.bag');
+async function logMessagesFromFooBar() {
+  // open a new bag at a given file location:
+  const bag = await open('../path/to/ros.bag');
 
-// read all messages from both the '/foo' and '/bar' topics:
-await bag.readMessages({ topics: ['/foo', '/bar'] }, (result) => {
-  // topic is the topic the data record was in
-  // in this case it will be either '/foo' or '/bar'
-  console.log(result.topic);
+  // read all messages from both the '/foo' and '/bar' topics:
+  await bag.readMessages({ topics: ['/foo', '/bar'] }, (result) => {
+    // topic is the topic the data record was in
+    // in this case it will be either '/foo' or '/bar'
+    console.log(result.topic);
 
-  // message is the parsed payload
-  // this payload will likely differ based on the topic
-  console.log(result.message);
-});
+    // message is the parsed payload
+    // this payload will likely differ based on the topic
+    console.log(result.message);
+  });
+}
+
+logMessagesFromFooBar();
 ```
 
 ## API
