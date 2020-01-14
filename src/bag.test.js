@@ -196,6 +196,18 @@ describe("rosbag - high-level api", () => {
       noParse: true,
       endTime: { sec: 1490148912, nsec: 600000000 },
     });
+
+    // First make sure that the messages were actually shuffled.
+    const smallerMessages = messages.map(({ timestamp, chunkOffset }) => ({ timestamp, chunkOffset }));
+    expect(smallerMessages[0]).toBeDefined();
+    const sortedMessages = [...smallerMessages];
+    sortedMessages.sort((a, b) => TimeUtil.compare(a.timestamp, b.timestamp));
+    expect(smallerMessages).not.toEqual(sortedMessages);
+
+    // And make sure that the chunks were also overlapping, ie. their chunksOffets are interlaced.
+    expect(sortedMessages.map(({ chunkOffset }) => chunkOffset)).toEqual([0, 2, 0, 1, 1, 0, 0, 0, 2]);
+
+    // Now make sure that we have the number of messages that we expect from this fixture.
     expect(messages).toHaveLength(9);
   });
 
