@@ -176,6 +176,41 @@ describe("rosbag - high-level api", () => {
     );
   });
 
+  it("reads messages from a shuffled bag", async () => {
+    const topics = [
+      "/cloud_nodelet/parameter_descriptions",
+      "/cloud_nodelet/parameter_updates",
+      "/diagnostics",
+      "/gps/fix",
+      "/gps/rtkfix",
+      "/gps/time",
+      "/obs1/gps/rtkfix",
+      "/obs1/gps/time",
+      "/radar/range",
+      "/radar/tracks",
+      "/rosout",
+      "/tf",
+    ];
+    const messages = await fullyReadBag("demo-shuffled", {
+      topics,
+      noParse: true,
+      endTime: { sec: 1490148912, nsec: 600000000 },
+    });
+
+    // First make sure that the messages were actually shuffled.
+    const smallerMessages = messages.map(({ timestamp, chunkOffset }) => ({ timestamp, chunkOffset }));
+    expect(smallerMessages[0]).toBeDefined();
+    const sortedMessages = [...smallerMessages];
+    sortedMessages.sort((a, b) => TimeUtil.compare(a.timestamp, b.timestamp));
+    expect(smallerMessages).not.toEqual(sortedMessages);
+
+    // And make sure that the chunks were also overlapping, ie. their chunksOffets are interlaced.
+    expect(sortedMessages.map(({ chunkOffset }) => chunkOffset)).toEqual([0, 2, 0, 1, 1, 0, 0, 0, 2]);
+
+    // Now make sure that we have the number of messages that we expect from this fixture.
+    expect(messages).toHaveLength(9);
+  });
+
   describe("compression", () => {
     it("throws if compression scheme is not registered", async () => {
       let errorThrown = false;
