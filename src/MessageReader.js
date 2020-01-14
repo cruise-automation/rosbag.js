@@ -172,7 +172,7 @@ const constructorBody = (type: $ReadOnly<RosMsgDefinition>) => {
 
 const friendlyName = (name: string) => name.replace("/", "_");
 
-const createParser = (types: RosMsgDefinition[]) => {
+const createParser = (types: RosMsgDefinition[], freeze: boolean) => {
   const unnamedTypes = types.filter((type) => !type.name);
   if (unnamedTypes.length !== 1) {
     throw new Error("multiple unnamed types");
@@ -250,6 +250,9 @@ Record.${friendlyName(t.name)} = function() {
         readerLines.push(`${fieldName}.${def.name} = reader.${def.type}();`);
       }
     });
+    if (freeze) {
+      readerLines.push(`Object.freeze(${fieldName})`);
+    }
     return readerLines;
   };
 
@@ -283,9 +286,9 @@ export class MessageReader {
   // takes a multi-line string message definition and returns
   // a message reader which can be used to read messages based
   // on the message definition
-  constructor(messageDefinition: string) {
+  constructor(messageDefinition: string, options: { freeze?: ?boolean } = {}) {
     const definitions = parseMessageDefinition(messageDefinition);
-    this.reader = createParser(definitions);
+    this.reader = createParser(definitions, !!options.freeze);
   }
 
   readMessage(buffer: Buffer) {

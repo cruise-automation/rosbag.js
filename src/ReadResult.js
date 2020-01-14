@@ -18,7 +18,15 @@ export default class ReadResult<T> {
   chunkOffset: number;
   totalChunks: number;
 
-  constructor(topic: string, message: T, timestamp: Time, data: Buffer, chunkOffset: number, totalChunks: number) {
+  constructor(
+    topic: string,
+    message: T,
+    timestamp: Time,
+    data: Buffer,
+    chunkOffset: number,
+    totalChunks: number,
+    freeze?: ?boolean
+  ) {
     // string: the topic the message was on
     this.topic = topic;
 
@@ -36,5 +44,10 @@ export default class ReadResult<T> {
 
     // the total number of chunks in the read operation
     this.totalChunks = totalChunks;
+
+    if (freeze) {
+      Object.freeze(timestamp);
+      Object.freeze(this);
+    }
   }
 }

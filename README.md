@@ -121,11 +121,15 @@ const bagOptions = {
   decompress?: {|
     bz2?: (buffer: Buffer, uncompressedByteLength: number) => Buffer,
     lz4?: (buffer: Buffer, uncompressedByteLength: number) => Buffer,
-  |}
+  |},
 
   // by default the individual parsed binary messages will be parsed based on their [ROS message definition](http://wiki.ros.org/msg)
   // if you set noParse to true the read operation will skip the message parsing step
-  noParse?: boolean
+  noParse?: boolean,
+
+  // Whether the resulting messages should be deeply frozen using Object.freeze(). (default: false)
+  // Useful to make sure your code or libraries doesn't accidentally mutate bag messages.
+  freeze?: boolean,
 }
 ```
 
