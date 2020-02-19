@@ -13,4 +13,5 @@ export * from "./BagReader";
 export * from "./MessageReader";
 export * from "./parseMessageDefinition";
 export * from "./types";
+export * from "./fields";
 export { TimeUtil };
