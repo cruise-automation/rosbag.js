@@ -6,7 +6,7 @@
 
 // @flow
 
-import { Reader } from ".";
+import { Reader, extractFields, extractTime } from ".";
 
 describe("browser reader", () => {
   it("works in node", (done) => {
@@ -59,5 +59,10 @@ describe("browser reader", () => {
       expect(err.message).toBe("fake error");
       done();
     });
+  });
+
+  it("exposes other methods", () => {
+    expect(extractFields).toBeDefined();
+    expect(extractTime).toBeDefined();
   });
 });
