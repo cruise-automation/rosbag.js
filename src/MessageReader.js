@@ -161,15 +161,6 @@ const findTypeByName = (types: RosMsgDefinition[], name = ""): NamedRosMsgDefini
   return { ...matches[0], name: foundName };
 };
 
-const constructorBody = (type: $ReadOnly<RosMsgDefinition>) => {
-  return type.definitions
-    .filter((def) => !def.isConstant)
-    .map((def) => {
-      return `this.${def.name} = undefined`;
-    })
-    .join(";\n");
-};
-
 const friendlyName = (name: string) => name.replace("/", "_");
 
 const createParser = (types: RosMsgDefinition[], freeze: boolean) => {
@@ -182,21 +173,8 @@ const createParser = (types: RosMsgDefinition[], freeze: boolean) => {
 
   const namedTypes: NamedRosMsgDefinition[] = (types.filter((type) => !!type.name): any[]);
 
-  let js = `
-  var Record = function () {
-    ${constructorBody(unnamedType)}
-  };\n`;
-
-  namedTypes.forEach((t) => {
-    js += `
-Record.${friendlyName(t.name)} = function() {
-  ${constructorBody(t)}
-};\n`;
-  });
-
-  let stack = 0;
-  const getReaderLines = (type: RosMsgDefinition | NamedRosMsgDefinition, fieldName = "record") => {
-    let readerLines: string[] = [];
+  const constructorBody = (type: RosMsgDefinition | NamedRosMsgDefinition) => {
+    const readerLines: string[] = [];
     type.definitions.forEach((def) => {
       if (def.isConstant) {
         return;
@@ -204,67 +182,61 @@ Record.${friendlyName(t.name)} = function() {
       if (def.isArray) {
         if (def.type === "uint8" || def.type === "int8") {
           const arrayType = def.type === "uint8" ? "Uint8Array" : "Int8Array";
-          readerLines.push(`${fieldName}.${def.name} = reader.typedArray(${String(def.arrayLength)}, ${arrayType});`);
+          readerLines.push(`this.${def.name} = reader.typedArray(${String(def.arrayLength)}, ${arrayType});`);
           return;
         }
-        // because we might have nested arrays
-        // we need to incrementally number varaibles so they aren't
-        // stomped on by other variables in the function
-        stack++;
 
-        // name for the length field in the for-loop
-        const lenField = `length_${stack}`;
-        // name for a child collection
-        const childName = `cplx_${stack}`;
-        // name to the itterator in the for-loop
-        const incName = `${childName}_inc_${stack}`;
-
+        const lenField = `length_${def.name}`;
         // set a variable pointing to the parsed fixed array length
         // or read the byte indicating the dynamic length
         readerLines.push(`var ${lenField} = ${def.arrayLength ? def.arrayLength : "reader.uint32();"}`);
 
         // only allocate an array if there is a length - skips empty allocations
-        const arrayName = `${fieldName}.${def.name}`;
+        const arrayName = `this.${def.name}`;
 
         // allocate the new array to a fixed length since we know it ahead of time
         readerLines.push(`${arrayName} = new Array(${lenField})`);
         // start the for-loop
-        readerLines.push(`for (var ${incName} = 0; ${incName} < ${lenField}; ${incName}++) {`);
+        readerLines.push(`for (var i = 0; i < ${lenField}; i++) {`);
         // if the sub type is complex we need to allocate it and parse its values
         if (def.isComplex) {
           const defType = findTypeByName(types, def.type);
-          readerLines.push(`var ${childName} = new Record.${friendlyName(defType.name)}();`);
-          // recursively generate the parse instructions for the sub-type
-          readerLines = readerLines.concat(getReaderLines(defType, `${childName}`));
-          readerLines.push(`${arrayName}[${incName}] = ${childName}`);
+          // recursively call the constructor for the sub-type
+          readerLines.push(`  ${arrayName}[i] = new Record.${friendlyName(defType.name)}(reader);`);
         } else {
           // if the subtype is not complex its a simple low-level reader operation
-          readerLines.push(`${arrayName}[${incName}] = reader.${def.type}();`);
+          readerLines.push(`  ${arrayName}[i] = reader.${def.type}();`);
         }
         readerLines.push("}"); // close the for-loop
       } else if (def.isComplex) {
         const defType = findTypeByName(types, def.type);
-        readerLines.push(`${fieldName}.${def.name} = new Record.${friendlyName(defType.name)}();`);
-        readerLines = readerLines.concat(getReaderLines(defType, `${fieldName}.${def.name}`));
+        readerLines.push(`this.${def.name} = new Record.${friendlyName(defType.name)}(reader);`);
       } else {
-        readerLines.push(`${fieldName}.${def.name} = reader.${def.type}();`);
+        readerLines.push(`this.${def.name} = reader.${def.type}();`);
       }
     });
     if (freeze) {
-      readerLines.push(`Object.freeze(${fieldName})`);
+      readerLines.push("Object.freeze(this);");
     }
-    return readerLines;
+    return readerLines.join("\n    ");
   };
 
-  const lines = getReaderLines(unnamedType).join("\n");
-  const readerFn = `
-  return function read(reader) {
-    var record = new Record();
-    ${lines}
-    return record;
-  };`;
+  let js = `
+  var Record = function (reader) {
+    ${constructorBody(unnamedType)}
+  };\n`;
 
-  js += readerFn;
+  namedTypes.forEach((t) => {
+    js += `
+  Record.${friendlyName(t.name)} = function(reader) {
+    ${constructorBody(t)}
+  };\n`;
+  });
+
+  js += `
+  return function read(reader) {
+    return new Record(reader);
+  };`;
 
   let _read: (reader: StandardTypeReader) => any;
   try {
