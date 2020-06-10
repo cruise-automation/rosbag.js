@@ -247,7 +247,7 @@ const createParser = (types: RosMsgDefinition[], freeze: boolean) => {
     throw e;
   }
 
-  return function (buffer: Buffer) {
+  return function(buffer: Buffer) {
     const reader = new StandardTypeReader(buffer);
     return _read(reader);
   };

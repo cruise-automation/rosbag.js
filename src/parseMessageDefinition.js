@@ -55,39 +55,39 @@ function newDefinition(type: string, name: string, isJson: boolean): RosMsgField
     name,
     isArray: false,
     isComplex: !rosPrimitiveTypes.has(normalizedType),
-    ...(isJson ? { isJson } : {})
+    ...(isJson ? { isJson } : {}),
   };
 }
 
 export type RosMsgField =
   | {|
-  type: string,
-    name: string,
-      isConstant ?: boolean,
-      isComplex ?: boolean,
-      isJson ?: boolean,
-      value ?: mixed,
-      isArray ?: false,
-      arrayLength ?: void,
+      type: string,
+      name: string,
+      isConstant?: boolean,
+      isComplex?: boolean,
+      isJson?: boolean,
+      value?: mixed,
+      isArray?: false,
+      arrayLength?: void,
     |}
   | {|
-  type: string,
-    name: string,
-      isConstant ?: boolean,
-      isComplex ?: boolean,
-      isJson ?: boolean,
-      value ?: mixed,
+      type: string,
+      name: string,
+      isConstant?: boolean,
+      isComplex?: boolean,
+      isJson?: boolean,
+      value?: mixed,
       isArray: true,
-        arrayLength: ?number,
+      arrayLength: ?number,
     |};
 
 export type RosMsgDefinition = {|
   name?: string,
-    definitions: RosMsgField[],
+  definitions: RosMsgField[],
 |};
 export type NamedRosMsgDefinition = {|
   name: string,
-    definitions: RosMsgField[],
+  definitions: RosMsgField[],
 |};
 
 const buildType = (lines: { isJson: boolean, line: string }[]): RosMsgDefinition => {
