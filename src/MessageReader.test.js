@@ -51,6 +51,16 @@ describe("MessageReader", () => {
       expect(reader.readMessage(buff)).toEqual({
         dummy: { foo: 123, bar: { nestedFoo: 456 } },
       });
+
+      const readerWithSpaces = new MessageReader(" #pragma rosbag_parse_json  \n  string dummy");
+      expect(readerWithSpaces.readMessage(buff)).toEqual({
+        dummy: { foo: 123, bar: { nestedFoo: 456 } },
+      });
+
+      const readerWithNewlines = new MessageReader("#pragma rosbag_parse_json\n\n\nstring dummy");
+      expect(readerWithNewlines.readMessage(buff)).toEqual({
+        dummy: { foo: 123, bar: { nestedFoo: 456 } },
+      });
     });
 
     it("parses time", () => {

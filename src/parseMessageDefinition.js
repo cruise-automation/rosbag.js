@@ -195,16 +195,12 @@ export function parseMessageDefinition(messageDefinition: string) {
 
   let definitionLines: { isJson: boolean, line: string }[] = [];
   const types: RosMsgDefinition[] = [];
-  const pragmaLineIndices: number[] = [];
+  let nextDefinitionIsJson: boolean = false;
   // group lines into individual definitions
-  allLines.forEach((line, idx) => {
+  allLines.forEach((line) => {
     // ignore comment lines unless they start with #pragma rosbag_parse_json
-    if (line.indexOf("#") === 0) {
-      if (line.indexOf("#pragma rosbag_parse_json") === 0) {
-        pragmaLineIndices.push(idx);
-      } else {
-        return;
-      }
+    if (line.indexOf("#") === 0 && line.indexOf("#pragma rosbag_parse_json") !== 0) {
+      return;
     }
 
     // definitions are split by equal signs
@@ -212,7 +208,12 @@ export function parseMessageDefinition(messageDefinition: string) {
       types.push(buildType(definitionLines));
       definitionLines = [];
     } else {
-      definitionLines.push({ isJson: pragmaLineIndices.includes(idx - 1), line });
+      definitionLines.push({ isJson: nextDefinitionIsJson, line });
+      nextDefinitionIsJson = false;
+    }
+
+    if (line.indexOf("#pragma rosbag_parse_json") === 0) {
+      nextDefinitionIsJson = true;
     }
   });
   types.push(buildType(definitionLines));
