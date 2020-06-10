@@ -55,7 +55,7 @@ function newDefinition(type: string, name: string, isJson: boolean): RosMsgField
     name,
     isArray: false,
     isComplex: !rosPrimitiveTypes.has(normalizedType),
-    isJson
+    ...(isJson ? { isJson } : {})
   };
 }
 
