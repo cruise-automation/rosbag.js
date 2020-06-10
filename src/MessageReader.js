@@ -48,14 +48,28 @@ class StandardTypeReader {
     // in those cases revert to a slower itterative string building approach
     if (codePoints.length < 1000) {
       const resultString = String.fromCharCode.apply(null, codePoints);
-      return isJson ? JSON.parse(resultString) : resultString;
+      if (isJson) {
+        try {
+          return JSON.parse(resultString);
+        } catch {
+          return `Could not parse ${resultString}`;
+        }
+      }
+      return resultString;
     }
 
     let data = "";
     for (let i = 0; i < len; i++) {
       data += String.fromCharCode(codePoints[i]);
     }
-    return isJson ? JSON.parse(data) : data;
+    if (isJson) {
+      try {
+        return JSON.parse(data);
+      } catch {
+        return `Could not parse ${data}`;
+      }
+    }
+    return data;
   }
 
   bool() {
