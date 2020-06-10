@@ -48,49 +48,52 @@ function newArrayDefinition(type: string, name: string, arrayLength: ?number): R
     isComplex: !rosPrimitiveTypes.has(normalizedType),
   };
 }
-function newDefinition(type: string, name: string): RosMsgField {
+function newDefinition(type: string, name: string, isJson: boolean): RosMsgField {
   const normalizedType = normalizeType(type);
   return {
     type: normalizedType,
     name,
     isArray: false,
     isComplex: !rosPrimitiveTypes.has(normalizedType),
+    isJson
   };
 }
 
 export type RosMsgField =
   | {|
-      type: string,
-      name: string,
-      isConstant?: boolean,
-      isComplex?: boolean,
-      value?: mixed,
-      isArray?: false,
-      arrayLength?: void,
+  type: string,
+    name: string,
+      isConstant ?: boolean,
+      isComplex ?: boolean,
+      isJson ?: boolean,
+      value ?: mixed,
+      isArray ?: false,
+      arrayLength ?: void,
     |}
   | {|
-      type: string,
-      name: string,
-      isConstant?: boolean,
-      isComplex?: boolean,
-      value?: mixed,
+  type: string,
+    name: string,
+      isConstant ?: boolean,
+      isComplex ?: boolean,
+      isJson ?: boolean,
+      value ?: mixed,
       isArray: true,
-      arrayLength: ?number,
+        arrayLength: ?number,
     |};
 
 export type RosMsgDefinition = {|
   name?: string,
-  definitions: RosMsgField[],
+    definitions: RosMsgField[],
 |};
 export type NamedRosMsgDefinition = {|
   name: string,
-  definitions: RosMsgField[],
+    definitions: RosMsgField[],
 |};
 
-const buildType = (lines: string[]): RosMsgDefinition => {
+const buildType = (lines: { isJson: boolean, line: string }[]): RosMsgDefinition => {
   const definitions: RosMsgField[] = [];
   let complexTypeName: ?string;
-  lines.forEach((line) => {
+  lines.forEach(({ isJson, line }) => {
     // remove comments and extra whitespace from each line
     const splits = line
       .replace(/#.*/gi, "")
@@ -111,7 +114,7 @@ const buildType = (lines: string[]): RosMsgDefinition => {
         throw new Error("Malformed line: " + line);
       }
       let value: any = matches[2];
-      if (type !== "string") {
+      if (type !== "string" || isJson) {
         // handle special case of python bool values
         value = value.replace(/True/gi, "true");
         value = value.replace(/False/gi, "false");
@@ -143,7 +146,7 @@ const buildType = (lines: string[]): RosMsgDefinition => {
       const len = typeSplits[1].replace("]", "");
       definitions.push(newArrayDefinition(baseType, name, len ? parseInt(len, 10) : undefined));
     } else {
-      definitions.push(newDefinition(type, name));
+      definitions.push(newDefinition(type, name, isJson));
     }
   });
   return { name: complexTypeName, definitions };
@@ -190,20 +193,26 @@ export function parseMessageDefinition(messageDefinition: string) {
     .map((line) => line.trim())
     .filter((line) => line);
 
-  let definitionLines: string[] = [];
+  let definitionLines: { isJson: boolean, line: string }[] = [];
   const types: RosMsgDefinition[] = [];
+  const pragmaLineIndices: number[] = [];
   // group lines into individual definitions
-  allLines.forEach((line) => {
-    // skip comment lines
+  allLines.forEach((line, idx) => {
+    // ignore comment lines unless they start with #pragma rosbag_parse_json
     if (line.indexOf("#") === 0) {
-      return;
+      if (line.indexOf("#pragma rosbag_parse_json") === 0) {
+        pragmaLineIndices.push(idx);
+      } else {
+        return;
+      }
     }
+
     // definitions are split by equal signs
     if (line.indexOf("==") === 0) {
       types.push(buildType(definitionLines));
       definitionLines = [];
     } else {
-      definitionLines.push(line);
+      definitionLines.push({ isJson: pragmaLineIndices.includes(idx - 1), line });
     }
   });
   types.push(buildType(definitionLines));

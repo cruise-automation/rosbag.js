@@ -39,7 +39,7 @@ class StandardTypeReader {
     this.view = new DataView(buffer.buffer, buffer.byteOffset);
   }
 
-  string() {
+  string(isJson: boolean) {
     const len = this.int32();
     const codePoints = new Uint8Array(this.buffer.buffer, this.buffer.byteOffset + this.offset, len);
     this.offset += len;
@@ -47,14 +47,15 @@ class StandardTypeReader {
     // but very long strings can cause a stack overflow due to too many arguments
     // in those cases revert to a slower itterative string building approach
     if (codePoints.length < 1000) {
-      return String.fromCharCode.apply(null, codePoints);
+      const resultString = String.fromCharCode.apply(null, codePoints);
+      return isJson ? JSON.parse(resultString) : resultString;
     }
 
     let data = "";
     for (let i = 0; i < len; i++) {
       data += String.fromCharCode(codePoints[i]);
     }
-    return data;
+    return isJson ? JSON.parse(data) : data;
   }
 
   bool() {
@@ -212,7 +213,7 @@ const createParser = (types: RosMsgDefinition[], freeze: boolean) => {
         const defType = findTypeByName(types, def.type);
         readerLines.push(`this.${def.name} = new Record.${friendlyName(defType.name)}(reader);`);
       } else {
-        readerLines.push(`this.${def.name} = reader.${def.type}();`);
+        readerLines.push(`this.${def.name} = reader.${def.type}(${def.isJson ? "true" : "false"});`);
       }
     });
     if (freeze) {
@@ -246,7 +247,7 @@ const createParser = (types: RosMsgDefinition[], freeze: boolean) => {
     throw e;
   }
 
-  return function(buffer: Buffer) {
+  return function (buffer: Buffer) {
     const reader = new StandardTypeReader(buffer);
     return _read(reader);
   };

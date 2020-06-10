@@ -45,6 +45,14 @@ describe("MessageReader", () => {
       });
     });
 
+    it.only("parses JSON", () => {
+      const reader = new MessageReader("#pragma rosbag_parse_json\nstring dummy");
+      const buff = getStringBuffer('{"foo":123,"bar":{"nestedFoo":456}}');
+      expect(reader.readMessage(buff)).toEqual({
+        dummy: { foo: 123, bar: { nestedFoo: 456 } }
+      });
+    });
+
     it("parses time", () => {
       const reader = new MessageReader("time right_now");
       const buff = new Buffer(8);
