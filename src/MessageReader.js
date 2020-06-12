@@ -39,13 +39,22 @@ class StandardTypeReader {
     this.view = new DataView(buffer.buffer, buffer.byteOffset);
   }
 
+  json(): mixed {
+    const resultString = this.string();
+    try {
+      return JSON.parse(resultString);
+    } catch {
+      return `Could not parse ${resultString}`;
+    }
+  }
+
   string() {
     const len = this.int32();
     const codePoints = new Uint8Array(this.buffer.buffer, this.buffer.byteOffset + this.offset, len);
     this.offset += len;
     // if the string is relatively short we can use apply
     // but very long strings can cause a stack overflow due to too many arguments
-    // in those cases revert to a slower itterative string building approach
+    // in those cases revert to a slower iterative string building approach
     if (codePoints.length < 1000) {
       return String.fromCharCode.apply(null, codePoints);
     }

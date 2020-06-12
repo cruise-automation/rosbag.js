@@ -22,6 +22,7 @@
   "scripts": {
     "prepack": "yarn run build",
     "lint": "yarn run flow && eslint src && prettier -l 'src/**/*.js'",
+    "lint:fix": "eslint --fix src && prettier --write -l 'src/**/*.js'",
     "test": "yarn run jest --verbose && yarn run lint",
     "clean": "rm -rf build dist",
     "build": "yarn run clean && mkdir -p dist && yarn run flow && yarn run build-node && yarn run build-web && yarn run flow-copy-source src dist",

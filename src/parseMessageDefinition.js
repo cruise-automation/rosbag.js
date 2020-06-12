@@ -22,6 +22,7 @@ export const rosPrimitiveTypes: Set<string> = new Set([
   "uint64",
   "time",
   "duration",
+  "json",
 ]);
 
 function normalizeType(type: string) {
@@ -87,10 +88,10 @@ export type NamedRosMsgDefinition = {|
   definitions: RosMsgField[],
 |};
 
-const buildType = (lines: string[]): RosMsgDefinition => {
+const buildType = (lines: { isJson: boolean, line: string }[]): RosMsgDefinition => {
   const definitions: RosMsgField[] = [];
   let complexTypeName: ?string;
-  lines.forEach((line) => {
+  lines.forEach(({ isJson, line }) => {
     // remove comments and extra whitespace from each line
     const splits = line
       .replace(/#.*/gi, "")
@@ -143,7 +144,7 @@ const buildType = (lines: string[]): RosMsgDefinition => {
       const len = typeSplits[1].replace("]", "");
       definitions.push(newArrayDefinition(baseType, name, len ? parseInt(len, 10) : undefined));
     } else {
-      definitions.push(newDefinition(type, name));
+      definitions.push(newDefinition(isJson ? "json" : type, name));
     }
   });
   return { name: complexTypeName, definitions };
@@ -190,20 +191,27 @@ export function parseMessageDefinition(messageDefinition: string) {
     .map((line) => line.trim())
     .filter((line) => line);
 
-  let definitionLines: string[] = [];
+  let definitionLines: { isJson: boolean, line: string }[] = [];
   const types: RosMsgDefinition[] = [];
+  let nextDefinitionIsJson: boolean = false;
   // group lines into individual definitions
   allLines.forEach((line) => {
-    // skip comment lines
-    if (line.indexOf("#") === 0) {
+    // ignore comment lines unless they start with #pragma rosbag_parse_json
+    if (line.startsWith("#")) {
+      if (line.startsWith("#pragma rosbag_parse_json")) {
+        nextDefinitionIsJson = true;
+      }
       return;
     }
+
     // definitions are split by equal signs
-    if (line.indexOf("==") === 0) {
+    if (line.startsWith("==")) {
+      nextDefinitionIsJson = false;
       types.push(buildType(definitionLines));
       definitionLines = [];
     } else {
-      definitionLines.push(line);
+      definitionLines.push({ isJson: nextDefinitionIsJson, line });
+      nextDefinitionIsJson = false;
     }
   });
   types.push(buildType(definitionLines));
