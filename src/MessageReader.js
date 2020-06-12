@@ -55,17 +55,15 @@ class StandardTypeReader {
     // if the string is relatively short we can use apply
     // but very long strings can cause a stack overflow due to too many arguments
     // in those cases revert to a slower iterative string building approach
-    let resultString = "";
     if (codePoints.length < 1000) {
-      resultString = String.fromCharCode.apply(null, codePoints);
+      return String.fromCharCode.apply(null, codePoints);
     }
 
-    if (!resultString.length) {
-      for (let i = 0; i < len; i++) {
-        resultString += String.fromCharCode(codePoints[i]);
-      }
+    let data = "";
+    for (let i = 0; i < len; i++) {
+      data += String.fromCharCode(codePoints[i]);
     }
-    return resultString;
+    return data;
   }
 
   bool() {
