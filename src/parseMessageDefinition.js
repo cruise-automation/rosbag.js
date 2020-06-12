@@ -205,6 +205,7 @@ export function parseMessageDefinition(messageDefinition: string) {
 
     // definitions are split by equal signs
     if (line.indexOf("==") === 0) {
+      nextDefinitionIsJson = false;
       types.push(buildType(definitionLines));
       definitionLines = [];
     } else {

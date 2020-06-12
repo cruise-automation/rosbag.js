@@ -61,6 +61,41 @@ describe("MessageReader", () => {
       expect(readerWithNewlines.readMessage(buff)).toEqual({
         dummy: { foo: 123, bar: { nestedFoo: 456 } },
       });
+
+      const readerWithNestedComplexType = new MessageReader(`#pragma rosbag_parse_json
+      string dummy
+      Account account
+      ============
+      MSG: custom_type/Account
+      string name
+      uint16 id
+      `);
+      expect(
+        readerWithNestedComplexType.readMessage(
+          Buffer.concat([buff, getStringBuffer('{"first":"First","last":"Last"}}'), new Buffer([100, 0x00])])
+        )
+      ).toEqual({
+        dummy: { foo: 123, bar: { nestedFoo: 456 } },
+        account: { name: '{"first":"First","last":"Last"}}', id: 100 },
+      });
+
+      const readerWithTrailingPragmaComment = new MessageReader(`#pragma rosbag_parse_json
+      string dummy
+      Account account
+      #pragma rosbag_parse_json
+      ============
+      MSG: custom_type/Account
+      string name
+      uint16 id
+      `);
+      expect(
+        readerWithTrailingPragmaComment.readMessage(
+          Buffer.concat([buff, getStringBuffer('{"first":"First","last":"Last"}}'), new Buffer([100, 0x00])])
+        )
+      ).toEqual({
+        dummy: { foo: 123, bar: { nestedFoo: 456 } },
+        account: { name: '{"first":"First","last":"Last"}}', id: 100 },
+      });
     });
 
     it("parses time", () => {
