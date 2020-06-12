@@ -39,7 +39,7 @@ class StandardTypeReader {
     this.view = new DataView(buffer.buffer, buffer.byteOffset);
   }
 
-  json(): { [key: string]: any } {
+  json(): mixed {
     const resultString = this.string();
     try {
       return JSON.parse(resultString);
