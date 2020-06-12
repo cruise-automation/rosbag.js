@@ -22,6 +22,7 @@ export const rosPrimitiveTypes: Set<string> = new Set([
   "uint64",
   "time",
   "duration",
+  "json",
 ]);
 
 function normalizeType(type: string) {
@@ -48,14 +49,13 @@ function newArrayDefinition(type: string, name: string, arrayLength: ?number): R
     isComplex: !rosPrimitiveTypes.has(normalizedType),
   };
 }
-function newDefinition(type: string, name: string, isJson: boolean): RosMsgField {
+function newDefinition(type: string, name: string): RosMsgField {
   const normalizedType = normalizeType(type);
   return {
     type: normalizedType,
     name,
     isArray: false,
     isComplex: !rosPrimitiveTypes.has(normalizedType),
-    ...(isJson && normalizedType === "string" ? { isJson } : {}),
   };
 }
 
@@ -65,7 +65,6 @@ export type RosMsgField =
       name: string,
       isConstant?: boolean,
       isComplex?: boolean,
-      isJson?: boolean,
       value?: mixed,
       isArray?: false,
       arrayLength?: void,
@@ -75,7 +74,6 @@ export type RosMsgField =
       name: string,
       isConstant?: boolean,
       isComplex?: boolean,
-      isJson?: boolean,
       value?: mixed,
       isArray: true,
       arrayLength: ?number,
@@ -146,7 +144,7 @@ const buildType = (lines: { isJson: boolean, line: string }[]): RosMsgDefinition
       const len = typeSplits[1].replace("]", "");
       definitions.push(newArrayDefinition(baseType, name, len ? parseInt(len, 10) : undefined));
     } else {
-      definitions.push(newDefinition(type, name, isJson));
+      definitions.push(newDefinition(isJson ? "json" : type, name));
     }
   });
   return { name: complexTypeName, definitions };

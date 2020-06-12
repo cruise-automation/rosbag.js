@@ -39,7 +39,16 @@ class StandardTypeReader {
     this.view = new DataView(buffer.buffer, buffer.byteOffset);
   }
 
-  string(isJson: boolean) {
+  json(): { [key: string]: any } {
+    const resultString = this.string();
+    try {
+      return JSON.parse(resultString);
+    } catch {
+      return { err: `Could not parse ${resultString}` };
+    }
+  }
+
+  string() {
     const len = this.int32();
     const codePoints = new Uint8Array(this.buffer.buffer, this.buffer.byteOffset + this.offset, len);
     this.offset += len;
@@ -54,14 +63,6 @@ class StandardTypeReader {
     if (!resultString.length) {
       for (let i = 0; i < len; i++) {
         resultString += String.fromCharCode(codePoints[i]);
-      }
-    }
-
-    if (isJson) {
-      try {
-        return JSON.parse(resultString);
-      } catch {
-        return `Could not parse ${resultString}`;
       }
     }
     return resultString;
@@ -222,7 +223,7 @@ const createParser = (types: RosMsgDefinition[], freeze: boolean) => {
         const defType = findTypeByName(types, def.type);
         readerLines.push(`this.${def.name} = new Record.${friendlyName(defType.name)}(reader);`);
       } else {
-        readerLines.push(`this.${def.name} = reader.${def.type}(${def.isJson ? "true" : "false"});`);
+        readerLines.push(`this.${def.name} = reader.${def.type}();`);
       }
     });
     if (freeze) {
@@ -256,7 +257,7 @@ const createParser = (types: RosMsgDefinition[], freeze: boolean) => {
     throw e;
   }
 
-  return function(buffer: Buffer) {
+  return function (buffer: Buffer) {
     const reader = new StandardTypeReader(buffer);
     return _read(reader);
   };
