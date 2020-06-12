@@ -44,7 +44,7 @@ class StandardTypeReader {
     try {
       return JSON.parse(resultString);
     } catch {
-      return { err: `Could not parse ${resultString}` };
+      return `Could not parse ${resultString}`;
     }
   }
 
