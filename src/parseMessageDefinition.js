@@ -197,23 +197,21 @@ export function parseMessageDefinition(messageDefinition: string) {
   // group lines into individual definitions
   allLines.forEach((line) => {
     // ignore comment lines unless they start with #pragma rosbag_parse_json
-    const pragmaCommentIdx = line.indexOf("#pragma rosbag_parse_json");
-    if (line.indexOf("#") === 0 && pragmaCommentIdx !== 0) {
+    if (line.startsWith("#")) {
+      if (line.startsWith("#pragma rosbag_parse_json")) {
+        nextDefinitionIsJson = true;
+      }
       return;
     }
 
     // definitions are split by equal signs
-    if (line.indexOf("==") === 0) {
+    if (line.startsWith("==")) {
       nextDefinitionIsJson = false;
       types.push(buildType(definitionLines));
       definitionLines = [];
     } else {
       definitionLines.push({ isJson: nextDefinitionIsJson, line });
       nextDefinitionIsJson = false;
-    }
-
-    if (pragmaCommentIdx === 0) {
-      nextDefinitionIsJson = true;
     }
   });
   types.push(buildType(definitionLines));
