@@ -197,7 +197,8 @@ export function parseMessageDefinition(messageDefinition: string) {
   // group lines into individual definitions
   allLines.forEach((line) => {
     // ignore comment lines unless they start with #pragma rosbag_parse_json
-    if (line.indexOf("#") === 0 && line.indexOf("#pragma rosbag_parse_json") !== 0) {
+    const pragmaCommentIdx = line.indexOf("#pragma rosbag_parse_json");
+    if (line.indexOf("#") === 0 && pragmaCommentIdx !== 0) {
       return;
     }
 
@@ -211,7 +212,7 @@ export function parseMessageDefinition(messageDefinition: string) {
       nextDefinitionIsJson = false;
     }
 
-    if (line.indexOf("#pragma rosbag_parse_json") === 0) {
+    if (pragmaCommentIdx === 0) {
       nextDefinitionIsJson = true;
     }
   });
