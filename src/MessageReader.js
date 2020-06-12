@@ -45,31 +45,26 @@ class StandardTypeReader {
     this.offset += len;
     // if the string is relatively short we can use apply
     // but very long strings can cause a stack overflow due to too many arguments
-    // in those cases revert to a slower itterative string building approach
+    // in those cases revert to a slower iterative string building approach
+    let resultString = "";
     if (codePoints.length < 1000) {
-      const resultString = String.fromCharCode.apply(null, codePoints);
-      if (isJson) {
-        try {
-          return JSON.parse(resultString);
-        } catch {
-          return `Could not parse ${resultString}`;
-        }
-      }
-      return resultString;
+      resultString = String.fromCharCode.apply(null, codePoints);
     }
 
-    let data = "";
-    for (let i = 0; i < len; i++) {
-      data += String.fromCharCode(codePoints[i]);
-    }
-    if (isJson) {
-      try {
-        return JSON.parse(data);
-      } catch {
-        return `Could not parse ${data}`;
+    if (!resultString.length) {
+      for (let i = 0; i < len; i++) {
+        resultString += String.fromCharCode(codePoints[i]);
       }
     }
-    return data;
+
+    if (isJson) {
+      try {
+        return JSON.parse(resultString);
+      } catch {
+        return `Could not parse ${resultString}`;
+      }
+    }
+    return resultString;
   }
 
   bool() {
