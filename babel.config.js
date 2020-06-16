@@ -5,7 +5,7 @@
 // You may not use this file except in compliance with the License.
 
 module.exports = {
-  plugins: ["@babel/plugin-proposal-class-properties", "@babel/plugin-syntax-object-rest-spread"],
+  plugins: ["@babel/plugin-proposal-class-properties", "@babel/plugin-syntax-object-rest-spread", "@babel/plugin-proposal-optional-catch-binding"],
   presets: ["@babel/preset-flow"],
   env: {
     test: {
