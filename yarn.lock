@@ -159,6 +159,11 @@
   resolved "https://registry.yarnpkg.com/@babel/helper-plugin-utils/-/helper-plugin-utils-7.0.0.tgz#bbb3fbee98661c569034237cc03967ba99b4f250"
   integrity sha512-CYAOUCARwExnEixLdB6sDm2dIJ/YgEAKDM1MOeMeZu9Ld/bDgVo8aiWrXwcY7OBh+1Ea2uUcVRcxKk0GJvW7QA==
 
+"@babel/helper-plugin-utils@^7.10.1", "@babel/helper-plugin-utils@^7.8.0":
+  version "7.10.1"
+  resolved "https://registry.yarnpkg.com/@babel/helper-plugin-utils/-/helper-plugin-utils-7.10.1.tgz#ec5a5cf0eec925b66c60580328b122c01230a127"
+  integrity sha512-fvoGeXt0bJc7VMWZGCAEBEMo/HAjW2mP8apF5eXK0wSqwLAVHAISCWRoLMBMUs2kqeaG77jltVqu4Hn8Egl3nA==
+
 "@babel/helper-regex@^7.0.0":
   version "7.0.0"
   resolved "https://registry.yarnpkg.com/@babel/helper-regex/-/helper-regex-7.0.0.tgz#2c1718923b57f9bbe64705ffe5640ac64d9bdb27"
@@ -272,6 +277,14 @@
     "@babel/helper-plugin-utils" "^7.0.0"
     "@babel/plugin-syntax-object-rest-spread" "^7.0.0"
 
+"@babel/plugin-proposal-optional-catch-binding@7.10.1":
+  version "7.10.1"
+  resolved "https://registry.yarnpkg.com/@babel/plugin-proposal-optional-catch-binding/-/plugin-proposal-optional-catch-binding-7.10.1.tgz#c9f86d99305f9fa531b568ff5ab8c964b8b223d2"
+  integrity sha512-VqExgeE62YBqI3ogkGoOJp1R6u12DFZjqwJhqtKc2o5m1YTUuUWnos7bZQFBhwkxIFpWYJ7uB75U7VAPPiKETA==
+  dependencies:
+    "@babel/helper-plugin-utils" "^7.10.1"
+    "@babel/plugin-syntax-optional-catch-binding" "^7.8.0"
+
 "@babel/plugin-proposal-optional-catch-binding@^7.0.0":
   version "7.0.0"
   resolved "https://registry.yarnpkg.com/@babel/plugin-proposal-optional-catch-binding/-/plugin-proposal-optional-catch-binding-7.0.0.tgz#b610d928fe551ff7117d42c8bb410eec312a6425"
@@ -330,6 +343,13 @@
   integrity sha512-Wc+HVvwjcq5qBg1w5RG9o9RVzmCaAg/Vp0erHCKpAYV8La6I94o4GQAmFYNmkzoMO6gzoOSulpKeSSz6mPEoZw==
   dependencies:
     "@babel/helper-plugin-utils" "^7.0.0"
+
+"@babel/plugin-syntax-optional-catch-binding@^7.8.0":
+  version "7.8.3"
+  resolved "https://registry.yarnpkg.com/@babel/plugin-syntax-optional-catch-binding/-/plugin-syntax-optional-catch-binding-7.8.3.tgz#6111a265bcfb020eb9efd0fdfd7d26402b9ed6c1"
+  integrity sha512-6VPD0Pc1lpTqw0aKoeRTMiB+kWhAoT24PA+ksWSBrFtl5SIRVpZlwN3NNPQjehA2E/91FV3RjLWoVTglWcSV3Q==
+  dependencies:
+    "@babel/helper-plugin-utils" "^7.8.0"
 
 "@babel/plugin-transform-arrow-functions@^7.0.0":
   version "7.0.0"
