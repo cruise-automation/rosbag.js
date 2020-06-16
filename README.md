@@ -135,6 +135,13 @@ const bagOptions = {
 
 All options are optional and used to filter down from the sometimes enormous and varied data records in a rosbag. One could omit all options & filter the messages in memory within the `readMessages` callback; however, due to the rosbag format optimizations can be made during reading & parsing which will yield _significant_ performance and memory gains if you specify topics and/or date ranges ahead of time.
 
+For ROS message definitions that contain a string field preceded by a `#pragma rosbag_parse_json` comment, rosbag will parse that string field into JSON. For example, the message definition below has a `data` field containing stringified JSON; rosbag will parse that string into JSON while reading messages from a bag instance.
+
+```cpp
+#pragma rosbag_parse_json
+string data
+```
+
 ### ReadResult
 
 ```js
@@ -225,4 +232,4 @@ interface TimeUtil {
 
 ## Supported platforms
 
-Currently rosbag is used & heavily tested in `node@10.x` as well as google chrome (via webpack).  It should also work under all modern browsers which have the [FileReader](https://caniuse.com/#feat=filereader) and [typed array](https://caniuse.com/#feat=typedarrays) APIs available.  If you run into issues with Firefox, Edge, or Safari please feel free to open an issue or submit a pull request with a fix.
+Currently rosbag is used & heavily tested in `node@10.x` as well as Google Chrome (via webpack).  It should also work under all modern browsers which have the [FileReader](https://caniuse.com/#feat=filereader) and [typed array](https://caniuse.com/#feat=typedarrays) APIs available.  If you run into issues with Firefox, Edge, or Safari please feel free to open an issue or submit a pull request with a fix.
