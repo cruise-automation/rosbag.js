@@ -53,6 +53,31 @@ async function logMessagesFromFooBar() {
 logMessagesFromFooBar();
 ```
 
+If you're dealing with large rosbag files and need flow control to process messages async, use the Async Generator `iterateMessages`.
+
+```js
+const { open } = require('rosbag');
+
+async function readWithAsyncConsumer () {
+  const options = { topics: ['/unicorns'] };
+  const bag = await open("filename.bag");
+  for await (const msg of bag.iterateMessages(options)) {
+    // each message is read separately
+    // respecting async behavior in the for loop
+    await doSomethingAsync(msg);
+  }
+}
+
+readWithAsyncConsumer()
+  .then(() => console.log("DONE"));
+
+```
+
+That way you can also create a readable message stream
+```js
+  require("stream").Readable.from(bag.iterateMessages(options))
+```
+
 ## API
 
 ### Opening a new rosbag reader
