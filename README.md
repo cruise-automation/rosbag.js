@@ -2,6 +2,19 @@
 
 `rosbag` is a node.js & browser compatible module for reading [rosbag](http://wiki.ros.org/rosbag) binary data files.
 
+## Development
+
+### Install yarn
+Install `yarn` globallay as it is the chosen package manager for development, and to run scripts.
+```
+npm install -g yarn
+```
+
+### Run tests
+```
+yarn run test
+```
+
 ## Installation
 
 ```
