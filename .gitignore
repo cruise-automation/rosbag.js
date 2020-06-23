@@ -5,3 +5,4 @@ dist
 junit.xml
 .DS_Store
 package-lock.json
+.idea
