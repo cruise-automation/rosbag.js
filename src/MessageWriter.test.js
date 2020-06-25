@@ -368,6 +368,59 @@ describe("MessageWriter", () => {
     });
   });
 
+  describe("calculateBufferSize", () => {
+    it("with a complex type", () => {
+      const messageDefinition = `
+      string username
+      Account[] accounts
+      ============
+      MSG: custom_type/Account
+      string name
+      uint16 id
+      bool isActive
+      Photo[] photos
+
+      =======
+      MSG: custom_type/Photo
+      string url
+      uint8[] ids
+      `;
+      const message = {
+        username: "foo",
+        accounts: [
+          {
+            name: "bar",
+            id: 100,
+            isActive: true,
+            photos: [
+              {
+                url: "http://foo.com",
+                ids: Uint8Array.from([10, 100]),
+              },
+              {
+                url: "http://bar.com",
+                ids: Uint8Array.from([12]),
+              },
+              {
+                url: "http://zug.com",
+                ids: Uint8Array.from([]),
+              },
+            ],
+          },
+          {
+            name: "baz",
+            id: 101,
+            isActive: false,
+            photos: [],
+          },
+        ],
+      };
+
+      const writer = new MessageWriter(messageDefinition);
+      expect(writer.calculateBufferSize(message)).toEqual(108);
+    });
+  });
+
   describe("MessageReader and MessageWriter outputs are compatible", () => {
     it("with a complex type", () => {
       const messageDefinition = `

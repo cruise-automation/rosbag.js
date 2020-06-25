@@ -186,14 +186,18 @@ const findTypeByName = (types: RosMsgDefinition[], name = ""): NamedRosMsgDefini
     return false;
   });
   if (matches.length !== 1) {
-    throw new Error(`Expected 1 top level type definition for '${name}' but found ${matches.length}`);
+    throw new Error(`Expected 1 top level type definition for '${name}' but found ${matches.length}.`);
   }
   return { ...matches[0], name: foundName };
 };
 
 const friendlyName = (name: string) => name.replace(/\//g, "_");
+type WriterAndSizeCalculator = {|
+  writer: (message: any, bufferToWrite: Buffer) => Buffer,
+  bufferSizeCalculator: (message: any) => number,
+|};
 
-function createWriter(types: RosMsgDefinition[]): (message: any) => Buffer {
+function createWriterAndSizeCalculator(types: RosMsgDefinition[]): WriterAndSizeCalculator {
   const unnamedTypes = types.filter((type) => !type.name);
   if (unnamedTypes.length !== 1) {
     throw new Error("multiple unnamed types");
@@ -204,7 +208,7 @@ function createWriter(types: RosMsgDefinition[]): (message: any) => Buffer {
   const namedTypes: NamedRosMsgDefinition[] = (types.filter((type) => !!type.name): any[]);
 
   const constructorBody = (type: RosMsgDefinition | NamedRosMsgDefinition, argName: "offsetCalculator" | "writer") => {
-    const writerLines: string[] = [];
+    const lines: string[] = [];
     type.definitions.forEach((def) => {
       if (def.isConstant) {
         return;
@@ -217,33 +221,33 @@ function createWriter(types: RosMsgDefinition[]): (message: any) => Buffer {
         // set a variable pointing to the parsed fixed array length
         // or write the byte indicating the dynamic length
         if (def.arrayLength) {
-          writerLines.push(`var ${lenField} = ${def.arrayLength};`);
+          lines.push(`var ${lenField} = ${def.arrayLength};`);
         } else {
-          writerLines.push(`var ${lenField} = ${accessMessageField}.length;`);
-          writerLines.push(`${argName}.uint32(${lenField});`);
+          lines.push(`var ${lenField} = ${accessMessageField}.length;`);
+          lines.push(`${argName}.uint32(${lenField});`);
         }
 
         // start the for-loop
-        writerLines.push(`for (var i = 0; i < ${lenField}; i++) {`);
+        lines.push(`for (var i = 0; i < ${lenField}; i++) {`);
         // if the sub type is complex we need to allocate it and parse its values
         if (def.isComplex) {
           const defType = findTypeByName(types, def.type);
           // recursively call the function for the sub-type
-          writerLines.push(`  ${friendlyName(defType.name)}(${argName}, ${accessMessageField}[i]);`);
+          lines.push(`  ${friendlyName(defType.name)}(${argName}, ${accessMessageField}[i]);`);
         } else {
           // if the subtype is not complex its a simple low-level operation
-          writerLines.push(`  ${argName}.${def.type}(${accessMessageField}[i]);`);
+          lines.push(`  ${argName}.${def.type}(${accessMessageField}[i]);`);
         }
-        writerLines.push("}"); // close the for-loop
+        lines.push("}"); // close the for-loop
       } else if (def.isComplex) {
         const defType = findTypeByName(types, def.type);
-        writerLines.push(`${friendlyName(defType.name)}(${argName}, ${accessMessageField});`);
+        lines.push(`${friendlyName(defType.name)}(${argName}, ${accessMessageField});`);
       } else {
         // Call primitives directly.
-        writerLines.push(`${argName}.${def.type}(${accessMessageField});`);
+        lines.push(`${argName}.${def.type}(${accessMessageField});`);
       }
     });
-    return writerLines.join("\n    ");
+    return lines.join("\n    ");
   };
 
   let writerJs = "";
@@ -286,27 +290,44 @@ function createWriter(types: RosMsgDefinition[]): (message: any) => Buffer {
     throw e;
   }
 
-  return function(message: any) {
-    const offsetCalculator = new StandardTypeOffsetCalculator();
-    const bufferSize = _calculateSize(offsetCalculator, message);
-    const buffer = new Buffer(bufferSize);
-    const writer = new StandardTypeWriter(buffer);
-    return _write(writer, message);
+  return {
+    writer: function(message: any, buffer: Buffer): Buffer {
+      const writer = new StandardTypeWriter(buffer);
+      return _write(writer, message);
+    },
+    bufferSizeCalculator(message: any): number {
+      const offsetCalculator = new StandardTypeOffsetCalculator();
+      return _calculateSize(offsetCalculator, message);
+    },
   };
 }
 
 export class MessageWriter {
-  writer: (message: any) => Buffer;
+  writer: (message: any, bufferToWrite: Buffer) => Buffer;
+  bufferSizeCalculator: (message: any) => number;
 
   // takes a multi-line string message definition and returns
   // a message writer which can be used to write messages based
   // on the message definition
   constructor(messageDefinition: string) {
     const definitions = parseMessageDefinition(messageDefinition);
-    this.writer = createWriter(definitions);
+    const { writer, bufferSizeCalculator } = createWriterAndSizeCalculator(definitions);
+    this.writer = writer;
+    this.bufferSizeCalculator = bufferSizeCalculator;
   }
 
-  writeMessage(message: any) {
-    return this.writer(message);
+  // Calculates the buffer size needed to write this message in bytes.
+  calculateBufferSize(message: any) {
+    return this.bufferSizeCalculator(message);
+  }
+
+  // bufferToWrite is optional - if it is not provided, a buffer will be generated.
+  writeMessage(message: any, bufferToWrite?: Buffer) {
+    let buffer = bufferToWrite;
+    if (!buffer) {
+      const bufferSize = this.calculateBufferSize(message);
+      buffer = new Buffer(bufferSize);
+    }
+    return this.writer(message, buffer);
   }
 }
