@@ -191,7 +191,7 @@ const findTypeByName = (types: RosMsgDefinition[], name = ""): NamedRosMsgDefini
   return { ...matches[0], name: foundName };
 };
 
-const friendlyName = (name: string) => name.replace("/", "_");
+const friendlyName = (name: string) => name.replace(/\//g, "_");
 
 function createWriter(types: RosMsgDefinition[]): (message: any) => Buffer {
   const unnamedTypes = types.filter((type) => !type.name);
@@ -276,13 +276,13 @@ function createWriter(types: RosMsgDefinition[]): (message: any) => Buffer {
   try {
     _write = eval(`(function buildWriter() { ${writerJs} })()`);
   } catch (e) {
-    console.error("error building writer:", writerJs); // eslint-disable-line
+    console.error("error building writer:", writerJs); // eslint-disable-line no-console
     throw e;
   }
   try {
     _calculateSize = eval(`(function buildSizeCalculator() { ${calculateSizeJs} })()`);
   } catch (e) {
-    console.error("error building size calculator:", calculateSizeJs); // eslint-disable-line
+    console.error("error building size calculator:", calculateSizeJs); // eslint-disable-line no-console
     throw e;
   }
 
@@ -299,7 +299,7 @@ export class MessageWriter {
   writer: (message: any) => Buffer;
 
   // takes a multi-line string message definition and returns
-  // a message reader which can be used to write messages based
+  // a message writer which can be used to write messages based
   // on the message definition
   constructor(messageDefinition: string) {
     const definitions = parseMessageDefinition(messageDefinition);

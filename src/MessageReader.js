@@ -165,12 +165,12 @@ const findTypeByName = (types: RosMsgDefinition[], name = ""): NamedRosMsgDefini
     return false;
   });
   if (matches.length !== 1) {
-    throw new Error(`Expected 1 top level type definition for '${name}' but found ${matches.length}`);
+    throw new Error(`Expected 1 top level type definition for '${name}' but found ${matches.length}.`);
   }
   return { ...matches[0], name: foundName };
 };
 
-const friendlyName = (name: string) => name.replace("/", "_");
+const friendlyName = (name: string) => name.replace(/\//g, "_");
 
 const createParser = (types: RosMsgDefinition[], freeze: boolean) => {
   const unnamedTypes = types.filter((type) => !type.name);
@@ -251,7 +251,7 @@ const createParser = (types: RosMsgDefinition[], freeze: boolean) => {
   try {
     _read = eval(`(function buildReader() { ${js} })()`);
   } catch (e) {
-    console.error("error building parser:", js); // eslint-disable-line
+    console.error("error building parser:", js); // eslint-disable-line no-console
     throw e;
   }
 
