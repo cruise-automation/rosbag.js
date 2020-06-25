@@ -115,7 +115,7 @@ class StandardTypeWriter {
     this.buffer.write(value, stringOffset + 4, value.length, "ascii");
   }
 
-  bool(value: bool) {
+  bool(value: boolean) {
     this.uint8(value ? 1 : 0);
   }
 

@@ -24,9 +24,11 @@ describe("MessageWriter", () => {
       cb(buffer);
       it(`writes message ${JSON.stringify(message)} containing ${type}`, () => {
         const writer = new MessageWriter(`${type} foo`);
-        expect(writer.writeMessage({
-          foo: expected,
-        })).toEqual(buffer);
+        expect(
+          writer.writeMessage({
+            foo: expected,
+          })
+        ).toEqual(buffer);
       });
     };
 
@@ -48,9 +50,11 @@ describe("MessageWriter", () => {
     it("writes JSON", () => {
       const writer = new MessageWriter("#pragma rosbag_parse_json\nstring dummy");
       const buff = getStringBuffer('{"foo":123,"bar":{"nestedFoo":456}}');
-      expect(writer.writeMessage({
-        dummy: { foo: 123, bar: { nestedFoo: 456 } },
-      })).toEqual(buff);
+      expect(
+        writer.writeMessage({
+          dummy: { foo: 123, bar: { nestedFoo: 456 } },
+        })
+      ).toEqual(buff);
 
       const writerWithNestedComplexType = new MessageWriter(`#pragma rosbag_parse_json
       string dummy
@@ -81,9 +85,7 @@ describe("MessageWriter", () => {
           dummy: { foo: 123, bar: { nestedFoo: 456 } },
           account: { name: '{"first":"First","last":"Last"}}', id: 100 },
         })
-      ).toEqual(
-        Buffer.concat([buff, getStringBuffer('{"first":"First","last":"Last"}}'), new Buffer([100, 0x00])])
-      );
+      ).toEqual(Buffer.concat([buff, getStringBuffer('{"first":"First","last":"Last"}}'), new Buffer([100, 0x00])]));
     });
 
     it("writes time", () => {
@@ -96,12 +98,14 @@ describe("MessageWriter", () => {
       buff.writeUInt32LE(seconds, 0);
       buff.writeUInt32LE(1000000, 4);
       now.setMilliseconds(1);
-      expect(writer.writeMessage({
-        right_now: {
-          nsec: 1000000,
-          sec: seconds,
-        },
-      })).toEqual(buff);
+      expect(
+        writer.writeMessage({
+          right_now: {
+            nsec: 1000000,
+            sec: seconds,
+          },
+        })
+      ).toEqual(buff);
     });
   });
 
@@ -115,24 +119,32 @@ describe("MessageWriter", () => {
         getStringBuffer("bar"),
         getStringBuffer("baz"),
       ]);
-      expect(writer.writeMessage({
-        names: ["foo", "bar", "baz"],
-      })).toEqual(buffer);
+      expect(
+        writer.writeMessage({
+          names: ["foo", "bar", "baz"],
+        })
+      ).toEqual(buffer);
     });
 
     it("writes fixed length arrays", () => {
       const writer1 = new MessageWriter("string[1] names");
       const writer2 = new MessageWriter("string[2] names");
       const writer3 = new MessageWriter("string[3] names");
-      expect(writer1.writeMessage({
-        names: ["foo", "bar", "baz"],
-      })).toEqual(getStringBuffer("foo"));
-      expect(writer2.writeMessage({
-        names: ["foo", "bar", "baz"],
-      })).toEqual(Buffer.concat([getStringBuffer("foo"), getStringBuffer("bar")]));
-      expect(writer3.writeMessage({
-        names: ["foo", "bar", "baz"],
-      })).toEqual(Buffer.concat([getStringBuffer("foo"), getStringBuffer("bar"), getStringBuffer("baz")]));
+      expect(
+        writer1.writeMessage({
+          names: ["foo", "bar", "baz"],
+        })
+      ).toEqual(getStringBuffer("foo"));
+      expect(
+        writer2.writeMessage({
+          names: ["foo", "bar", "baz"],
+        })
+      ).toEqual(Buffer.concat([getStringBuffer("foo"), getStringBuffer("bar")]));
+      expect(
+        writer3.writeMessage({
+          names: ["foo", "bar", "baz"],
+        })
+      ).toEqual(Buffer.concat([getStringBuffer("foo"), getStringBuffer("bar"), getStringBuffer("baz")]));
     });
 
     it("does not write any data for a zero length array", () => {
@@ -349,7 +361,7 @@ describe("MessageWriter", () => {
         status: {
           leve: 0,
           name: "foo",
-        }
+        },
       };
 
       expect(writer.writeMessage(message)).toEqual(buffer);
