@@ -12,6 +12,7 @@ import ReadResult from "./ReadResult";
 import { BagHeader, ChunkInfo, Connection, MessageData } from "./record";
 import type { Time } from "./types";
 import * as TimeUtil from "./TimeUtil";
+import { parseMessageDefinition } from "./parseMessageDefinition";
 
 export type ReadOptions = {|
   decompress?: Decompress,
@@ -104,7 +105,8 @@ export default class Bag {
       if (!opts.noParse) {
         // lazily create a reader for this connection if it doesn't exist
         connection.reader =
-          connection.reader || new MessageReader(connection.messageDefinition, { freeze: opts.freeze });
+          connection.reader ||
+          new MessageReader(parseMessageDefinition(connection.messageDefinition), { freeze: opts.freeze });
         message = connection.reader.readMessage(data);
       }
       return new ReadResult(topic, message, timestamp, data, chunkOffset, chunkInfos.length, opts.freeze);

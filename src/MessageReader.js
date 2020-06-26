@@ -264,11 +264,18 @@ const createParser = (types: RosMsgDefinition[], freeze: boolean) => {
 export class MessageReader {
   reader: (buffer: Buffer) => any;
 
-  // takes a multi-line string message definition and returns
+  // takes an object message definition and returns
   // a message reader which can be used to read messages based
   // on the message definition
-  constructor(messageDefinition: string, options: { freeze?: ?boolean } = {}) {
-    const definitions = parseMessageDefinition(messageDefinition);
+  constructor(definitions: RosMsgDefinition[], options: { freeze?: ?boolean } = {}) {
+    let parsedDefinitions = definitions;
+    if (typeof parsedDefinitions === "string") {
+      // eslint-disable-next-line no-console
+      console.warn(
+        "Passing string message defintions to MessageReader is deprecated. Instead call `parseMessageDefinition` on it and pass in the resulting parsed message definition object."
+      );
+      parsedDefinitions = parseMessageDefinition(parsedDefinitions);
+    }
     this.reader = createParser(definitions, !!options.freeze);
   }
 
