@@ -6,6 +6,7 @@
 
 // @flow
 
+import range from "lodash/range";
 import { MessageReader } from "./MessageReader";
 import { parseMessageDefinition } from "./parseMessageDefinition";
 
@@ -44,6 +45,15 @@ describe("MessageReader", () => {
       expect(reader.readMessage(buff)).toEqual({
         name: "test",
       });
+    });
+
+    it("parses long strings", () => {
+      const reader = new MessageReader(parseMessageDefinition("string name"));
+      const longString = range(0, 5000)
+        .map((i) => i.toString())
+        .join("");
+      const buff = getStringBuffer(longString);
+      expect(reader.readMessage(buff)).toEqual({ name: longString });
     });
 
     it("parses JSON", () => {

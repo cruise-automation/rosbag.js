@@ -59,11 +59,11 @@ class StandardTypeReader {
       return String.fromCharCode.apply(null, codePoints);
     }
 
-    let data = "";
+    const data = new Array(len);
     for (let i = 0; i < len; i++) {
-      data += String.fromCharCode(codePoints[i]);
+      data[i] = String.fromCharCode(codePoints[i]);
     }
-    return data;
+    return data.join("");
   }
 
   bool() {
