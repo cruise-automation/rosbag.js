@@ -165,12 +165,12 @@ const findTypeByName = (types: RosMsgDefinition[], name = ""): NamedRosMsgDefini
     return false;
   });
   if (matches.length !== 1) {
-    throw new Error(`Expected 1 top level type definition for '${name}' but found ${matches.length}`);
+    throw new Error(`Expected 1 top level type definition for '${name}' but found ${matches.length}.`);
   }
   return { ...matches[0], name: foundName };
 };
 
-const friendlyName = (name: string) => name.replace("/", "_");
+const friendlyName = (name: string) => name.replace(/\//g, "_");
 
 const createParser = (types: RosMsgDefinition[], freeze: boolean) => {
   const unnamedTypes = types.filter((type) => !type.name);
@@ -251,7 +251,7 @@ const createParser = (types: RosMsgDefinition[], freeze: boolean) => {
   try {
     _read = eval(`(function buildReader() { ${js} })()`);
   } catch (e) {
-    console.error("error building parser:", js); // eslint-disable-line
+    console.error("error building parser:", js); // eslint-disable-line no-console
     throw e;
   }
 
@@ -264,11 +264,18 @@ const createParser = (types: RosMsgDefinition[], freeze: boolean) => {
 export class MessageReader {
   reader: (buffer: Buffer) => any;
 
-  // takes a multi-line string message definition and returns
+  // takes an object message definition and returns
   // a message reader which can be used to read messages based
   // on the message definition
-  constructor(messageDefinition: string, options: { freeze?: ?boolean } = {}) {
-    const definitions = parseMessageDefinition(messageDefinition);
+  constructor(definitions: RosMsgDefinition[], options: { freeze?: ?boolean } = {}) {
+    let parsedDefinitions = definitions;
+    if (typeof parsedDefinitions === "string") {
+      // eslint-disable-next-line no-console
+      console.warn(
+        "Passing string message defintions to MessageReader is deprecated. Instead call `parseMessageDefinition` on it and pass in the resulting parsed message definition object."
+      );
+      parsedDefinitions = parseMessageDefinition(parsedDefinitions);
+    }
     this.reader = createParser(definitions, !!options.freeze);
   }
 
