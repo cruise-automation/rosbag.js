@@ -1,3 +1,7 @@
+# 2.5.0
+
+* Added MessageWriter functionality, and deprecated passing the unparsed message definitions direction to MessageReader.
+
 # 1.3.0
 
 * Reorganized the repository, build using webpack, and export Flow type definitions.
