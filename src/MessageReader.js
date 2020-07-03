@@ -276,7 +276,7 @@ export class MessageReader {
       );
       parsedDefinitions = parseMessageDefinition(parsedDefinitions);
     }
-    this.reader = createParser(definitions, !!options.freeze);
+    this.reader = createParser(parsedDefinitions, !!options.freeze);
   }
 
   readMessage(buffer: Buffer) {
