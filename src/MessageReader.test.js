@@ -143,6 +143,13 @@ describe("MessageReader", () => {
     });
   });
 
+  it("still works given string message definitions", () => {
+    const messageDefinition = "string value";
+    const reader = new MessageReader(parseMessageDefinition(messageDefinition));
+    const buffer = getStringBuffer("foo");
+    expect(reader.readMessage(buffer)).toEqual({ value: "foo" });
+  });
+
   describe("array", () => {
     it("parses variable length string array", () => {
       const reader = new MessageReader(parseMessageDefinition("string[] names"));
