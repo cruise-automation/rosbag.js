@@ -52,18 +52,26 @@ class StandardTypeReader {
     const len = this.int32();
     const codePoints = new Uint8Array(this.buffer.buffer, this.buffer.byteOffset + this.offset, len);
     this.offset += len;
-    // if the string is relatively short we can use apply
-    // but very long strings can cause a stack overflow due to too many arguments
-    // in those cases revert to a slower iterative string building approach
-    if (codePoints.length < 1000) {
-      return String.fromCharCode.apply(null, codePoints);
+
+    // Use TextDecoder if it is available and supports the "ascii" encoding.
+    if (typeof global.TextDecoder !== "undefined") {
+      try {
+        const decoder = new global.TextDecoder("ascii");
+        return decoder.decode(codePoints);
+      } catch (e) {
+        // Swallow the error if we don't support ascii encoding.
+        if (e.message !== 'The "ascii" encoding is not supported') {
+          throw e;
+        }
+      }
     }
 
-    const data = new Array(len);
+    // Otherwise, use string concatentation.
+    let data = "";
     for (let i = 0; i < len; i++) {
-      data[i] = String.fromCharCode(codePoints[i]);
+      data += String.fromCharCode(codePoints[i]);
     }
-    return data.join("");
+    return data;
   }
 
   bool() {
