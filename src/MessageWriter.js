@@ -325,7 +325,7 @@ export class MessageWriter {
     let buffer = bufferToWrite;
     if (!buffer) {
       const bufferSize = this.calculateBufferSize(message);
-      buffer = new Buffer(bufferSize);
+      buffer = Buffer.allocUnsafe(bufferSize);
     }
     return this.writer(message, buffer);
   }
