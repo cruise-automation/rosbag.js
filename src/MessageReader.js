@@ -32,11 +32,32 @@ class StandardTypeReader {
   buffer: Buffer;
   offset: number;
   view: DataView;
+  _decoder: ?TextDecoder;
+  _decoderStatus: "NOT_INITIALIZED" | "INITIALIZED" | "NOT_AVAILABLE" = "NOT_INITIALIZED";
 
   constructor(buffer: Buffer) {
     this.buffer = buffer;
     this.offset = 0;
     this.view = new DataView(buffer.buffer, buffer.byteOffset);
+  }
+
+  _intializeTextDecoder() {
+    if (typeof global.TextDecoder === "undefined") {
+      this._decoderStatus = "NOT_AVAILABLE";
+      return;
+    }
+
+    try {
+      this._decoder = new global.TextDecoder("ascii");
+      this._decoderStatus = "INITIALIZED";
+    } catch (e) {
+      // Swallow the error if we don't support ascii encoding.
+      if (e.message === 'The "ascii" encoding is not supported') {
+        this._decoderStatus = "NOT_AVAILABLE";
+      } else {
+        throw e;
+      }
+    }
   }
 
   json(): mixed {
@@ -54,16 +75,11 @@ class StandardTypeReader {
     this.offset += len;
 
     // Use TextDecoder if it is available and supports the "ascii" encoding.
-    if (typeof global.TextDecoder !== "undefined") {
-      try {
-        const decoder = new global.TextDecoder("ascii");
-        return decoder.decode(codePoints);
-      } catch (e) {
-        // Swallow the error if we don't support ascii encoding.
-        if (e.message !== 'The "ascii" encoding is not supported') {
-          throw e;
-        }
-      }
+    if (this._decoderStatus === "NOT_INITIALIZED") {
+      this._intializeTextDecoder();
+    }
+    if (this._decoder) {
+      return this._decoder.decode(codePoints);
     }
 
     // Otherwise, use string concatentation.
