@@ -6,6 +6,8 @@
 
 // @flow
 
+import { range } from "lodash";
+
 import util from "util";
 import { MessageReader } from "./MessageReader";
 import { parseMessageDefinition } from "./parseMessageDefinition";
@@ -51,7 +53,7 @@ describe("MessageReader", () => {
     // encoding out of the box despite it being supported in the browser; later versions of node do support "ascii" out
     // of the box.
     // TODO: re-enable this test when pinning to node 14+.
-    xit("parses with TextDecoder available", () => {
+    xit("parses long strings with TextDecoder available", () => {
       // Remove TextDecoder
       expect(typeof TextDecoder).toEqual("undefined");
       // $FlowFixMe flow doesn't like util.TextDecoder
@@ -60,7 +62,9 @@ describe("MessageReader", () => {
       global.TextDecoder = util.TextDecoder;
 
       const reader = new MessageReader(parseMessageDefinition("string name"));
-      const string = "Test";
+      const string = range(0, 5000)
+        .map(() => String.fromCharCode(Math.floor(Math.random() * 255)))
+        .join("");
       const buff = getStringBuffer(string);
       expect(reader.readMessage(buff)).toEqual({ name: string });
 

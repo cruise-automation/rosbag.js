@@ -52,11 +52,7 @@ class StandardTypeReader {
       this._decoderStatus = "INITIALIZED";
     } catch (e) {
       // Swallow the error if we don't support ascii encoding.
-      if (e.message === 'The "ascii" encoding is not supported') {
-        this._decoderStatus = "NOT_AVAILABLE";
-      } else {
-        throw e;
-      }
+      this._decoderStatus = "NOT_AVAILABLE";
     }
   }
 
@@ -73,6 +69,11 @@ class StandardTypeReader {
     const len = this.int32();
     const codePoints = new Uint8Array(this.buffer.buffer, this.buffer.byteOffset + this.offset, len);
     this.offset += len;
+
+    // if the string is relatively short we can use apply, but longer strings can benefit from the speed of TextDecoder.
+    if (codePoints.length < 1000) {
+      return String.fromCharCode.apply(null, codePoints);
+    }
 
     // Use TextDecoder if it is available and supports the "ascii" encoding.
     if (this._decoderStatus === "NOT_INITIALIZED") {
