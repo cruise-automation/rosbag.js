@@ -10,6 +10,7 @@ import { Buffer } from "buffer";
 import * as fs from "fs";
 import {
   MessageReader,
+  MessageWriter,
   parseMessageDefinition,
   rosPrimitiveTypes,
   TimeUtil,
@@ -98,6 +99,7 @@ export {
   TimeUtil,
   BagReader,
   MessageReader,
+  MessageWriter,
   open,
   parseMessageDefinition,
   rosPrimitiveTypes,
