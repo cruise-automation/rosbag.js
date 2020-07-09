@@ -32,11 +32,28 @@ class StandardTypeReader {
   buffer: Buffer;
   offset: number;
   view: DataView;
+  _decoder: ?TextDecoder;
+  _decoderStatus: "NOT_INITIALIZED" | "INITIALIZED" | "NOT_AVAILABLE" = "NOT_INITIALIZED";
 
   constructor(buffer: Buffer) {
     this.buffer = buffer;
     this.offset = 0;
     this.view = new DataView(buffer.buffer, buffer.byteOffset);
+  }
+
+  _intializeTextDecoder() {
+    if (typeof global.TextDecoder === "undefined") {
+      this._decoderStatus = "NOT_AVAILABLE";
+      return;
+    }
+
+    try {
+      this._decoder = new global.TextDecoder("ascii");
+      this._decoderStatus = "INITIALIZED";
+    } catch (e) {
+      // Swallow the error if we don't support ascii encoding.
+      this._decoderStatus = "NOT_AVAILABLE";
+    }
   }
 
   json(): mixed {
@@ -52,13 +69,21 @@ class StandardTypeReader {
     const len = this.int32();
     const codePoints = new Uint8Array(this.buffer.buffer, this.buffer.byteOffset + this.offset, len);
     this.offset += len;
-    // if the string is relatively short we can use apply
-    // but very long strings can cause a stack overflow due to too many arguments
-    // in those cases revert to a slower iterative string building approach
+
+    // if the string is relatively short we can use apply, but longer strings can benefit from the speed of TextDecoder.
     if (codePoints.length < 1000) {
       return String.fromCharCode.apply(null, codePoints);
     }
 
+    // Use TextDecoder if it is available and supports the "ascii" encoding.
+    if (this._decoderStatus === "NOT_INITIALIZED") {
+      this._intializeTextDecoder();
+    }
+    if (this._decoder) {
+      return this._decoder.decode(codePoints);
+    }
+
+    // Otherwise, use string concatentation.
     let data = "";
     for (let i = 0; i < len; i++) {
       data += String.fromCharCode(codePoints[i]);

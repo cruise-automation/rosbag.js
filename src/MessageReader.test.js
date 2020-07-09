@@ -6,6 +6,9 @@
 
 // @flow
 
+import { range } from "lodash";
+
+import util from "util";
 import { MessageReader } from "./MessageReader";
 import { parseMessageDefinition } from "./parseMessageDefinition";
 
@@ -44,6 +47,29 @@ describe("MessageReader", () => {
       expect(reader.readMessage(buff)).toEqual({
         name: "test",
       });
+    });
+
+    // Our tests are currently run in node v10 and our code is run in the browser. Node v10 does not support "ascii"
+    // encoding out of the box despite it being supported in the browser; later versions of node do support "ascii" out
+    // of the box.
+    // TODO: re-enable this test when pinning to node 14+.
+    xit("parses long strings with TextDecoder available", () => {
+      // Remove TextDecoder
+      expect(typeof TextDecoder).toEqual("undefined");
+      // $FlowFixMe flow doesn't like util.TextDecoder
+      expect(() => new util.TextDecoder("ascii")).not.toThrow();
+      // $FlowFixMe flow doesn't like util.TextDecoder
+      global.TextDecoder = util.TextDecoder;
+
+      const reader = new MessageReader(parseMessageDefinition("string name"));
+      const string = range(0, 5000)
+        .map(() => String.fromCharCode(Math.floor(Math.random() * 255)))
+        .join("");
+      const buff = getStringBuffer(string);
+      expect(reader.readMessage(buff)).toEqual({ name: string });
+
+      // Reset the TextDecoder
+      delete global.TextDecoder;
     });
 
     it("parses JSON", () => {
