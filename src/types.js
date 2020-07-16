@@ -22,3 +22,32 @@ export interface Filelike {
   read(offset: number, length: number, callback: Callback<Buffer>): void;
   size(): number;
 }
+
+export type RosMsgField =
+  | {|
+      type: string,
+      name: string,
+      isConstant?: boolean,
+      isComplex?: boolean,
+      value?: mixed,
+      isArray?: false,
+      arrayLength?: void,
+    |}
+  | {|
+      type: string,
+      name: string,
+      isConstant?: boolean,
+      isComplex?: boolean,
+      value?: mixed,
+      isArray: true,
+      arrayLength: ?number,
+    |};
+
+export type RosMsgDefinition = {|
+  name?: string,
+  definitions: RosMsgField[],
+|};
+export type NamedRosMsgDefinition = {|
+  name: string,
+  definitions: RosMsgField[],
+|};
