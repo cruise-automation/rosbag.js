@@ -7,8 +7,7 @@
 // @flow
 
 import int53 from "int53";
-import type { Time } from "./types";
-import { type RosMsgDefinition, type NamedRosMsgDefinition } from "./parseMessageDefinition";
+import type { Time, RosMsgDefinition, NamedRosMsgDefinition } from "./types";
 
 // write a Time object to a buffer.
 function writeTime(time: Time, buffer: Buffer, offset: number) {

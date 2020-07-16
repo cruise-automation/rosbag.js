@@ -8,7 +8,8 @@
 
 import int53 from "int53";
 import { extractTime } from "./fields";
-import { parseMessageDefinition, type RosMsgDefinition, type NamedRosMsgDefinition } from "./parseMessageDefinition";
+import type { RosMsgDefinition, NamedRosMsgDefinition } from "./types";
+import { parseMessageDefinition } from "./parseMessageDefinition";
 
 type TypedArrayConstructor = (
   buffer: ArrayBuffer,
