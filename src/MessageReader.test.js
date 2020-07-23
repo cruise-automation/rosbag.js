@@ -6,7 +6,11 @@
 
 // @flow
 
+import { range } from "lodash";
+
+import util from "util";
 import { MessageReader } from "./MessageReader";
+import { parseMessageDefinition } from "./parseMessageDefinition";
 
 const getStringBuffer = (str: string) => {
   const data = new Buffer(str, "utf8");
@@ -21,7 +25,7 @@ describe("MessageReader", () => {
       const buffer = new Buffer(size);
       cb(buffer);
       it(`parses buffer ${JSON.stringify(buffer)} containing ${type}`, () => {
-        const reader = new MessageReader(`${type} foo`);
+        const reader = new MessageReader(parseMessageDefinition(`${type} foo`));
         expect(reader.readMessage(buffer)).toEqual({
           foo: expected,
         });
@@ -38,38 +42,67 @@ describe("MessageReader", () => {
     testNum("float64", 8, 0xdeadbeefcafebabe, (buffer) => buffer.writeDoubleLE(0xdeadbeefcafebabe, 0));
 
     it("parses string", () => {
-      const reader = new MessageReader("string name");
+      const reader = new MessageReader(parseMessageDefinition("string name"));
       const buff = getStringBuffer("test");
       expect(reader.readMessage(buff)).toEqual({
         name: "test",
       });
     });
 
+    // Our tests are currently run in node v10 and our code is run in the browser. Node v10 does not support "ascii"
+    // encoding out of the box despite it being supported in the browser; later versions of node do support "ascii" out
+    // of the box.
+    // TODO: re-enable this test when pinning to node 14+.
+    xit("parses long strings with TextDecoder available", () => {
+      // Remove TextDecoder
+      expect(typeof TextDecoder).toEqual("undefined");
+      // $FlowFixMe flow doesn't like util.TextDecoder
+      expect(() => new util.TextDecoder("ascii")).not.toThrow();
+      // $FlowFixMe flow doesn't like util.TextDecoder
+      global.TextDecoder = util.TextDecoder;
+
+      const reader = new MessageReader(parseMessageDefinition("string name"));
+      const string = range(0, 5000)
+        .map(() => String.fromCharCode(Math.floor(Math.random() * 255)))
+        .join("");
+      const buff = getStringBuffer(string);
+      expect(reader.readMessage(buff)).toEqual({ name: string });
+
+      // Reset the TextDecoder
+      delete global.TextDecoder;
+    });
+
     it("parses JSON", () => {
-      const reader = new MessageReader("#pragma rosbag_parse_json\nstring dummy");
+      const reader = new MessageReader(parseMessageDefinition("#pragma rosbag_parse_json\nstring dummy"));
       const buff = getStringBuffer('{"foo":123,"bar":{"nestedFoo":456}}');
       expect(reader.readMessage(buff)).toEqual({
         dummy: { foo: 123, bar: { nestedFoo: 456 } },
       });
 
-      const readerWithSpaces = new MessageReader(" #pragma rosbag_parse_json  \n  string dummy");
+      const readerWithSpaces = new MessageReader(
+        parseMessageDefinition(" #pragma rosbag_parse_json  \n  string dummy")
+      );
       expect(readerWithSpaces.readMessage(buff)).toEqual({
         dummy: { foo: 123, bar: { nestedFoo: 456 } },
       });
 
-      const readerWithNewlines = new MessageReader("#pragma rosbag_parse_json\n\n\nstring dummy");
+      const readerWithNewlines = new MessageReader(
+        parseMessageDefinition("#pragma rosbag_parse_json\n\n\nstring dummy")
+      );
       expect(readerWithNewlines.readMessage(buff)).toEqual({
         dummy: { foo: 123, bar: { nestedFoo: 456 } },
       });
 
-      const readerWithNestedComplexType = new MessageReader(`#pragma rosbag_parse_json
+      const readerWithNestedComplexType = new MessageReader(
+        parseMessageDefinition(`#pragma rosbag_parse_json
       string dummy
       Account account
       ============
       MSG: custom_type/Account
       string name
       uint16 id
-      `);
+      `)
+      );
       expect(
         readerWithNestedComplexType.readMessage(
           Buffer.concat([buff, getStringBuffer('{"first":"First","last":"Last"}}'), new Buffer([100, 0x00])])
@@ -79,7 +112,8 @@ describe("MessageReader", () => {
         account: { name: '{"first":"First","last":"Last"}}', id: 100 },
       });
 
-      const readerWithTrailingPragmaComment = new MessageReader(`#pragma rosbag_parse_json
+      const readerWithTrailingPragmaComment = new MessageReader(
+        parseMessageDefinition(`#pragma rosbag_parse_json
       string dummy
       Account account
       #pragma rosbag_parse_json
@@ -87,7 +121,8 @@ describe("MessageReader", () => {
       MSG: custom_type/Account
       string name
       uint16 id
-      `);
+      `)
+      );
       expect(
         readerWithTrailingPragmaComment.readMessage(
           Buffer.concat([buff, getStringBuffer('{"first":"First","last":"Last"}}'), new Buffer([100, 0x00])])
@@ -99,7 +134,7 @@ describe("MessageReader", () => {
     });
 
     it("parses time", () => {
-      const reader = new MessageReader("time right_now");
+      const reader = new MessageReader(parseMessageDefinition("time right_now"));
       const buff = new Buffer(8);
       const now = new Date();
       now.setSeconds(31);
@@ -126,7 +161,7 @@ describe("MessageReader", () => {
     ### foo bar baz?
     string lastName
     `;
-    const reader = new MessageReader(messageDefinition);
+    const reader = new MessageReader(parseMessageDefinition(messageDefinition));
     const buffer = Buffer.concat([getStringBuffer("foo"), getStringBuffer("bar")]);
     expect(reader.readMessage(buffer)).toEqual({
       firstName: "foo",
@@ -134,9 +169,16 @@ describe("MessageReader", () => {
     });
   });
 
+  it("still works given string message definitions", () => {
+    const messageDefinition = "string value";
+    const reader = new MessageReader(parseMessageDefinition(messageDefinition));
+    const buffer = getStringBuffer("foo");
+    expect(reader.readMessage(buffer)).toEqual({ value: "foo" });
+  });
+
   describe("array", () => {
     it("parses variable length string array", () => {
-      const reader = new MessageReader("string[] names");
+      const reader = new MessageReader(parseMessageDefinition("string[] names"));
       const buffer = Buffer.concat([
         // variable length array has int32 as first entry
         new Buffer([0x03, 0x00, 0x00, 0x00]),
@@ -150,9 +192,9 @@ describe("MessageReader", () => {
     });
 
     it("parses fixed length arrays", () => {
-      const parser1 = new MessageReader("string[1] names");
-      const parser2 = new MessageReader("string[2] names");
-      const parser3 = new MessageReader("string[3] names");
+      const parser1 = new MessageReader(parseMessageDefinition("string[1] names"));
+      const parser2 = new MessageReader(parseMessageDefinition("string[2] names"));
+      const parser3 = new MessageReader(parseMessageDefinition("string[3] names"));
       const buffer = Buffer.concat([getStringBuffer("foo"), getStringBuffer("bar"), getStringBuffer("baz")]);
       expect(parser1.readMessage(buffer)).toEqual({
         names: ["foo"],
@@ -166,7 +208,7 @@ describe("MessageReader", () => {
     });
 
     it("uses an empty array for a 0 length array", () => {
-      const reader = new MessageReader("string[] names");
+      const reader = new MessageReader(parseMessageDefinition("string[] names"));
       const buffer = Buffer.concat([
         // variable length array has int32 as first entry
         new Buffer([0x00, 0x00, 0x00, 0x00]),
@@ -178,7 +220,7 @@ describe("MessageReader", () => {
 
     describe("typed arrays", () => {
       it("uint8[] uses the same backing buffer", () => {
-        const reader = new MessageReader("uint8[] values\nuint8 after");
+        const reader = new MessageReader(parseMessageDefinition("uint8[] values\nuint8 after"));
         const buffer = Buffer.from([0x03, 0x00, 0x00, 0x00, 0x01, 0x02, 0x03, 0x04]);
         const result = reader.readMessage(buffer);
         const { values, after } = result;
@@ -195,7 +237,7 @@ describe("MessageReader", () => {
       });
 
       it("parses uint8[] with a fixed length", () => {
-        const reader = new MessageReader("uint8[3] values\nuint8 after");
+        const reader = new MessageReader(parseMessageDefinition("uint8[3] values\nuint8 after"));
         const buffer = Buffer.from([0x01, 0x02, 0x03, 0x04]);
         const result = reader.readMessage(buffer);
         const { values, after } = result;
@@ -212,7 +254,7 @@ describe("MessageReader", () => {
       });
 
       it("int8[] uses the same backing buffer", () => {
-        const reader = new MessageReader("int8[] values\nint8 after");
+        const reader = new MessageReader(parseMessageDefinition("int8[] values\nint8 after"));
         const buffer = new Buffer([0x03, 0x00, 0x00, 0x00, 0x01, 0x02, 0x03, 0x04]);
         const result = reader.readMessage(buffer);
         const { values, after } = result;
@@ -229,7 +271,7 @@ describe("MessageReader", () => {
       });
 
       it("parses int8[] with a fixed length", () => {
-        const reader = new MessageReader("int8[3] values\nint8 after");
+        const reader = new MessageReader(parseMessageDefinition("int8[3] values\nint8 after"));
         const buffer = new Buffer([0x01, 0x02, 0x03, 0x04]);
         const result = reader.readMessage(buffer);
         const { values, after } = result;
@@ -246,7 +288,7 @@ describe("MessageReader", () => {
       });
 
       it("parses combinations of typed arrays", () => {
-        const reader = new MessageReader("int8[] first\nuint8[2] second");
+        const reader = new MessageReader(parseMessageDefinition("int8[] first\nuint8[2] second"));
         const buffer = new Buffer([0x02, 0x00, 0x00, 0x00, 0x01, 0x02, 0x03, 0x04]);
         const result = reader.readMessage(buffer);
         const { first, second } = result;
@@ -268,7 +310,7 @@ describe("MessageReader", () => {
 
   describe("complex types", () => {
     it("parses single complex type", () => {
-      const reader = new MessageReader("string firstName \n string lastName\nuint16 age");
+      const reader = new MessageReader(parseMessageDefinition("string firstName \n string lastName\nuint16 age"));
       const buffer = Buffer.concat([getStringBuffer("foo"), getStringBuffer("bar"), new Buffer([0x05, 0x00])]);
       expect(reader.readMessage(buffer)).toEqual({
         firstName: "foo",
@@ -286,7 +328,7 @@ describe("MessageReader", () => {
       string name
       uint16 id
       `;
-      const reader = new MessageReader(messageDefinition);
+      const reader = new MessageReader(parseMessageDefinition(messageDefinition));
       const buffer = Buffer.concat([getStringBuffer("foo"), getStringBuffer("bar"), new Buffer([100, 0x00])]);
       expect(reader.readMessage(buffer)).toEqual({
         username: "foo",
@@ -306,7 +348,7 @@ describe("MessageReader", () => {
       string name
       uint16 id
       `;
-      const reader = new MessageReader(messageDefinition);
+      const reader = new MessageReader(parseMessageDefinition(messageDefinition));
       const buffer = Buffer.concat([
         getStringBuffer("foo"),
         // uint32LE length of array (2)
@@ -347,7 +389,7 @@ describe("MessageReader", () => {
       uint8 id
       `;
 
-      const reader = new MessageReader(messageDefinition);
+      const reader = new MessageReader(parseMessageDefinition(messageDefinition));
       const buffer = Buffer.concat([
         getStringBuffer("foo"),
         // uint32LE length of Account array (2)
@@ -437,7 +479,7 @@ describe("MessageReader", () => {
       string name # a description of the test/component reporting`;
 
     it("parses bytes and constants", () => {
-      const reader = new MessageReader(withBytesAndBools);
+      const reader = new MessageReader(parseMessageDefinition(withBytesAndBools));
       const buffer = Buffer.concat([Buffer.from([0x01]), Buffer.from([0x00]), getStringBuffer("foo")]);
 
       const message = reader.readMessage(buffer);
@@ -451,7 +493,9 @@ describe("MessageReader", () => {
     });
 
     it("freezes the resulting message if requested", () => {
-      const reader = new MessageReader("string firstName \n string lastName\nuint16 age", { freeze: true });
+      const reader = new MessageReader(parseMessageDefinition("string firstName \n string lastName\nuint16 age"), {
+        freeze: true,
+      });
       const buffer = Buffer.concat([getStringBuffer("foo"), getStringBuffer("bar"), new Buffer([0x05, 0x00])]);
       const output = reader.readMessage(buffer);
       expect(output).toEqual({ firstName: "foo", lastName: "bar", age: 5 });

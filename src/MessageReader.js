@@ -8,7 +8,8 @@
 
 import int53 from "int53";
 import { extractTime } from "./fields";
-import { parseMessageDefinition, type RosMsgDefinition, type NamedRosMsgDefinition } from "./parseMessageDefinition";
+import type { RosMsgDefinition, NamedRosMsgDefinition } from "./types";
+import { parseMessageDefinition } from "./parseMessageDefinition";
 
 type TypedArrayConstructor = (
   buffer: ArrayBuffer,
@@ -32,11 +33,28 @@ class StandardTypeReader {
   buffer: Buffer;
   offset: number;
   view: DataView;
+  _decoder: ?TextDecoder;
+  _decoderStatus: "NOT_INITIALIZED" | "INITIALIZED" | "NOT_AVAILABLE" = "NOT_INITIALIZED";
 
   constructor(buffer: Buffer) {
     this.buffer = buffer;
     this.offset = 0;
     this.view = new DataView(buffer.buffer, buffer.byteOffset);
+  }
+
+  _intializeTextDecoder() {
+    if (typeof global.TextDecoder === "undefined") {
+      this._decoderStatus = "NOT_AVAILABLE";
+      return;
+    }
+
+    try {
+      this._decoder = new global.TextDecoder("ascii");
+      this._decoderStatus = "INITIALIZED";
+    } catch (e) {
+      // Swallow the error if we don't support ascii encoding.
+      this._decoderStatus = "NOT_AVAILABLE";
+    }
   }
 
   json(): mixed {
@@ -52,13 +70,21 @@ class StandardTypeReader {
     const len = this.int32();
     const codePoints = new Uint8Array(this.buffer.buffer, this.buffer.byteOffset + this.offset, len);
     this.offset += len;
-    // if the string is relatively short we can use apply
-    // but very long strings can cause a stack overflow due to too many arguments
-    // in those cases revert to a slower iterative string building approach
+
+    // if the string is relatively short we can use apply, but longer strings can benefit from the speed of TextDecoder.
     if (codePoints.length < 1000) {
       return String.fromCharCode.apply(null, codePoints);
     }
 
+    // Use TextDecoder if it is available and supports the "ascii" encoding.
+    if (this._decoderStatus === "NOT_INITIALIZED") {
+      this._intializeTextDecoder();
+    }
+    if (this._decoder) {
+      return this._decoder.decode(codePoints);
+    }
+
+    // Otherwise, use string concatentation.
     let data = "";
     for (let i = 0; i < len; i++) {
       data += String.fromCharCode(codePoints[i]);
@@ -165,12 +191,12 @@ const findTypeByName = (types: RosMsgDefinition[], name = ""): NamedRosMsgDefini
     return false;
   });
   if (matches.length !== 1) {
-    throw new Error(`Expected 1 top level type definition for '${name}' but found ${matches.length}`);
+    throw new Error(`Expected 1 top level type definition for '${name}' but found ${matches.length}.`);
   }
   return { ...matches[0], name: foundName };
 };
 
-const friendlyName = (name: string) => name.replace("/", "_");
+const friendlyName = (name: string) => name.replace(/\//g, "_");
 
 const createParser = (types: RosMsgDefinition[], freeze: boolean) => {
   const unnamedTypes = types.filter((type) => !type.name);
@@ -251,7 +277,7 @@ const createParser = (types: RosMsgDefinition[], freeze: boolean) => {
   try {
     _read = eval(`(function buildReader() { ${js} })()`);
   } catch (e) {
-    console.error("error building parser:", js); // eslint-disable-line
+    console.error("error building parser:", js); // eslint-disable-line no-console
     throw e;
   }
 
@@ -264,12 +290,19 @@ const createParser = (types: RosMsgDefinition[], freeze: boolean) => {
 export class MessageReader {
   reader: (buffer: Buffer) => any;
 
-  // takes a multi-line string message definition and returns
+  // takes an object message definition and returns
   // a message reader which can be used to read messages based
   // on the message definition
-  constructor(messageDefinition: string, options: { freeze?: ?boolean } = {}) {
-    const definitions = parseMessageDefinition(messageDefinition);
-    this.reader = createParser(definitions, !!options.freeze);
+  constructor(definitions: RosMsgDefinition[], options: { freeze?: ?boolean } = {}) {
+    let parsedDefinitions = definitions;
+    if (typeof parsedDefinitions === "string") {
+      // eslint-disable-next-line no-console
+      console.warn(
+        "Passing string message defintions to MessageReader is deprecated. Instead call `parseMessageDefinition` on it and pass in the resulting parsed message definition object."
+      );
+      parsedDefinitions = parseMessageDefinition(parsedDefinitions);
+    }
+    this.reader = createParser(parsedDefinitions, !!options.freeze);
   }
 
   readMessage(buffer: Buffer) {

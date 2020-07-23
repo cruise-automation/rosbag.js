@@ -6,6 +6,8 @@
 
 // @flow
 
+import type { RosMsgField, RosMsgDefinition } from "./types";
+
 // Set of built-in ros types. See http://wiki.ros.org/msg#Field_Types
 export const rosPrimitiveTypes: Set<string> = new Set([
   "string",
@@ -58,35 +60,6 @@ function newDefinition(type: string, name: string): RosMsgField {
     isComplex: !rosPrimitiveTypes.has(normalizedType),
   };
 }
-
-export type RosMsgField =
-  | {|
-      type: string,
-      name: string,
-      isConstant?: boolean,
-      isComplex?: boolean,
-      value?: mixed,
-      isArray?: false,
-      arrayLength?: void,
-    |}
-  | {|
-      type: string,
-      name: string,
-      isConstant?: boolean,
-      isComplex?: boolean,
-      value?: mixed,
-      isArray: true,
-      arrayLength: ?number,
-    |};
-
-export type RosMsgDefinition = {|
-  name?: string,
-  definitions: RosMsgField[],
-|};
-export type NamedRosMsgDefinition = {|
-  name: string,
-  definitions: RosMsgField[],
-|};
 
 const buildType = (lines: { isJson: boolean, line: string }[]): RosMsgDefinition => {
   const definitions: RosMsgField[] = [];
