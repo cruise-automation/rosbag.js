@@ -23,25 +23,19 @@ export interface Filelike {
   size(): number;
 }
 
-export type RosMsgField =
-  | {|
-      type: string,
-      name: string,
-      isConstant?: boolean,
-      isComplex?: boolean,
-      value?: mixed,
-      isArray?: false,
-      arrayLength?: void,
-    |}
-  | {|
-      type: string,
-      name: string,
-      isConstant?: boolean,
-      isComplex?: boolean,
-      value?: mixed,
-      isArray: true,
-      arrayLength: ?number,
-    |};
+export type RosMsgField = {|
+  type: string,
+  name: string,
+  isComplex?: boolean,
+
+  // For arrays
+  isArray?: boolean,
+  arrayLength?: ?number,
+
+  // For constants
+  isConstant?: boolean,
+  value?: mixed,
+|};
 
 export type RosMsgDefinition = {|
   name?: string,
