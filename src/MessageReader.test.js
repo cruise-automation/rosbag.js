@@ -504,4 +504,14 @@ describe("MessageReader", () => {
       }).toThrow();
     });
   });
+
+  it("allows generating a reader from passed-in parser code", () => {
+    const messageDefinition = parseMessageDefinition("string name");
+    const reader1 = new MessageReader(messageDefinition);
+    const reader2 = new MessageReader(messageDefinition, { parserCode: reader1.parserCode });
+
+    const buff = getStringBuffer("test");
+    const output = reader2.readMessage(buff);
+    expect(output).toEqual({ name: "test" });
+  });
 });

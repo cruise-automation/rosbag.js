@@ -198,7 +198,7 @@ const findTypeByName = (types: RosMsgDefinition[], name = ""): NamedRosMsgDefini
 
 const friendlyName = (name: string) => name.replace(/\//g, "_");
 
-const createParser = (types: RosMsgDefinition[], freeze: boolean) => {
+const generateParserCode = (types: RosMsgDefinition[], freeze: boolean): string => {
   const unnamedTypes = types.filter((type) => !type.name);
   if (unnamedTypes.length !== 1) {
     throw new Error("multiple unnamed types");
@@ -273,9 +273,13 @@ const createParser = (types: RosMsgDefinition[], freeze: boolean) => {
     return new Record(reader);
   };`;
 
+  return `(function buildReader() { ${js} })()`;
+};
+
+function createParser(js: string) {
   let _read: (reader: StandardTypeReader) => any;
   try {
-    _read = eval(`(function buildReader() { ${js} })()`);
+    _read = eval(js);
   } catch (e) {
     console.error("error building parser:", js); // eslint-disable-line no-console
     throw e;
@@ -285,15 +289,16 @@ const createParser = (types: RosMsgDefinition[], freeze: boolean) => {
     const reader = new StandardTypeReader(buffer);
     return _read(reader);
   };
-};
+}
 
 export class MessageReader {
+  parserCode: string;
   reader: (buffer: Buffer) => any;
 
   // takes an object message definition and returns
   // a message reader which can be used to read messages based
   // on the message definition
-  constructor(definitions: RosMsgDefinition[], options: { freeze?: ?boolean } = {}) {
+  constructor(definitions: RosMsgDefinition[], options: { freeze?: ?boolean, parserCode?: ?string } = {}) {
     let parsedDefinitions = definitions;
     if (typeof parsedDefinitions === "string") {
       // eslint-disable-next-line no-console
@@ -302,7 +307,18 @@ export class MessageReader {
       );
       parsedDefinitions = parseMessageDefinition(parsedDefinitions);
     }
-    this.reader = createParser(parsedDefinitions, !!options.freeze);
+    if (options.parserCode) {
+      if (options.freeze) {
+        // eslint-disable-next-line no-console
+        console.warn(
+          "Cannot pass options.freeze and options.parserCode to MessageReader: parserCode generation depends on options.freeze"
+        );
+      }
+      this.parserCode = options.parserCode;
+    } else {
+      this.parserCode = generateParserCode(parsedDefinitions, !!options.freeze);
+    }
+    this.reader = createParser(this.parserCode);
   }
 
   readMessage(buffer: Buffer) {
