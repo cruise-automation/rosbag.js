@@ -7,15 +7,7 @@
 // @flow
 
 import { Buffer } from "buffer";
-import {
-  MessageReader,
-  MessageWriter,
-  parseMessageDefinition,
-  rosPrimitiveTypes,
-  TimeUtil,
-  extractFields,
-  extractTime,
-} from "../index";
+import { parseMessageDefinition, rosPrimitiveTypes, TimeUtil, extractFields, extractTime } from "../index";
 import { type Callback } from "../types";
 import Bag from "../bag";
 import BagReader from "../BagReader";
@@ -70,15 +62,7 @@ const open = async (file: File | string) => {
 Bag.open = open;
 
 export * from "../types";
-export {
-  TimeUtil,
-  BagReader,
-  MessageReader,
-  MessageWriter,
-  open,
-  parseMessageDefinition,
-  rosPrimitiveTypes,
-  extractFields,
-  extractTime,
-};
+export * from "../MessageReader";
+export * from "../MessageWriter";
+export { TimeUtil, BagReader, open, parseMessageDefinition, rosPrimitiveTypes, extractFields, extractTime };
 export default Bag;

@@ -6,8 +6,8 @@
 
 // @flow
 
-import { MessageReader } from "./MessageReader";
-import { MessageWriter } from "./MessageWriter";
+import { createMessageReader } from "./MessageReader";
+import { createMessageWriter } from "./MessageWriter";
 import { parseMessageDefinition } from "./parseMessageDefinition";
 
 const getStringBuffer = (str: string) => {
@@ -24,7 +24,7 @@ describe("MessageWriter", () => {
       const message = { foo: expected };
       cb(buffer);
       it(`writes message ${JSON.stringify(message)} containing ${type}`, () => {
-        const writer = new MessageWriter(parseMessageDefinition(`${type} foo`));
+        const writer = createMessageWriter(parseMessageDefinition(`${type} foo`));
         expect(
           writer.writeMessage({
             foo: expected,
@@ -43,13 +43,13 @@ describe("MessageWriter", () => {
     testNum("float64", 8, 0xdeadbeefcafebabe, (buffer) => buffer.writeDoubleLE(0xdeadbeefcafebabe, 0));
 
     it("writes strings", () => {
-      const writer = new MessageWriter(parseMessageDefinition("string name"));
+      const writer = createMessageWriter(parseMessageDefinition("string name"));
       const buff = getStringBuffer("test");
       expect(writer.writeMessage({ name: "test" })).toEqual(buff);
     });
 
     it("writes JSON", () => {
-      const writer = new MessageWriter(parseMessageDefinition("#pragma rosbag_parse_json\nstring dummy"));
+      const writer = createMessageWriter(parseMessageDefinition("#pragma rosbag_parse_json\nstring dummy"));
       const buff = getStringBuffer('{"foo":123,"bar":{"nestedFoo":456}}');
       expect(
         writer.writeMessage({
@@ -57,7 +57,7 @@ describe("MessageWriter", () => {
         })
       ).toEqual(buff);
 
-      const writerWithNestedComplexType = new MessageWriter(
+      const writerWithNestedComplexType = createMessageWriter(
         parseMessageDefinition(`#pragma rosbag_parse_json
       string dummy
       Account account
@@ -74,7 +74,7 @@ describe("MessageWriter", () => {
         })
       ).toEqual(Buffer.concat([buff, getStringBuffer('{"first":"First","last":"Last"}}'), new Buffer([100, 0x00])]));
 
-      const writerWithTrailingPragmaComment = new MessageWriter(
+      const writerWithTrailingPragmaComment = createMessageWriter(
         parseMessageDefinition(`#pragma rosbag_parse_json
       string dummy
       Account account
@@ -94,7 +94,7 @@ describe("MessageWriter", () => {
     });
 
     it("writes time", () => {
-      const writer = new MessageWriter(parseMessageDefinition("time right_now"));
+      const writer = createMessageWriter(parseMessageDefinition("time right_now"));
       const buff = new Buffer(8);
       const now = new Date();
       now.setSeconds(31);
@@ -116,7 +116,7 @@ describe("MessageWriter", () => {
 
   describe("array", () => {
     it("writes variable length string array", () => {
-      const writer = new MessageWriter(parseMessageDefinition("string[] names"));
+      const writer = createMessageWriter(parseMessageDefinition("string[] names"));
       const buffer = Buffer.concat([
         // variable length array has int32 as first entry
         new Buffer([0x03, 0x00, 0x00, 0x00]),
@@ -132,9 +132,9 @@ describe("MessageWriter", () => {
     });
 
     it("writes fixed length arrays", () => {
-      const writer1 = new MessageWriter(parseMessageDefinition("string[1] names"));
-      const writer2 = new MessageWriter(parseMessageDefinition("string[2] names"));
-      const writer3 = new MessageWriter(parseMessageDefinition("string[3] names"));
+      const writer1 = createMessageWriter(parseMessageDefinition("string[1] names"));
+      const writer2 = createMessageWriter(parseMessageDefinition("string[2] names"));
+      const writer3 = createMessageWriter(parseMessageDefinition("string[3] names"));
       expect(
         writer1.writeMessage({
           names: ["foo", "bar", "baz"],
@@ -153,7 +153,7 @@ describe("MessageWriter", () => {
     });
 
     it("does not write any data for a zero length array", () => {
-      const writer = new MessageWriter(parseMessageDefinition("string[] names"));
+      const writer = createMessageWriter(parseMessageDefinition("string[] names"));
       const buffer = Buffer.concat([
         // variable length array has int32 as first entry
         new Buffer([0x00, 0x00, 0x00, 0x00]),
@@ -165,7 +165,7 @@ describe("MessageWriter", () => {
 
     describe("typed arrays", () => {
       it("writes a uint8[]", () => {
-        const writer = new MessageWriter(parseMessageDefinition("uint8[] values\nuint8 after"));
+        const writer = createMessageWriter(parseMessageDefinition("uint8[] values\nuint8 after"));
         const message = { values: Uint8Array.from([1, 2, 3]), after: 4 };
         const result = writer.writeMessage(message);
         const buffer = Buffer.from([0x03, 0x00, 0x00, 0x00, 0x01, 0x02, 0x03, 0x04]);
@@ -173,7 +173,7 @@ describe("MessageWriter", () => {
       });
 
       it("writes a uint8[] with a fixed length", () => {
-        const writer = new MessageWriter(parseMessageDefinition("uint8[3] values\nuint8 after"));
+        const writer = createMessageWriter(parseMessageDefinition("uint8[3] values\nuint8 after"));
         const message = { values: Uint8Array.from([1, 2, 3]), after: 4 };
         const result = writer.writeMessage(message);
         const buffer = Buffer.from([0x01, 0x02, 0x03, 0x04]);
@@ -184,7 +184,7 @@ describe("MessageWriter", () => {
 
   describe("complex types", () => {
     it("writes single complex type", () => {
-      const writer = new MessageWriter(parseMessageDefinition("string firstName \n string lastName\nuint16 age"));
+      const writer = createMessageWriter(parseMessageDefinition("string firstName \n string lastName\nuint16 age"));
       const buffer = Buffer.concat([getStringBuffer("foo"), getStringBuffer("bar"), new Buffer([0x05, 0x00])]);
       const message = {
         firstName: "foo",
@@ -203,7 +203,7 @@ describe("MessageWriter", () => {
       string name
       uint16 id
       `;
-      const writer = new MessageWriter(parseMessageDefinition(messageDefinition));
+      const writer = createMessageWriter(parseMessageDefinition(messageDefinition));
       const buffer = Buffer.concat([getStringBuffer("foo"), getStringBuffer("bar"), new Buffer([100, 0x00])]);
       const message = {
         username: "foo",
@@ -224,7 +224,7 @@ describe("MessageWriter", () => {
       string name
       uint16 id
       `;
-      const writer = new MessageWriter(parseMessageDefinition(messageDefinition));
+      const writer = createMessageWriter(parseMessageDefinition(messageDefinition));
       const buffer = Buffer.concat([
         getStringBuffer("foo"),
         // uint32LE length of array (2)
@@ -266,7 +266,7 @@ describe("MessageWriter", () => {
       uint8 id
       `;
 
-      const writer = new MessageWriter(parseMessageDefinition(messageDefinition));
+      const writer = createMessageWriter(parseMessageDefinition(messageDefinition));
       const buffer = Buffer.concat([
         getStringBuffer("foo"),
         // uint32LE length of Account array (2)
@@ -358,7 +358,7 @@ describe("MessageWriter", () => {
       string name # a description of the test/component reporting`;
 
     it("writes bytes and constants", () => {
-      const writer = new MessageWriter(parseMessageDefinition(withBytesAndBools));
+      const writer = createMessageWriter(parseMessageDefinition(withBytesAndBools));
       const buffer = Buffer.concat([Buffer.from([0x01]), Buffer.from([0x00]), getStringBuffer("foo")]);
 
       const message = {
@@ -421,7 +421,7 @@ describe("MessageWriter", () => {
         ],
       };
 
-      const writer = new MessageWriter(parseMessageDefinition(messageDefinition));
+      const writer = createMessageWriter(parseMessageDefinition(messageDefinition));
       expect(writer.calculateBufferSize(message)).toEqual(108);
     });
   });
@@ -475,8 +475,8 @@ describe("MessageWriter", () => {
         ],
       };
 
-      const reader = new MessageReader(parseMessageDefinition(messageDefinition));
-      const writer = new MessageWriter(parseMessageDefinition(messageDefinition));
+      const reader = createMessageReader(parseMessageDefinition(messageDefinition));
+      const writer = createMessageWriter(parseMessageDefinition(messageDefinition));
       expect(reader.readMessage(writer.writeMessage(message))).toEqual(message);
     });
   });

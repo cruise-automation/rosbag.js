@@ -9,7 +9,7 @@
 import int53 from "int53";
 
 import { extractFields, extractTime } from "./fields";
-import { MessageReader } from "./MessageReader";
+import { type MessageReader } from "./MessageReader";
 import type { Time } from "./types";
 
 const readUInt64LE = (buffer: Buffer) => {

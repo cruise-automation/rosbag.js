@@ -9,7 +9,6 @@
 import int53 from "int53";
 import { extractTime } from "./fields";
 import type { RosMsgDefinition, NamedRosMsgDefinition } from "./types";
-import { parseMessageDefinition } from "./parseMessageDefinition";
 
 type TypedArrayConstructor = (
   buffer: ArrayBuffer,
@@ -291,37 +290,23 @@ function createParser(js: string) {
   };
 }
 
-export class MessageReader {
-  parserCode: string;
-  reader: (buffer: Buffer) => any;
+export type MessageReader = {|
+  parserCode: string,
+  readMessage: (buffer: Buffer) => any,
+|};
 
-  // takes an object message definition and returns
-  // a message reader which can be used to read messages based
-  // on the message definition
-  constructor(definitions: RosMsgDefinition[], options: { freeze?: ?boolean, parserCode?: ?string } = {}) {
-    let parsedDefinitions = definitions;
-    if (typeof parsedDefinitions === "string") {
-      // eslint-disable-next-line no-console
-      console.warn(
-        "Passing string message defintions to MessageReader is deprecated. Instead call `parseMessageDefinition` on it and pass in the resulting parsed message definition object."
-      );
-      parsedDefinitions = parseMessageDefinition(parsedDefinitions);
-    }
-    if (options.parserCode) {
-      if (options.freeze) {
-        // eslint-disable-next-line no-console
-        console.warn(
-          "Cannot pass options.freeze and options.parserCode to MessageReader: parserCode generation depends on options.freeze"
-        );
-      }
-      this.parserCode = options.parserCode;
-    } else {
-      this.parserCode = generateParserCode(parsedDefinitions, !!options.freeze);
-    }
-    this.reader = createParser(this.parserCode);
-  }
+export function createMessageReaderFromParserCode(parserCode: string): MessageReader {
+  const readMessage = createParser(parserCode);
+  return {
+    parserCode,
+    readMessage,
+  };
+}
 
-  readMessage(buffer: Buffer) {
-    return this.reader(buffer);
-  }
+export function createMessageReader(
+  definitions: RosMsgDefinition[],
+  options: { freeze?: ?boolean } = {}
+): MessageReader {
+  const parserCode = generateParserCode(definitions, !!options.freeze);
+  return createMessageReaderFromParserCode(parserCode);
 }

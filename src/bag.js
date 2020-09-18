@@ -7,7 +7,7 @@
 // @flow
 
 import BagReader, { type Decompress } from "./BagReader";
-import { MessageReader } from "./MessageReader";
+import { createMessageReader } from "./MessageReader";
 import ReadResult from "./ReadResult";
 import { BagHeader, ChunkInfo, Connection, MessageData } from "./record";
 import type { Time } from "./types";
@@ -106,7 +106,7 @@ export default class Bag {
         // lazily create a reader for this connection if it doesn't exist
         connection.reader =
           connection.reader ||
-          new MessageReader(parseMessageDefinition(connection.messageDefinition), { freeze: opts.freeze });
+          createMessageReader(parseMessageDefinition(connection.messageDefinition), { freeze: opts.freeze });
         message = connection.reader.readMessage(data);
       }
       return new ReadResult(topic, message, timestamp, data, chunkOffset, chunkInfos.length, opts.freeze);

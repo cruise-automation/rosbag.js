@@ -301,31 +301,30 @@ function createWriterAndSizeCalculator(types: RosMsgDefinition[]): WriterAndSize
   };
 }
 
-export class MessageWriter {
-  writer: (message: any, bufferToWrite: Buffer) => Buffer;
-  bufferSizeCalculator: (message: any) => number;
-
-  // takes an object string message definition and returns
-  // a message writer which can be used to write messages based
-  // on the message definition
-  constructor(definitions: RosMsgDefinition[]) {
-    const { writer, bufferSizeCalculator } = createWriterAndSizeCalculator(definitions);
-    this.writer = writer;
-    this.bufferSizeCalculator = bufferSizeCalculator;
-  }
-
+export type MessageWriter = {|
   // Calculates the buffer size needed to write this message in bytes.
-  calculateBufferSize(message: any) {
-    return this.bufferSizeCalculator(message);
-  }
-
+  calculateBufferSize: (message: any) => number,
   // bufferToWrite is optional - if it is not provided, a buffer will be generated.
-  writeMessage(message: any, bufferToWrite?: Buffer) {
+  writeMessage: (message: any, bufferToWrite?: Buffer) => Buffer,
+|};
+
+// takes an object string message definition and returns
+// a message writer which can be used to write messages based
+// on the message definition
+export function createMessageWriter(definitions: RosMsgDefinition[]) {
+  const { writer, bufferSizeCalculator } = createWriterAndSizeCalculator(definitions);
+
+  function writeMessage(message: any, bufferToWrite?: Buffer) {
     let buffer = bufferToWrite;
     if (!buffer) {
-      const bufferSize = this.calculateBufferSize(message);
+      const bufferSize = bufferSizeCalculator(message);
       buffer = Buffer.allocUnsafe(bufferSize);
     }
-    return this.writer(message, buffer);
+    return writer(message, buffer);
   }
+
+  return {
+    writeMessage,
+    calculateBufferSize: bufferSizeCalculator,
+  };
 }
