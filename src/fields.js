@@ -11,6 +11,7 @@ import type { Time } from "./types";
 // reads through a buffer and extracts { [key: string]: value: string }
 // pairs - the buffer is expected to have length prefixed utf8 strings
 // with a '=' separating the key and value
+const EQUALS_CHARCODE = "=".charCodeAt(0);
 export function extractFields(buffer: Buffer) {
   if (buffer.length < 4) {
     throw new Error("Header fields are truncated.");
@@ -27,8 +28,10 @@ export function extractFields(buffer: Buffer) {
       throw new Error("Header fields are corrupt.");
     }
 
+    // Passing a number into "indexOf" explicitly to avoid Buffer polyfill
+    // slow path. See issue #87.
     const field = buffer.slice(i, i + length);
-    const index = field.indexOf("=");
+    const index = field.indexOf(EQUALS_CHARCODE);
     if (index === -1) {
       throw new Error("Header field is missing equals sign.");
     }
