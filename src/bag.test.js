@@ -211,6 +211,23 @@ describe("rosbag - high-level api", () => {
     expect(messages).toHaveLength(9);
   });
 
+  it("reads at consumer speed and abort reading on demand", async () => {
+    const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+    const opts = { topics: ["/tf"] };
+    const bag = await Bag.open(getFixture());
+    const messages = bag.iterateMessages(opts || {});
+    const r1 = await messages.next();
+    expect(r1.value.timestamp.nsec).toBe(56251251);
+    expect(r1.done).toBe(false);
+    await delay(100);
+    const r2 = await messages.next();
+    expect(r2.value.timestamp.nsec).toBe(56262848);
+    expect(r2.done).toBe(false);
+    await delay(100);
+    const r3 = await messages.next(true);
+    expect(r3.done).toBe(true);
+  });
+
   describe("compression", () => {
     it("throws if compression scheme is not registered", async () => {
       let errorThrown = false;

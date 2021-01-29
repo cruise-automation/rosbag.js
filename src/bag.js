@@ -74,6 +74,12 @@ export default class Bag {
   }
 
   async readMessages(opts: ReadOptions, callback: (msg: ReadResult<any>) => void) {
+    for await (const msg of this.iterateMessages(opts)) {
+      callback(msg);
+    }
+  }
+
+  async *iterateMessages(opts: ReadOptions): AsyncGenerator<ReadResult<any>, void, number> {
     const connections = this.connections;
 
     const startTime = opts.startTime || { sec: 0, nsec: 0 };
@@ -121,7 +127,9 @@ export default class Bag {
         endTime,
         decompress
       );
-      messages.forEach((msg) => callback(parseMsg(msg, i)));
+      for (const msg of messages) {
+        if (yield parseMsg(msg, i)) return;
+      }
     }
   }
 }
