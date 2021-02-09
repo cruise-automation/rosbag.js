@@ -1,0 +1,22 @@
+{
+  "compilerOptions": {
+    "outDir": "./build",
+    "rootDir": ".",
+    "target": "es2019",
+    "baseUrl": ".",
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "lib": ["es2019", "DOM"],
+    "noUnusedLocals": true,
+    "noImplicitAny": true,
+    "noImplicitReturns": true,
+    "experimentalDecorators": true,
+    "allowUnreachableCode": false,
+    "strict": true,
+    "typeRoots": ["./node_modules/@types", "./typings"]
+  },
+  "include": ["src/**/*"],
+  "exclude": ["node_modules"]
+}

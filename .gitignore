@@ -4,3 +4,4 @@ build
 dist
 junit.xml
 .DS_Store
+docs
