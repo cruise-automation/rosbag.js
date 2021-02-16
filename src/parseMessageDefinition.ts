@@ -83,7 +83,7 @@ const buildType = (lines: { isJson: boolean; line: string }[]): RosMsgDefinition
         throw new Error("Malformed line: " + line);
       }
       let match: string = matches[2];
-      let value: unknown = match;
+      let value: string | number | boolean = match;
       if (type !== "string") {
         // handle special case of python bool values
         match = match.replace(/True/gi, "true");
