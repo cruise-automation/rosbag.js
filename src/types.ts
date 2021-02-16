@@ -41,7 +41,7 @@ export type RosMsgField = {
 
   // For constants
   isConstant?: boolean;
-  value?: unknown;
+  value?: string | number | boolean | undefined;
 };
 
 export type RosMsgDefinition = {
