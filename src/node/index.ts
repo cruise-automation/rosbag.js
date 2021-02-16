@@ -6,18 +6,15 @@
 
 import { Buffer } from "buffer";
 import * as fs from "fs";
-import {
-  MessageReader,
-  MessageWriter,
-  parseMessageDefinition,
-  rosPrimitiveTypes,
-  TimeUtil,
-  extractFields,
-  extractTime,
-} from "../index";
+
 import { Callback } from "../types";
 import Bag from "../bag";
 import BagReader from "../BagReader";
+import { extractFields, extractTime } from "../fields";
+import { MessageReader } from "../MessageReader";
+import { MessageWriter } from "../MessageWriter";
+import { parseMessageDefinition, rosPrimitiveTypes } from "../parseMessageDefinition";
+import * as TimeUtil from "../TimeUtil";
 
 // reader using nodejs fs api
 export class Reader {

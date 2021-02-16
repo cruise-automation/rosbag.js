@@ -1,11 +1,12 @@
 {
   "compilerOptions": {
-    "outDir": "./build",
-    "rootDir": ".",
+    "outDir": "./dist",
+    "rootDir": "src",
     "target": "es2019",
     "baseUrl": ".",
     "module": "commonjs",
     "moduleResolution": "node",
+    "declaration": true,
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
     "lib": ["es2019", "DOM"],

@@ -5,18 +5,15 @@
 // You may not use this file except in compliance with the License.
 
 import { Buffer } from "buffer";
-import {
-  MessageReader,
-  MessageWriter,
-  parseMessageDefinition,
-  rosPrimitiveTypes,
-  TimeUtil,
-  extractFields,
-  extractTime,
-} from "../index";
+
 import { Callback } from "../types";
 import Bag from "../bag";
 import BagReader from "../BagReader";
+import { extractFields, extractTime } from "../fields";
+import { MessageReader } from "../MessageReader";
+import { MessageWriter } from "../MessageWriter";
+import { parseMessageDefinition, rosPrimitiveTypes } from "../parseMessageDefinition";
+import * as TimeUtil from "../TimeUtil";
 
 // browser reader for Blob|File objects
 export class Reader {

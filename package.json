@@ -11,10 +11,9 @@
   "engines": {
     "node": ">=8.0.0"
   },
-  "main": "src/node/index.ts",
-  "browser": "src/web/index.ts",
+  "main": "dist/node/index.js",
+  "browser": "dist/web/index.js",
   "files": [
-    "src",
     "dist",
     "LICENSE",
     "README.md"
@@ -24,11 +23,9 @@
     "lint": "eslint . --ext .ts",
     "lint:fix": "yarn lint --fix",
     "test": "yarn run jest --verbose --testPathIgnorePatterns 'web'",
-    "clean": "rm -rf build dist",
+    "clean": "rm -rf dist",
     "docs": "yarn typedoc",
-    "build": "yarn run clean && mkdir -p dist && yarn run flow && yarn run build-node && yarn run build-web && yarn run flow-copy-source src dist",
-    "build-node": "cross-env ROSBAG_TARGET=node webpack --mode development",
-    "build-web": "cross-env ROSBAG_TARGET=web webpack --mode development"
+    "build": "yarn clean && tsc -p tsconfig.dist.json"
   },
   "devDependencies": {
     "@types/heap": "0.2.28",
