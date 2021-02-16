@@ -40,7 +40,7 @@ export class Reader {
     reader.onerror = function () {
       reader.onload = null;
       reader.onerror = null;
-      cb(reader.error ?? new Error('Unknown FileReader error'));
+      cb(reader.error ?? new Error("Unknown FileReader error"));
     };
     reader.readAsArrayBuffer(this._blob.slice(offset, offset + length));
   }
