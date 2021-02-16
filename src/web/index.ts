@@ -35,12 +35,12 @@ export class Reader {
     reader.onload = function () {
       reader.onload = null;
       reader.onerror = null;
-      setImmediate(cb, null, Buffer.from(reader.result as ArrayBuffer));
+      cb(null, Buffer.from(reader.result as ArrayBuffer));
     };
     reader.onerror = function () {
       reader.onload = null;
       reader.onerror = null;
-      setImmediate(cb, reader.error);
+      cb(reader.error ?? new Error('Unknown FileReader error'));
     };
     reader.readAsArrayBuffer(this._blob.slice(offset, offset + length));
   }
