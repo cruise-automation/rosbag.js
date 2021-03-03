@@ -23,7 +23,7 @@
     "lint": "eslint . --ext .ts",
     "lint:fix": "yarn lint --fix",
     "test": "yarn run jest --verbose --testPathIgnorePatterns 'web'",
-    "clean": "rm -rf dist",
+    "clean": "rimraf dist",
     "docs": "yarn typedoc",
     "build": "yarn clean && tsc -p tsconfig.dist.json"
   },
@@ -42,6 +42,7 @@
     "jest-cli": "26.6.3",
     "lz4js": "0.2.0",
     "prettier": "2.2.1",
+    "rimraf": "3.0.2",
     "ts-jest": "26.5.0",
     "typedoc": "0.20.23",
     "typescript": "4.1.3"
