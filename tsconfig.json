@@ -10,6 +10,7 @@
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
     "lib": ["es2019", "DOM"],
+    "newLine": "lf",
     "noUnusedLocals": true,
     "noImplicitAny": true,
     "noImplicitReturns": true,
