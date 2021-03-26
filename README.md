@@ -53,6 +53,25 @@ async function logMessagesFromFooBar() {
 logMessagesFromFooBar();
 ```
 
+If you're using `rosbag` in the web (or importing `rosbag/dist/web/index.js` directly) modify the lines
+
+```js
+  // open a new bag at a given file location:
+  const bag = await open('../path/to/ros.bag');
+```
+
+to
+
+```js
+  // get a file blob from the file location:
+  const blob = await fetch('../path/to/ros.bag').then((r) => r.blob())
+
+  // open the file blob:
+  const bag = await open(blob)
+```
+
+The rest remains the same.
+
 ## API
 
 ### Opening a new rosbag reader
