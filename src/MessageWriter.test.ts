@@ -8,7 +8,7 @@ import { MessageReader } from "./MessageReader";
 import { MessageWriter } from "./MessageWriter";
 import { parseMessageDefinition } from "./parseMessageDefinition";
 
-const getStringBuffer = (str: string) => {
+const getStringBuffer = (str: string): Buffer => {
   const data = Buffer.from(str, "utf8");
   const len = Buffer.alloc(4);
   len.writeInt32LE(data.byteLength, 0);
@@ -17,7 +17,7 @@ const getStringBuffer = (str: string) => {
 
 describe("MessageWriter", () => {
   describe("simple type", () => {
-    const testNum = (type: string, size: number, expected: number, cb: (buffer: Buffer) => void) => {
+    const testNum = (type: string, size: number, expected: number, cb: (buffer: Buffer) => void): void => {
       const buffer = Buffer.alloc(size);
       const message = { foo: expected };
       cb(buffer);
@@ -355,7 +355,7 @@ describe("MessageWriter", () => {
     });
   });
 
-  describe("calculateBufferSize", () => {
+  describe("calculateByteSize", () => {
     it("with a complex type", () => {
       const messageDefinition = `
       string username
@@ -404,7 +404,7 @@ describe("MessageWriter", () => {
       };
 
       const writer = new MessageWriter(parseMessageDefinition(messageDefinition));
-      expect(writer.calculateBufferSize(message)).toEqual(108);
+      expect(writer.calculateByteSize(message)).toEqual(108);
     });
   });
 
@@ -459,7 +459,7 @@ describe("MessageWriter", () => {
 
       const reader = new MessageReader(parseMessageDefinition(messageDefinition));
       const writer = new MessageWriter(parseMessageDefinition(messageDefinition));
-      expect(reader.readMessage(writer.writeMessage(message))).toEqual(message);
+      expect(reader.readMessage(Buffer.from(writer.writeMessage(message)))).toEqual(message);
     });
   });
 });

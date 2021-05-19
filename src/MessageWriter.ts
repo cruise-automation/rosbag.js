@@ -4,164 +4,175 @@
 // found in the LICENSE file in the root directory of this source tree.
 // You may not use this file except in compliance with the License.
 
-import int53 from "int53";
 import { Time, RosMsgDefinition, NamedRosMsgDefinition } from "./types";
 
-// write a Time object to a buffer.
-function writeTime(time: Time, buffer: Buffer, offset: number) {
-  buffer.writeUInt32LE(time.sec, offset);
-  buffer.writeUInt32LE(time.nsec, offset + 4);
+import { TextEncoder } from "web-encoding";
+
+// write a Time object to a DataView.
+function writeTime(time: Time, view: DataView, offset: number): void {
+  view.setUint32(time.sec, offset, true);
+  view.setUint32(time.nsec, offset + 4, true);
 }
 
 class StandardTypeOffsetCalculator {
   offset = 0;
 
   // Returns the current offset and increments the next offset by `byteCount`.
-  _incrementAndReturn(byteCount: number) {
+  _incrementAndReturn(byteCount: number): number {
     const offset = this.offset;
     this.offset += byteCount;
     return offset;
   }
 
   // These are not actually used in the StandardTypeWriter, so they must be kept in sync with those implementations.
-  json(value: unknown) {
+  json(value: unknown): number {
     return this.string(JSON.stringify(value));
   }
 
   // The following are used in the StandardTypeWriter.
-  string(value: string) {
+  string(value: string): number {
     // int32 length
     const length = 4 + value.length;
     return this._incrementAndReturn(length);
   }
 
-  bool() {
+  bool(): number {
     return this.uint8();
   }
 
-  int8() {
+  int8(): number {
     return this._incrementAndReturn(1);
   }
 
-  uint8() {
+  uint8(): number {
     return this._incrementAndReturn(1);
   }
 
-  int16() {
+  int16(): number {
     return this._incrementAndReturn(2);
   }
 
-  uint16() {
+  uint16(): number {
     return this._incrementAndReturn(2);
   }
 
-  int32() {
+  int32(): number {
     return this._incrementAndReturn(4);
   }
 
-  uint32() {
+  uint32(): number {
     return this._incrementAndReturn(4);
   }
 
-  float32() {
+  float32(): number {
     return this._incrementAndReturn(4);
   }
 
-  float64() {
+  float64(): number {
     return this._incrementAndReturn(8);
   }
 
-  int64() {
+  int64(): number {
     return this._incrementAndReturn(8);
   }
 
-  uint64() {
+  uint64(): number {
     return this._incrementAndReturn(8);
   }
 
-  time() {
+  time(): number {
     return this._incrementAndReturn(8);
   }
 
-  duration() {
+  duration(): number {
     return this._incrementAndReturn(8);
   }
 }
 
-// this has hard-coded buffer writing functions for each
+// this has hard-coded data writing functions for each
 // of the standard message types http://docs.ros.org/api/std_msgs/html/index-msg.html
 // eventually custom types decompose into these standard types
 class StandardTypeWriter {
-  buffer: Buffer;
+  data: Uint8Array;
   view: DataView;
+  textEncoder?: TextEncoder;
   offsetCalculator: StandardTypeOffsetCalculator;
 
-  constructor(buffer: Buffer) {
-    this.buffer = buffer;
-    this.view = new DataView(buffer.buffer, buffer.byteOffset);
+  constructor(data: Uint8Array) {
+    this.data = data;
+    this.view = new DataView(data.buffer, data.byteOffset);
     this.offsetCalculator = new StandardTypeOffsetCalculator();
   }
 
-  json(value: unknown) {
+  json(value: unknown): void {
     this.string(JSON.stringify(value));
   }
 
-  string(value: string) {
+  string(value: string): void {
+    if (this.textEncoder == undefined) {
+      this.textEncoder = new TextEncoder();
+    }
     const stringOffset = this.offsetCalculator.string(value);
     this.view.setInt32(stringOffset, value.length, true);
-    this.buffer.write(value, stringOffset + 4, value.length, "ascii");
+    this.textEncoder.encodeInto(value, this.data.subarray(stringOffset + 4));
   }
 
-  bool(value: boolean) {
+  bool(value: boolean): void {
     this.uint8(value ? 1 : 0);
   }
 
-  int8(value: number) {
+  int8(value: number): void {
     this.view.setInt8(this.offsetCalculator.int8(), value);
   }
 
-  uint8(value: number) {
+  uint8(value: number): void {
     this.view.setUint8(this.offsetCalculator.uint8(), value);
   }
 
-  int16(value: number) {
+  int16(value: number): void {
     this.view.setInt16(this.offsetCalculator.int16(), value, true);
   }
 
-  uint16(value: number) {
+  uint16(value: number): void {
     this.view.setUint16(this.offsetCalculator.uint16(), value, true);
   }
 
-  int32(value: number) {
+  int32(value: number): void {
     this.view.setInt32(this.offsetCalculator.int32(), value, true);
   }
 
-  uint32(value: number) {
+  uint32(value: number): void {
     this.view.setUint32(this.offsetCalculator.uint32(), value, true);
   }
 
-  float32(value: number) {
+  float32(value: number): void {
     this.view.setFloat32(this.offsetCalculator.float32(), value, true);
   }
 
-  float64(value: number) {
+  float64(value: number): void {
     this.view.setFloat64(this.offsetCalculator.float64(), value, true);
   }
 
-  int64(value: number) {
-    int53.writeInt64LE(value, this.buffer, this.offsetCalculator.int64());
+  int64(value: bigint | number): void {
+    if (typeof value !== "bigint") {
+      value = BigInt(value);
+    }
+    this.view.setBigInt64(this.offsetCalculator.int64(), value, true);
   }
 
-  uint64(value: number) {
-    int53.writeUInt64LE(value, this.buffer, this.offsetCalculator.uint64());
+  uint64(value: bigint | number): void {
+    if (typeof value !== "bigint") {
+      value = BigInt(value);
+    }
+    this.view.setBigUint64(this.offsetCalculator.uint64(), value, true);
   }
 
-  time(time: Time) {
-    writeTime(time, this.buffer, this.offsetCalculator.time());
+  time(time: Time): void {
+    writeTime(time, this.view, this.offsetCalculator.time());
   }
 
-  duration(time: Time) {
-    writeTime(time, this.buffer, this.offsetCalculator.time());
+  duration(time: Time): void {
+    writeTime(time, this.view, this.offsetCalculator.time());
   }
 }
 
@@ -188,10 +199,10 @@ const findTypeByName = (types: RosMsgDefinition[], name = ""): NamedRosMsgDefini
   return { ...matches[0], name: foundName };
 };
 
-const friendlyName = (name: string) => name.replace(/\//g, "_");
+const friendlyName = (name: string): string => name.replace(/\//g, "_");
 type WriterAndSizeCalculator = {
-  writer: (message: unknown, bufferToWrite: Buffer) => Buffer;
-  bufferSizeCalculator: (message: unknown) => number;
+  writer: (message: unknown, output: Uint8Array) => Uint8Array;
+  byteSizeCalculator: (message: unknown) => number;
 };
 
 function createWriterAndSizeCalculator(types: RosMsgDefinition[]): WriterAndSizeCalculator {
@@ -204,7 +215,10 @@ function createWriterAndSizeCalculator(types: RosMsgDefinition[]): WriterAndSize
 
   const namedTypes: NamedRosMsgDefinition[] = types.filter((type) => !!type.name) as NamedRosMsgDefinition[];
 
-  const constructorBody = (type: RosMsgDefinition | NamedRosMsgDefinition, argName: "offsetCalculator" | "writer") => {
+  const constructorBody = (
+    type: RosMsgDefinition | NamedRosMsgDefinition,
+    argName: "offsetCalculator" | "writer"
+  ): string | undefined => {
     const lines: string[] = [];
     type.definitions.forEach((def) => {
       if (def.isConstant) {
@@ -264,7 +278,7 @@ function createWriterAndSizeCalculator(types: RosMsgDefinition[]): WriterAndSize
   writerJs += `
   return function write(writer, message) {
     ${constructorBody(unnamedType, "writer")}
-    return writer.buffer;
+    return writer.data;
   };`;
   calculateSizeJs += `
   return function calculateSize(offsetCalculator, message) {
@@ -272,7 +286,7 @@ function createWriterAndSizeCalculator(types: RosMsgDefinition[]): WriterAndSize
     return offsetCalculator.offset;
   };`;
 
-  let _write: (writer: StandardTypeWriter, message: unknown) => Buffer;
+  let _write: (writer: StandardTypeWriter, message: unknown) => Uint8Array;
   let _calculateSize: (offsetCalculator: StandardTypeOffsetCalculator, message: unknown) => number;
   try {
     _write = eval(`(function buildWriter() { ${writerJs} })()`);
@@ -288,11 +302,11 @@ function createWriterAndSizeCalculator(types: RosMsgDefinition[]): WriterAndSize
   }
 
   return {
-    writer: function (message: unknown, buffer: Buffer): Buffer {
-      const writer = new StandardTypeWriter(buffer);
+    writer: function (message: unknown, data: Uint8Array): Uint8Array {
+      const writer = new StandardTypeWriter(data);
       return _write(writer, message);
     },
-    bufferSizeCalculator(message: unknown): number {
+    byteSizeCalculator(message: unknown): number {
       const offsetCalculator = new StandardTypeOffsetCalculator();
       return _calculateSize(offsetCalculator, message);
     },
@@ -300,30 +314,29 @@ function createWriterAndSizeCalculator(types: RosMsgDefinition[]): WriterAndSize
 }
 
 export class MessageWriter {
-  writer: (message: unknown, bufferToWrite: Buffer) => Buffer;
-  bufferSizeCalculator: (message: unknown) => number;
+  writer: (message: unknown, output: Uint8Array) => Uint8Array;
+  byteSizeCalculator: (message: unknown) => number;
 
   // takes an object string message definition and returns
   // a message writer which can be used to write messages based
   // on the message definition
   constructor(definitions: RosMsgDefinition[]) {
-    const { writer, bufferSizeCalculator } = createWriterAndSizeCalculator(definitions);
+    const { writer, byteSizeCalculator } = createWriterAndSizeCalculator(definitions);
     this.writer = writer;
-    this.bufferSizeCalculator = bufferSizeCalculator;
+    this.byteSizeCalculator = byteSizeCalculator;
   }
 
-  // Calculates the buffer size needed to write this message in bytes.
-  calculateBufferSize(message: unknown) {
-    return this.bufferSizeCalculator(message);
+  // Calculates the byte size needed to write this message in bytes.
+  calculateByteSize(message: unknown): number {
+    return this.byteSizeCalculator(message);
   }
 
-  // bufferToWrite is optional - if it is not provided, a buffer will be generated.
-  writeMessage(message: unknown, bufferToWrite?: Buffer) {
-    let buffer = bufferToWrite;
-    if (!buffer) {
-      const bufferSize = this.calculateBufferSize(message);
-      buffer = Buffer.allocUnsafe(bufferSize);
+  // output is optional - if it is not provided, a Uint8Array will be generated.
+  writeMessage(message: unknown, output?: Uint8Array): Uint8Array {
+    if (output == undefined) {
+      const dataSize = this.calculateByteSize(message);
+      output = new Uint8Array(dataSize);
     }
-    return this.writer(message, buffer);
+    return this.writer(message, output);
   }
 }
