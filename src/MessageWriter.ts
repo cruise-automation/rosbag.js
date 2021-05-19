@@ -10,8 +10,8 @@ import { TextEncoder } from "web-encoding";
 
 // write a Time object to a DataView.
 function writeTime(time: Time, view: DataView, offset: number): void {
-  view.setUint32(time.sec, offset, true);
-  view.setUint32(time.nsec, offset + 4, true);
+  view.setUint32(offset, time.sec, true);
+  view.setUint32(offset + 4, time.nsec, true);
 }
 
 class StandardTypeOffsetCalculator {
@@ -100,7 +100,7 @@ class StandardTypeWriter {
 
   constructor(data: Uint8Array) {
     this.data = data;
-    this.view = new DataView(data.buffer, data.byteOffset);
+    this.view = new DataView(data.buffer, data.byteOffset, data.byteLength);
     this.offsetCalculator = new StandardTypeOffsetCalculator();
   }
 
