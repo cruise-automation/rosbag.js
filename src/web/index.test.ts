@@ -1,3 +1,4 @@
+/** @jest-environment jsdom */
 // Copyright (c) 2018-present, Cruise LLC
 
 // This source code is licensed under the Apache License, Version 2.0,
@@ -5,7 +6,8 @@
 // You may not use this file except in compliance with the License.
 
 import assert from "assert";
-import { Reader, extractFields, extractTime } from ".";
+import Bag, { Reader, extractFields, extractTime } from ".";
+import * as fs from "fs";
 
 describe("browser reader", () => {
   it("works in node", (done) => {
@@ -20,6 +22,12 @@ describe("browser reader", () => {
       expect(buff[1]).toBe(0x01);
       done();
     });
+  });
+
+  it("propagates error for truncated bag", async () => {
+    const data = fs.readFileSync(`${__dirname}/../../fixtures/example.bag`);
+    const file = new File([data.slice(0, data.length - 1)], "example.bag");
+    await expect(Bag.open(file)).rejects.toThrow("out of range");
   });
 
   it("allows multiple read operations at once", async () => {
@@ -46,7 +54,7 @@ describe("browser reader", () => {
         setTimeout(() => {
           Object.defineProperty(this, "error", {
             get() {
-              return "fake error";
+              return new Error("fake error");
             },
           });
 

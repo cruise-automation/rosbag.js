@@ -111,23 +111,27 @@ export default class BagReader {
         return callback(null, { connections: [], chunkInfos: [] });
       }
 
-      const connections = this.readRecordsFromBuffer(buffer, connectionCount, fileOffset, Connection);
-      const connectionBlockLength = connections[connectionCount - 1].end! - connections[0].offset!;
-      const chunkInfos = this.readRecordsFromBuffer(
-        buffer.slice(connectionBlockLength),
-        chunkCount,
-        fileOffset + connectionBlockLength,
-        ChunkInfo
-      );
+      try {
+        const connections = this.readRecordsFromBuffer(buffer, connectionCount, fileOffset, Connection);
+        const connectionBlockLength = connections[connectionCount - 1].end! - connections[0].offset!;
+        const chunkInfos = this.readRecordsFromBuffer(
+          buffer.slice(connectionBlockLength),
+          chunkCount,
+          fileOffset + connectionBlockLength,
+          ChunkInfo
+        );
 
-      if (chunkCount > 0) {
-        for (let i = 0; i < chunkCount - 1; i++) {
-          chunkInfos[i].nextChunk = chunkInfos[i + 1];
+        if (chunkCount > 0) {
+          for (let i = 0; i < chunkCount - 1; i++) {
+            chunkInfos[i].nextChunk = chunkInfos[i + 1];
+          }
+          chunkInfos[chunkCount - 1].nextChunk = null;
         }
-        chunkInfos[chunkCount - 1].nextChunk = null;
-      }
 
-      return callback(null, { connections, chunkInfos });
+        return callback(null, { connections, chunkInfos });
+      } catch (error) {
+        return callback(error);
+      }
     });
   }
 
