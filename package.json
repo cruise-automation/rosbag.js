@@ -1,23 +1,22 @@
 {
-  "name": "rosbag",
+  "name": "@foxglove/rosbag",
   "version": "3.0.0",
   "license": "Apache-2.0",
-  "repository": "foxglove/rosbag.js",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/foxglove/rosbag.git"
+  },
   "dependencies": {
     "buffer": "6.0.3",
     "heap": "0.2.6",
     "int53": "1.0.0",
     "web-encoding": "1.1.5"
   },
-  "engines": {
-    "node": ">=12.0.0"
-  },
   "main": "dist/node/index.js",
   "browser": "dist/web/index.js",
   "files": [
     "dist",
-    "LICENSE",
-    "README.md"
+    "src"
   ],
   "scripts": {
     "prepack": "yarn run build",
