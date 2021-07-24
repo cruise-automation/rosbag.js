@@ -10,11 +10,6 @@ import { Buffer } from "buffer";
 
 import Bag from "../Bag";
 import BagReader from "../BagReader";
-import { MessageReader } from "../MessageReader";
-import { MessageWriter } from "../MessageWriter";
-import * as TimeUtil from "../TimeUtil";
-import { extractFields, extractTime } from "../fields";
-import { parseMessageDefinition, rosPrimitiveTypes } from "../parseMessageDefinition";
 import { Callback } from "../types";
 
 // browser reader for Blob|File objects
@@ -62,16 +57,6 @@ const open = async (file: File | string): Promise<Bag> => {
 };
 Bag.open = open;
 
-export * from "../types";
-export {
-  TimeUtil,
-  BagReader,
-  MessageReader,
-  MessageWriter,
-  open,
-  parseMessageDefinition,
-  rosPrimitiveTypes,
-  extractFields,
-  extractTime,
-};
+export type { Filelike } from "../types";
+export { BagReader, open };
 export default Bag;

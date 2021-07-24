@@ -6,13 +6,13 @@
 
 /* eslint-disable jest/no-conditional-expect */
 
+import { compare, fromDate } from "@foxglove/rostime";
 import compress from "compressjs";
 import fs from "fs";
 import lz4 from "lz4js";
 
 import { ReadOptions } from "./Bag";
 import ReadResult from "./ReadResult";
-import * as TimeUtil from "./TimeUtil";
 import Bag from "./node";
 
 const FILENAME = "example";
@@ -74,7 +74,7 @@ describe("rosbag - high-level api", () => {
     endTime: { sec: 1396293888, nsec: 846735850 },
   });
   testNumberOfMessages(FILENAME, 0, { endTime: { sec: 0, nsec: 0 } });
-  testNumberOfMessages(FILENAME, 0, { startTime: TimeUtil.fromDate(new Date()) });
+  testNumberOfMessages(FILENAME, 0, { startTime: fromDate(new Date()) });
   testNumberOfMessages(FILENAME, 0, { endTime: { sec: -1, nsec: -1 } });
 
   it("returns chunkOffset and totalChunks on read results", async () => {
@@ -200,7 +200,7 @@ describe("rosbag - high-level api", () => {
     const smallerMessages = messages.map(({ timestamp, chunkOffset }) => ({ timestamp, chunkOffset }));
     expect(smallerMessages[0]).toBeDefined();
     const sortedMessages = [...smallerMessages];
-    sortedMessages.sort((a, b) => TimeUtil.compare(a.timestamp, b.timestamp));
+    sortedMessages.sort((a, b) => compare(a.timestamp, b.timestamp));
     expect(smallerMessages).not.toEqual(sortedMessages);
 
     // And make sure that the chunks were also overlapping, ie. their chunksOffets are interlaced.

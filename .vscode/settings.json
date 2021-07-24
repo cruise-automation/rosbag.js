@@ -1,12 +1,10 @@
+// -*- jsonc -*-
 {
-  "[javascript]": {
-    "editor.formatOnSave": true
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": true
   },
-  "files.exclude": {
-    "node_modules": true,
-  },
-  "eslint.options": {
-    "reportUnusedDisableDirectives": true
-  },
-  "javascript.validate.enable": false
+  "editor.formatOnSave": true,
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "prettier.prettierPath": "./node_modules/prettier",
+  "files.eol": "\n"
 }

@@ -329,6 +329,23 @@
   resolved "https://registry.yarnpkg.com/@foxglove/eslint-plugin/-/eslint-plugin-0.13.0.tgz#2b92901bc803ea049d1df9dbbf85b29afd861942"
   integrity sha512-thIQmbG2ziu26bRafEQvi5Oik1mAJjimPIcdlpzV8yoyh4t0TOjStQT+8pPKU/mUrcCdmxSx0WI/zPLy99qjFQ==
 
+"@foxglove/rosmsg-serialization@1.0.1":
+  version "1.0.1"
+  resolved "https://registry.yarnpkg.com/@foxglove/rosmsg-serialization/-/rosmsg-serialization-1.0.1.tgz#eeeb0b83f7c88de8df375e9b3a01c60c184b5d5b"
+  integrity sha512-MNNl7qtIUCNHLSTl2K4h4eDecaqsESOy+m1yvXKAM0Fu+hr4U/JVvZ+1gW7oFuULroifOe6wzg4T0cd0JWYhdQ==
+  dependencies:
+    "@foxglove/rosmsg" "^1.0.0"
+
+"@foxglove/rosmsg@1.0.0", "@foxglove/rosmsg@^1.0.0":
+  version "1.0.0"
+  resolved "https://registry.yarnpkg.com/@foxglove/rosmsg/-/rosmsg-1.0.0.tgz#5416547030b4486469138f2b4127f7fc87985942"
+  integrity sha512-pY0k74xCGNoj0ls+gguLka5totRkwC6PRoI4NNJlTv3yI2V5A5enILlEq4PSl+5o11MtIY6G5gnmU5g+zEDDJw==
+
+"@foxglove/rostime@1.1.0":
+  version "1.1.0"
+  resolved "https://registry.yarnpkg.com/@foxglove/rostime/-/rostime-1.1.0.tgz#6a75ae46fdd17854a0033954f240bb6bda4b5e45"
+  integrity sha512-9f/oxnEgaOcXyAQEamv/GpbTnfg872XRxXY97xfWI5WweR2+ERqDswM6hQLLznIQWeTiKVAsc4DNwEQKBeUhhg==
+
 "@foxglove/tsconfig@1.0.0":
   version "1.0.0"
   resolved "https://registry.yarnpkg.com/@foxglove/tsconfig/-/tsconfig-1.0.0.tgz#bd097ec78c6120e32ec37e71c14fcc9b5cabf9ae"

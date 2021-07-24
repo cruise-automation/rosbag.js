@@ -11,11 +11,6 @@ import * as fs from "fs";
 
 import Bag from "../Bag";
 import BagReader from "../BagReader";
-import { MessageReader } from "../MessageReader";
-import { MessageWriter } from "../MessageWriter";
-import * as TimeUtil from "../TimeUtil";
-import { extractFields, extractTime } from "../fields";
-import { parseMessageDefinition, rosPrimitiveTypes } from "../parseMessageDefinition";
 import { Callback } from "../types";
 
 // reader using nodejs fs api
@@ -91,16 +86,6 @@ const open = async (filename: File | string): Promise<Bag> => {
 };
 Bag.open = open;
 
-export * from "../types";
-export {
-  TimeUtil,
-  BagReader,
-  MessageReader,
-  MessageWriter,
-  open,
-  parseMessageDefinition,
-  rosPrimitiveTypes,
-  extractFields,
-  extractTime,
-};
+export type { Filelike } from "../types";
+export { BagReader, open };
 export default Bag;

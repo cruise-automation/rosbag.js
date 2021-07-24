@@ -7,6 +7,9 @@
     "url": "https://github.com/foxglove/rosbag.git"
   },
   "dependencies": {
+    "@foxglove/rosmsg": "1.0.0",
+    "@foxglove/rosmsg-serialization": "1.0.1",
+    "@foxglove/rostime": "1.1.0",
     "buffer": "6.0.3",
     "heap": "0.2.6"
   },

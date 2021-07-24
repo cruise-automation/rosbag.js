@@ -4,9 +4,10 @@
 // found in the LICENSE file in the root directory of this source tree.
 // You may not use this file except in compliance with the License.
 
-import { MessageReader } from "./MessageReader";
+import { MessageReader } from "@foxglove/rosmsg-serialization";
+import { Time } from "@foxglove/rostime";
+
 import { extractFields, extractTime } from "./fields";
-import { Time } from "./types";
 
 export class Record {
   offset?: number;

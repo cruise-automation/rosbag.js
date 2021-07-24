@@ -4,13 +4,13 @@
 // found in the LICENSE file in the root directory of this source tree.
 // You may not use this file except in compliance with the License.
 
+import { parse as parseMessageDefinition } from "@foxglove/rosmsg";
+import { MessageReader } from "@foxglove/rosmsg-serialization";
+import { compare, Time } from "@foxglove/rostime";
+
 import BagReader, { Decompress } from "./BagReader";
-import { MessageReader } from "./MessageReader";
 import ReadResult from "./ReadResult";
-import * as TimeUtil from "./TimeUtil";
-import { parseMessageDefinition } from "./parseMessageDefinition";
 import { BagHeader, ChunkInfo, Connection, MessageData } from "./record";
-import { Time } from "./types";
 
 export type ReadOptions = {
   decompress?: Decompress;
@@ -18,7 +18,7 @@ export type ReadOptions = {
   topics?: string[];
   startTime?: Time;
   endTime?: Time;
-  freeze?: boolean | null | undefined;
+  freeze?: boolean;
 };
 
 // the high level rosbag interface
@@ -88,7 +88,7 @@ export default class Bag {
 
     // filter chunks to those which fall within the time range we're attempting to read
     const chunkInfos = this.chunkInfos.filter((info) => {
-      return TimeUtil.compare(info.startTime, endTime) <= 0 && TimeUtil.compare(startTime, info.endTime) <= 0;
+      return compare(info.startTime, endTime) <= 0 && compare(startTime, info.endTime) <= 0;
     });
 
     function parseMsg(msg: MessageData, chunkOffset: number): ReadResult<T> {

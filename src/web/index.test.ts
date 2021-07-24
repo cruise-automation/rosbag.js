@@ -7,7 +7,7 @@
 
 import * as fs from "fs";
 
-import Bag, { Reader, extractFields, extractTime } from ".";
+import Bag, { Reader } from ".";
 
 describe("browser reader", () => {
   it("works in node", async () => {
@@ -73,10 +73,5 @@ describe("browser reader", () => {
         resolve();
       });
     });
-  });
-
-  it("exposes other methods", () => {
-    expect(extractFields).toBeDefined();
-    expect(extractTime).toBeDefined();
   });
 });

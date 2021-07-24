@@ -7,7 +7,7 @@
 import fs from "fs";
 import path from "path";
 
-import { Reader, extractFields, extractTime } from ".";
+import { Reader } from ".";
 
 describe("node entrypoint", () => {
   describe("Reader", () => {
@@ -24,10 +24,5 @@ describe("node entrypoint", () => {
         reader.close(done);
       });
     });
-  });
-
-  it("exposes other methods", () => {
-    expect(extractFields).toBeDefined();
-    expect(extractTime).toBeDefined();
   });
 });

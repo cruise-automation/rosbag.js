@@ -4,7 +4,7 @@
 // found in the LICENSE file in the root directory of this source tree.
 // You may not use this file except in compliance with the License.
 
-import { Time } from "./types";
+import { Time } from "@foxglove/rostime";
 
 // represents a result passed to the callback from the high-level call:
 // bag.readMessages({ opts: any }, callback: (ReadResult) => void) => Promise<void>

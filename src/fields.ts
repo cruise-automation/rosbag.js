@@ -4,7 +4,7 @@
 // found in the LICENSE file in the root directory of this source tree.
 // You may not use this file except in compliance with the License.
 
-import { Time } from "./types";
+import { Time } from "@foxglove/rostime";
 
 // reads through a buffer and extracts { [key: string]: value: string }
 // pairs - the buffer is expected to have length prefixed utf8 strings

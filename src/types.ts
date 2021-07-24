@@ -16,39 +16,7 @@ export interface Constructor<T> {
   new (fields: RawFields): T;
 }
 
-// Represents a timestamp based on the UNIX epoch (1970 Jan 1).
-// See also: http://wiki.ros.org/roscpp/Overview/Time
-export interface Time {
-  // whole seconds
-  sec: number;
-  // additional nanoseconds past the sec value
-  nsec: number;
-}
-
 export interface Filelike {
   read(offset: number, length: number, callback: Callback<Buffer>): void;
   size(): number;
 }
-
-export type RosMsgField = {
-  type: string;
-  name: string;
-  isComplex?: boolean;
-
-  // For arrays
-  isArray?: boolean;
-  arrayLength?: number | null | undefined;
-
-  // For constants
-  isConstant?: boolean;
-  value?: string | number | boolean | undefined;
-};
-
-export type RosMsgDefinition = {
-  name?: string;
-  definitions: RosMsgField[];
-};
-export type NamedRosMsgDefinition = {
-  name: string;
-  definitions: RosMsgField[];
-};

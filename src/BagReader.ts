@@ -4,11 +4,12 @@
 // found in the LICENSE file in the root directory of this source tree.
 // You may not use this file except in compliance with the License.
 
-import * as TimeUtil from "./TimeUtil";
+import { compare, isGreaterThan, Time } from "@foxglove/rostime";
+
 import { parseHeader } from "./header";
 import nmerge from "./nmerge";
 import { Record, BagHeader, Chunk, ChunkInfo, Connection, IndexData, MessageData } from "./record";
-import { Time, Callback, Filelike, Constructor } from "./types";
+import { Callback, Filelike, Constructor } from "./types";
 
 interface ChunkReadResult {
   chunk: Chunk;
@@ -188,17 +189,17 @@ export default class BagReader {
       const iterables = presentConnections.map((conn) => {
         return indices[conn]!.indices![Symbol.iterator]();
       });
-      const iter = nmerge((a, b) => TimeUtil.compare(a.time, b.time), ...iterables);
+      const iter = nmerge((a, b) => compare(a.time, b.time), ...iterables);
 
       const entries = [];
       let item = iter.next();
       while (item.done !== true) {
         const { value } = item;
         item = iter.next();
-        if (value == null || TimeUtil.isGreaterThan(start, value.time)) {
+        if (value == null || isGreaterThan(start, value.time)) {
           continue;
         }
-        if (TimeUtil.isGreaterThan(value.time, end)) {
+        if (isGreaterThan(value.time, end)) {
           break;
         }
         entries.push(value);
