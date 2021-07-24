@@ -8,8 +8,7 @@
   },
   "dependencies": {
     "buffer": "6.0.3",
-    "heap": "0.2.6",
-    "int53": "1.0.0"
+    "heap": "0.2.6"
   },
   "main": "dist/node/index.js",
   "browser": "dist/web/index.js",

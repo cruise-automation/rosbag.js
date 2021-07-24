@@ -4,14 +4,12 @@
 // found in the LICENSE file in the root directory of this source tree.
 // You may not use this file except in compliance with the License.
 
-import int53 from "int53";
-
 import BagReader from "./BagReader";
 import { Callback } from "./types";
 
 function int64Buffer(number: number) {
   const buff = Buffer.alloc(8);
-  int53.writeInt64LE(number, buff, 0);
+  buff.writeBigInt64LE(BigInt(number), 0);
   return buff;
 }
 
