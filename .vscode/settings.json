@@ -4,8 +4,9 @@
   },
   "files.exclude": {
     "node_modules": true,
-    "flow-typed": true
   },
-  "flow.useNPMPackagedFlow": true,
+  "eslint.options": {
+    "reportUnusedDisableDirectives": true
+  },
   "javascript.validate.enable": false
 }

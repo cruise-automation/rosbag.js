@@ -43,7 +43,7 @@ export default class ReadResult<T> {
     // the total number of chunks in the read operation
     this.totalChunks = totalChunks;
 
-    if (freeze) {
+    if (freeze === true) {
       Object.freeze(timestamp);
       Object.freeze(this);
     }

@@ -5,3 +5,10 @@ dist
 junit.xml
 .DS_Store
 docs
+
+# Yarn
+.yarn/*
+!.yarn/releases
+!.yarn/plugins
+!.yarn/sdks
+.pnp.*

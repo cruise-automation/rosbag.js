@@ -4,17 +4,19 @@
 // found in the LICENSE file in the root directory of this source tree.
 // You may not use this file except in compliance with the License.
 
+/* eslint-disable filenames/match-exported */
+
 import { Buffer } from "buffer";
 import * as fs from "fs";
 
-import { Callback } from "../types";
-import Bag from "../bag";
+import Bag from "../Bag";
 import BagReader from "../BagReader";
-import { extractFields, extractTime } from "../fields";
 import { MessageReader } from "../MessageReader";
 import { MessageWriter } from "../MessageWriter";
-import { parseMessageDefinition, rosPrimitiveTypes } from "../parseMessageDefinition";
 import * as TimeUtil from "../TimeUtil";
+import { extractFields, extractTime } from "../fields";
+import { parseMessageDefinition, rosPrimitiveTypes } from "../parseMessageDefinition";
+import { Callback } from "../types";
 
 // reader using nodejs fs api
 export class Reader {
@@ -33,12 +35,12 @@ export class Reader {
   // open a file for reading
   _open(cb: (error: Error | null | undefined) => void): void {
     fs.stat(this._filename, (error, stat) => {
-      if (error) {
+      if (error != null) {
         return cb(error);
       }
 
       return fs.open(this._filename, "r", (err, fd) => {
-        if (err) {
+        if (err != null) {
           return cb(err);
         }
 
@@ -49,7 +51,7 @@ export class Reader {
     });
   }
 
-  close(cb: (error: Error | null | undefined) => void) {
+  close(cb: (error: Error | null | undefined) => void): void {
     if (this._fd != null) {
       fs.close(this._fd, cb);
     }
@@ -60,24 +62,24 @@ export class Reader {
   read(offset: number, length: number, cb: Callback<Buffer>): void {
     if (this._fd == null) {
       return this._open((err) => {
-        return err ? cb(err) : this.read(offset, length, cb);
+        return err != null ? cb(err) : this.read(offset, length, cb);
       });
     }
     if (length > this._buffer.byteLength) {
       this._buffer = Buffer.alloc(length);
     }
-    return fs.read(this._fd, this._buffer, 0, length, offset, (err, bytes, buff) => {
-      return err ? cb(err) : cb(null, buff);
+    return fs.read(this._fd, this._buffer, 0, length, offset, (err, _bytes, buff) => {
+      return err != null ? cb(err) : cb(null, buff);
     });
   }
 
   // return the size of the file
-  size() {
+  size(): number {
     return this._size;
   }
 }
 
-const open = async (filename: File | string) => {
+const open = async (filename: File | string): Promise<Bag> => {
   if (typeof filename !== "string") {
     throw new Error(
       "Expected filename to be a string. Make sure you are correctly importing the node or web version of Bag."

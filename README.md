@@ -58,7 +58,6 @@ logMessagesFromFooBar();
 ### Opening a new rosbag reader
 
 ```js
-// @flow signature
 function open(fileOrPath: File | string) => Promise<Bag>
 ```
 
@@ -67,7 +66,6 @@ Opening a new rosbag reader is done with the `open` function. In the browser the
 ### Bag instance
 
 ```js
-// @flow signature
 class Bag {
   // the time of the earliest message in the bag
   startTime: Time,
@@ -93,7 +91,6 @@ class Bag {
 ### BagOptions
 
 ```js
-// @flow signature
 const bagOptions = {
 
   // an optional array of topics used to filter down
@@ -145,7 +142,6 @@ string data
 ### ReadResult
 
 ```js
-// @flow signature
 const readResult {
 
   // the topic from which the current record was read
@@ -178,7 +174,6 @@ const readResult {
 ### Connection
 
 ```js
-// @flow signature
 class Connection {
   // the id of the connection
   conn: number,
@@ -199,7 +194,6 @@ class Connection {
 ROS represents time with nanosecond granularity. In JavaScript, a ROS Time value is stored as an object containing `sec` and `nsec` fields. The `TimeUtil` module has various utility methods for comparison, arithmetic, and conversion to/from JavaScript Date objects.
 
 ```js
-// @flow signature
 interface TimeUtil {
   // convert a Time object to a JavaScript Date object
   // note: this is a lossy conversion as JavaScript dates do not store nanoseconds

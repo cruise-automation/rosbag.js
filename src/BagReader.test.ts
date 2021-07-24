@@ -5,8 +5,8 @@
 // You may not use this file except in compliance with the License.
 
 import int53 from "int53";
+
 import BagReader from "./BagReader";
-import { BagHeader } from "./record";
 import { Callback } from "./types";
 
 function int64Buffer(number: number) {
@@ -76,64 +76,43 @@ class FakeHeaderFilelike {
       resultBuffer.fill(0x20, currentOffset);
       return callback(null, resultBuffer);
     }
-    return callback(new Error("Unexpected read position: " + offset));
+    return callback(new Error(`Unexpected read position: ${offset}`));
   }
 }
 
 describe("BagReader", () => {
   describe("parsing header", () => {
-    it("calls back with an error if the header has an invalid preamble", (done) => {
+    it("calls back with an error if the header has an invalid preamble", async () => {
       const filelike = new FakeHeaderFilelike();
       filelike.preamble = "#ROSBAG V1.0\n";
       const reader = new BagReader(filelike);
-      reader.readHeader((err?: Error | null, header?: BagHeader | null) => {
-        expect(err).not.toBeUndefined();
-        expect(header).toBeUndefined();
-        done();
-      });
+      await expect(reader.readHeaderAsync()).rejects.toThrow();
     });
 
-    it("parses header correctly with small int32 values", (done) => {
+    it("parses header correctly with small int32 values", async () => {
       const filelike = new FakeHeaderFilelike();
       filelike.indexPosition = 1;
       filelike.connectionCount = 2;
       filelike.chunkCount = 3;
       const reader = new BagReader(filelike);
-      reader.readHeader((err?: Error | null, header?: BagHeader | null) => {
-        if (err) {
-          return done(err);
-        }
-        if (!header) {
-          expect(header).toBeInstanceOf(BagHeader);
-          return;
-        }
-        expect(header.indexPosition).toEqual(1);
-        expect(header.connectionCount).toEqual(2);
-        expect(header.chunkCount).toEqual(3);
-        done();
-      });
+
+      const header = await reader.readHeaderAsync();
+      expect(header.indexPosition).toEqual(1);
+      expect(header.connectionCount).toEqual(2);
+      expect(header.chunkCount).toEqual(3);
     });
 
-    it("parses header correctly with large int32 values", (done) => {
+    it("parses header correctly with large int32 values", async () => {
       const filelike = new FakeHeaderFilelike();
       // 100000, 200000, 300000 etc overflow an Int16, but fit in Int32.
       filelike.indexPosition = 100000;
       filelike.connectionCount = 200000;
       filelike.chunkCount = 300000;
       const reader = new BagReader(filelike);
-      reader.readHeader((err?: Error | null, header?: BagHeader | null) => {
-        if (err) {
-          return done(err);
-        }
-        if (!header) {
-          expect(header).toBeInstanceOf(BagHeader);
-          return;
-        }
-        expect(header.indexPosition).toEqual(100000);
-        expect(header.connectionCount).toEqual(200000);
-        expect(header.chunkCount).toEqual(300000);
-        done();
-      });
+      const header = await reader.readHeaderAsync();
+      expect(header.indexPosition).toEqual(100000);
+      expect(header.connectionCount).toEqual(200000);
+      expect(header.chunkCount).toEqual(300000);
     });
   });
 });

@@ -7,10 +7,10 @@
 import BagReader, { Decompress } from "./BagReader";
 import { MessageReader } from "./MessageReader";
 import ReadResult from "./ReadResult";
-import { BagHeader, ChunkInfo, Connection, MessageData } from "./record";
-import { Time } from "./types";
 import * as TimeUtil from "./TimeUtil";
 import { parseMessageDefinition } from "./parseMessageDefinition";
+import { BagHeader, ChunkInfo, Connection, MessageData } from "./record";
+import { Time } from "./types";
 
 export type ReadOptions = {
   decompress?: Decompress;
@@ -43,8 +43,7 @@ export default class Bag {
     this.connections = new Map<number, Connection>();
   }
 
-  // eslint-disable-next-line no-unused-vars
-  static open = (file: File | string): Promise<Bag> => {
+  static open = async (_file: File | string): Promise<Bag> => {
     throw new Error(
       "This method should have been overridden based on the environment. Make sure you are correctly importing the node or web version of Bag."
     );
@@ -52,7 +51,7 @@ export default class Bag {
 
   // if the bag is manually created with the constructor, you must call `await open()` on the bag
   // generally this is called for you if you're using `const bag = await Bag.open()`
-  async open() {
+  async open(): Promise<void> {
     this.header = await this.reader.readHeaderAsync();
     const { connectionCount, chunkCount, indexPosition } = this.header;
 
@@ -67,21 +66,21 @@ export default class Bag {
     this.chunkInfos = result.chunkInfos;
 
     if (chunkCount > 0) {
-      this.startTime = this.chunkInfos[0].startTime;
-      this.endTime = this.chunkInfos[chunkCount - 1].endTime;
+      this.startTime = this.chunkInfos[0]!.startTime;
+      this.endTime = this.chunkInfos[chunkCount - 1]!.endTime;
     }
   }
 
-  async readMessages<T = unknown>(opts: ReadOptions, callback: (msg: ReadResult<T>) => void) {
+  async readMessages<T = unknown>(opts: ReadOptions, callback: (msg: ReadResult<T>) => void): Promise<void> {
     const connections = this.connections;
 
-    const startTime = opts.startTime || { sec: 0, nsec: 0 };
-    const endTime = opts.endTime || { sec: Number.MAX_VALUE, nsec: Number.MAX_VALUE };
+    const startTime = opts.startTime ?? { sec: 0, nsec: 0 };
+    const endTime = opts.endTime ?? { sec: Number.MAX_VALUE, nsec: Number.MAX_VALUE };
     const topics = opts.topics ?? [...connections.values()].map((connection) => connection.topic);
 
     const filteredConnections = [...connections.values()]
       .filter((connection) => {
-        return topics.indexOf(connection.topic) !== -1;
+        return topics.includes(connection.topic);
       })
       .map((connection) => connection.conn);
 
@@ -94,16 +93,16 @@ export default class Bag {
 
     function parseMsg(msg: MessageData, chunkOffset: number): ReadResult<T> {
       const connection = connections.get(msg.conn);
-      if (!connection) {
+      if (connection == null) {
         throw new Error(`Unable to find connection with id ${msg.conn}`);
       }
       const { topic } = connection;
       const { data, time: timestamp } = msg;
-      if (!data) {
+      if (data == null) {
         throw new Error(`No data in message for topic: ${topic}`);
       }
       let message = null;
-      if (!opts.noParse) {
+      if (opts.noParse !== true) {
         // lazily create a reader for this connection if it doesn't exist
         connection.reader =
           connection.reader ??
@@ -114,7 +113,7 @@ export default class Bag {
     }
 
     for (let i = 0; i < chunkInfos.length; i++) {
-      const info = chunkInfos[i];
+      const info = chunkInfos[i]!;
       const messages = await this.reader.readChunkMessagesAsync(
         info,
         filteredConnections,

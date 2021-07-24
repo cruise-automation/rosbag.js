@@ -4,14 +4,16 @@
 // found in the LICENSE file in the root directory of this source tree.
 // You may not use this file except in compliance with the License.
 
+/* eslint-disable jest/no-conditional-expect */
+
 import compress from "compressjs";
 import fs from "fs";
 import lz4 from "lz4js";
 
-import { ReadOptions } from "./bag";
-import Bag from "./node";
+import { ReadOptions } from "./Bag";
 import ReadResult from "./ReadResult";
 import * as TimeUtil from "./TimeUtil";
+import Bag from "./node";
 
 const FILENAME = "example";
 
@@ -33,9 +35,11 @@ async function fullyReadBag<T>(name: string, opts?: ReadOptions): Promise<ReadRe
 }
 
 describe("basics", () => {
-  expect(Bag.open(getFixture("NON_EXISTENT_FILE"))).rejects.toThrow("no such file or directory");
-  expect(Bag.open(getFixture("empty-file"))).rejects.toThrow("Missing file header.");
-  expect(fullyReadBag("no-messages")).resolves.toEqual([]);
+  it("handles empty and non-existent bags", async () => {
+    await expect(Bag.open(getFixture("NON_EXISTENT_FILE"))).rejects.toThrow("no such file or directory");
+    await expect(Bag.open(getFixture("empty-file"))).rejects.toThrow("Missing file header.");
+    await expect(fullyReadBag("no-messages")).resolves.toEqual([]);
+  });
 });
 
 describe("rosbag - high-level api", () => {
@@ -48,12 +52,12 @@ describe("rosbag - high-level api", () => {
     it(`finds ${expected} messages in ${name} with ${JSON.stringify(opts)}`, async () => {
       const messages = await fullyReadBag(name, opts);
       expect(messages).toHaveLength(expected);
-      if (expected) {
+      if (expected !== 0) {
         const [message] = messages;
         expect(message).toBeDefined();
-        expect(message.timestamp).toBeDefined();
+        expect(message!.timestamp).toBeDefined();
       }
-      if (done) {
+      if (done != undefined) {
         done(messages);
       }
     });
@@ -80,8 +84,8 @@ describe("rosbag - high-level api", () => {
     await bag.readMessages({}, (msg) => {
       messages.push(msg);
     });
-    expect(messages[0].chunkOffset).toBe(0);
-    expect(messages[0].totalChunks).toBe(1);
+    expect(messages[0]!.chunkOffset).toBe(0);
+    expect(messages[0]!.totalChunks).toBe(1);
   });
 
   it("reads topics", async () => {
@@ -105,7 +109,7 @@ describe("rosbag - high-level api", () => {
 
   it("reads correct fields on /tf message", async () => {
     const messages = await fullyReadBag(FILENAME, { topics: ["/tf"] });
-    expect(messages[0].message).toMatchSnapshot();
+    expect(messages[0]!.message).toMatchSnapshot();
   });
 
   it("can read bag twice at once", async () => {
@@ -125,7 +129,7 @@ describe("rosbag - high-level api", () => {
   it("reads poses", async () => {
     const opts = { topics: ["/turtle1/cmd_vel"] };
     const messages = await fullyReadBag<LinearMessage>(FILENAME, opts);
-    const [msg] = messages;
+    const msg = messages[0]!;
     const { linear } = msg.message;
     expect(msg.timestamp).toEqual({
       sec: 1396293889,
@@ -140,17 +144,17 @@ describe("rosbag - high-level api", () => {
 
   it("freezes when requested", async () => {
     const [notFrozenMsg] = await fullyReadBag<LinearMessage>(FILENAME, { topics: ["/turtle1/cmd_vel"] });
-    expect(notFrozenMsg.message.linear).toEqual({ x: 2, y: 0, z: 0 });
-    notFrozenMsg.message.linear.z = 100;
-    expect(notFrozenMsg.message.linear).toEqual({ x: 2, y: 0, z: 100 });
+    expect(notFrozenMsg!.message.linear).toEqual({ x: 2, y: 0, z: 0 });
+    notFrozenMsg!.message.linear.z = 100;
+    expect(notFrozenMsg!.message.linear).toEqual({ x: 2, y: 0, z: 100 });
 
     const [frozenMsg] = await fullyReadBag<LinearMessage>(FILENAME, { topics: ["/turtle1/cmd_vel"], freeze: true });
-    expect(frozenMsg.message.linear).toEqual({ x: 2, y: 0, z: 0 });
+    expect(frozenMsg!.message.linear).toEqual({ x: 2, y: 0, z: 0 });
     expect(() => {
-      frozenMsg.message.linear.z = 100;
+      frozenMsg!.message.linear.z = 100;
     }).toThrow();
     expect(() => {
-      frozenMsg.timestamp.sec = 0;
+      frozenMsg!.timestamp.sec = 0;
     }).toThrow();
   });
 
@@ -208,17 +212,8 @@ describe("rosbag - high-level api", () => {
 
   describe("compression", () => {
     it("throws if compression scheme is not registered", async () => {
-      let errorThrown = false;
       const bag = await Bag.open(getFixture("example-bz2"));
-      try {
-        await bag.readMessages({}, () => {
-          /* no-op */
-        });
-      } catch (err) {
-        expect(err.message).toContain("compression");
-        errorThrown = true;
-      }
-      expect(errorThrown).toBe(true);
+      await expect(async () => await bag.readMessages({}, () => {})).rejects.toThrow("compression");
     });
 
     it("reads bz2 with supplied decompression callback", async () => {

@@ -5,22 +5,24 @@
 // found in the LICENSE file in the root directory of this source tree.
 // You may not use this file except in compliance with the License.
 
-import assert from "assert";
-import Bag, { Reader, extractFields, extractTime } from ".";
 import * as fs from "fs";
 
+import Bag, { Reader, extractFields, extractTime } from ".";
+
 describe("browser reader", () => {
-  it("works in node", (done) => {
+  it("works in node", async () => {
     const buffer = new Blob([Uint8Array.from([0x00, 0x01, 0x02, 0x03, 0x04])]);
     const reader = new Reader(buffer);
-    reader.read(0, 2, (err?: Error | null, res?: unknown) => {
-      expect(err).toBeNull();
-      expect(res).toHaveLength(2);
-      expect(res instanceof Buffer).toBe(true);
-      const buff = res as Buffer;
-      expect(buff[0]).toBe(0x00);
-      expect(buff[1]).toBe(0x01);
-      done();
+    await new Promise<void>((resolve) => {
+      reader.read(0, 2, (err?: Error | null, res?: unknown) => {
+        expect(err).toBeNull();
+        expect(res).toHaveLength(2);
+        expect(res instanceof Buffer).toBe(true);
+        const buff = res as Buffer;
+        expect(buff[0]).toBe(0x00);
+        expect(buff[1]).toBe(0x01);
+        resolve();
+      });
     });
   });
 
@@ -34,22 +36,21 @@ describe("browser reader", () => {
     const buffer = new Blob([Uint8Array.from([0x00, 0x01, 0x02, 0x03, 0x04])]);
     const reader = new Reader(buffer);
     const read1 = new Promise<void>((resolve, reject) =>
-      reader.read(0, 2, (err?: Error | null) => (err ? reject(err) : resolve()))
+      reader.read(0, 2, (err?: Error | null) => (err != null ? reject(err) : resolve()))
     );
     const read2 = new Promise<void>((resolve, reject) =>
-      reader.read(0, 2, (err?: Error | null) => (err ? reject(err) : resolve()))
+      reader.read(0, 2, (err?: Error | null) => (err != null ? reject(err) : resolve()))
     );
-    await Promise.all([read1, read2]);
+    await expect(Promise.all([read1, read2])).resolves.toBeDefined();
   });
 
-  it("reports browser FileReader errors", (done) => {
+  it("reports browser FileReader errors", async () => {
     const buffer = new Blob([Uint8Array.from([0x00, 0x01, 0x02, 0x03, 0x04])]);
     const reader = new Reader(buffer);
     const actualFileReader = global.FileReader;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (global as any).FileReader = class FailReader {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      onerror: any;
+      onerror!: (_: this) => void;
       readAsArrayBuffer() {
         setTimeout(() => {
           Object.defineProperty(this, "error", {
@@ -64,12 +65,13 @@ describe("browser reader", () => {
       }
     };
 
-    reader.read(0, 2, (err?: Error | null) => {
-      global.FileReader = actualFileReader;
-      assert(err);
-      expect(err instanceof Error).toBe(true);
-      expect(err.message).toBe("fake error");
-      done();
+    await new Promise<void>((resolve) => {
+      reader.read(0, 2, (err?: Error | null) => {
+        global.FileReader = actualFileReader;
+        expect(err instanceof Error).toBe(true);
+        expect(err!.message).toBe("fake error");
+        resolve();
+      });
     });
   });
 

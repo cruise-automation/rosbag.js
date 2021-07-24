@@ -21,7 +21,7 @@ export function toDate(time: Time): Date {
 // useful to supply to Array.prototype.sort
 export function compare(left: Time, right: Time): number {
   const secDiff = left.sec - right.sec;
-  return secDiff || left.nsec - right.nsec;
+  return secDiff !== 0 ? secDiff : left.nsec - right.nsec;
 }
 
 // returns true if the left time is less than the right time, otherwise false

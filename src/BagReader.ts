@@ -4,12 +4,11 @@
 // found in the LICENSE file in the root directory of this source tree.
 // You may not use this file except in compliance with the License.
 
-import { Time, Callback, Filelike, Constructor } from "./types";
-
+import * as TimeUtil from "./TimeUtil";
 import { parseHeader } from "./header";
 import nmerge from "./nmerge";
 import { Record, BagHeader, Chunk, ChunkInfo, Connection, IndexData, MessageData } from "./record";
-import * as TimeUtil from "./TimeUtil";
+import { Time, Callback, Filelike, Constructor } from "./types";
 
 interface ChunkReadResult {
   chunk: Chunk;
@@ -39,7 +38,7 @@ export default class BagReader {
 
   verifyBagHeader(callback: Callback<BagHeader>, next: () => void): void {
     this._file.read(0, HEADER_OFFSET, (error?: Error | null, buffer?: Buffer | null) => {
-      if (error || !buffer) {
+      if (error != null || buffer == null) {
         return callback(error ?? new Error("Missing both error and buffer"));
       }
 
@@ -57,11 +56,11 @@ export default class BagReader {
   // reads the header block from the rosbag file
   // generally you call this first
   // because you need the header information to call readConnectionsAndChunkInfo
-  readHeader(callback: Callback<BagHeader>) {
+  readHeader(callback: Callback<BagHeader>): void {
     this.verifyBagHeader(callback, () => {
       return this._file.read(HEADER_OFFSET, HEADER_READAHEAD, (error?: Error | null, buffer?: Buffer | null) => {
-        if (error || !buffer) {
-          return callback(error || new Error("Missing both error and buffer"));
+        if (error != null || buffer == null) {
+          return callback(error ?? new Error("Missing both error and buffer"));
         }
 
         const read = buffer.length;
@@ -84,10 +83,10 @@ export default class BagReader {
   }
 
   // promisified version of readHeader
-  readHeaderAsync(): Promise<BagHeader> {
-    return new Promise((resolve, reject) =>
+  async readHeaderAsync(): Promise<BagHeader> {
+    return await new Promise((resolve, reject) =>
       this.readHeader((err?: Error | null, header?: BagHeader | null) =>
-        err || !header ? reject(err) : resolve(header)
+        err != null || header == null ? reject(err) : resolve(header)
       )
     );
   }
@@ -101,10 +100,10 @@ export default class BagReader {
     connectionCount: number,
     chunkCount: number,
     callback: Callback<{ connections: Connection[]; chunkInfos: ChunkInfo[] }>
-  ) {
+  ): void {
     this._file.read(fileOffset, this._file.size() - fileOffset, (err?: Error | null, buffer?: Buffer | null) => {
-      if (err || !buffer) {
-        return callback(err || new Error("Missing both error and buffer"));
+      if (err != null || buffer == null) {
+        return callback(err ?? new Error("Missing both error and buffer"));
       }
 
       if (connectionCount === 0) {
@@ -113,7 +112,7 @@ export default class BagReader {
 
       try {
         const connections = this.readRecordsFromBuffer(buffer, connectionCount, fileOffset, Connection);
-        const connectionBlockLength = connections[connectionCount - 1].end! - connections[0].offset!;
+        const connectionBlockLength = connections[connectionCount - 1]!.end! - connections[0]!.offset!;
         const chunkInfos = this.readRecordsFromBuffer(
           buffer.slice(connectionBlockLength),
           chunkCount,
@@ -123,9 +122,9 @@ export default class BagReader {
 
         if (chunkCount > 0) {
           for (let i = 0; i < chunkCount - 1; i++) {
-            chunkInfos[i].nextChunk = chunkInfos[i + 1];
+            chunkInfos[i]!.nextChunk = chunkInfos[i + 1];
           }
-          chunkInfos[chunkCount - 1].nextChunk = null;
+          chunkInfos[chunkCount - 1]!.nextChunk = null;
         }
 
         return callback(null, { connections, chunkInfos });
@@ -136,19 +135,18 @@ export default class BagReader {
   }
 
   // promisified version of readConnectionsAndChunkInfo
-  readConnectionsAndChunkInfoAsync(
+  async readConnectionsAndChunkInfoAsync(
     fileOffset: number,
     connectionCount: number,
     chunkCount: number
   ): Promise<{ connections: Connection[]; chunkInfos: ChunkInfo[] }> {
-    return new Promise((resolve, reject) => {
+    return await new Promise((resolve, reject) => {
       this.readConnectionsAndChunkInfo(
         fileOffset,
         connectionCount,
         chunkCount,
-        (err?: Error | null, result?: { connections: Connection[]; chunkInfos: ChunkInfo[] } | null) => {
-          err || !result ? reject(err) : resolve(result);
-        }
+        (err?: Error | null, result?: { connections: Connection[]; chunkInfos: ChunkInfo[] } | null) =>
+          err != null || result == null ? reject(err) : resolve(result)
       );
     });
   }
@@ -163,18 +161,18 @@ export default class BagReader {
     endTime: Time | null,
     decompress: Decompress,
     callback: Callback<MessageData[]>
-  ) {
-    const start = startTime || { sec: 0, nsec: 0 };
-    const end = endTime || { sec: Number.MAX_VALUE, nsec: Number.MAX_VALUE };
+  ): void {
+    const start = startTime ?? { sec: 0, nsec: 0 };
+    const end = endTime ?? { sec: Number.MAX_VALUE, nsec: Number.MAX_VALUE };
     const conns =
-      connections ||
+      connections ??
       chunkInfo.connections.map((connection) => {
         return connection.conn;
       });
 
     this.readChunk(chunkInfo, decompress, (error?: Error | null, result?: ChunkReadResult | null) => {
-      if (error || !result) {
-        return callback(error || new Error("Missing both error and result"));
+      if (error != null || result == null) {
+        return callback(error ?? new Error("Missing both error and result"));
       }
 
       const chunk = result.chunk;
@@ -185,19 +183,19 @@ export default class BagReader {
         indices[index.conn] = index;
       });
       const presentConnections = conns.filter((conn) => {
-        return indices[conn] !== undefined;
+        return indices[conn] != undefined;
       });
       const iterables = presentConnections.map((conn) => {
-        return indices[conn].indices![Symbol.iterator]();
+        return indices[conn]!.indices![Symbol.iterator]();
       });
       const iter = nmerge((a, b) => TimeUtil.compare(a.time, b.time), ...iterables);
 
       const entries = [];
       let item = iter.next();
-      while (!item.done) {
+      while (item.done !== true) {
         const { value } = item;
         item = iter.next();
-        if (!value || TimeUtil.isGreaterThan(start, value.time)) {
+        if (value == null || TimeUtil.isGreaterThan(start, value.time)) {
           continue;
         }
         if (TimeUtil.isGreaterThan(value.time, end)) {
@@ -215,31 +213,32 @@ export default class BagReader {
   }
 
   // promisified version of readChunkMessages
-  readChunkMessagesAsync(
+  async readChunkMessagesAsync(
     chunkInfo: ChunkInfo,
     connections: number[],
     startTime: Time,
     endTime: Time,
     decompress: Decompress
   ): Promise<MessageData[]> {
-    return new Promise((resolve, reject) => {
+    return await new Promise((resolve, reject) => {
       this.readChunkMessages(
         chunkInfo,
         connections,
         startTime,
         endTime,
         decompress,
-        (err?: Error | null, messages?: MessageData[] | null) => (err || !messages ? reject(err) : resolve(messages))
+        (err?: Error | null, messages?: MessageData[] | null) =>
+          err != null || messages == null ? reject(err) : resolve(messages)
       );
     });
   }
 
   // reads a single chunk record && its index records given a chunkInfo
-  readChunk(chunkInfo: ChunkInfo, decompress: Decompress, callback: Callback<ChunkReadResult>) {
+  readChunk(chunkInfo: ChunkInfo, decompress: Decompress, callback: Callback<ChunkReadResult>): void {
     // if we're reading the same chunk a second time return the cached version
     // to avoid doing decompression on the same chunk multiple times which is
     // expensive
-    if (chunkInfo === this._lastChunkInfo && this._lastReadResult) {
+    if (chunkInfo === this._lastChunkInfo && this._lastReadResult != null) {
       // always callback async, even if we have the result
       // https://oren.github.io/blog/zalgo.html
       const lastReadResult = this._lastReadResult;
@@ -248,13 +247,14 @@ export default class BagReader {
     }
     const { nextChunk } = chunkInfo;
 
-    const readLength = nextChunk
-      ? nextChunk.chunkPosition - chunkInfo.chunkPosition
-      : this._file.size() - chunkInfo.chunkPosition;
+    const readLength =
+      nextChunk != null
+        ? nextChunk.chunkPosition - chunkInfo.chunkPosition
+        : this._file.size() - chunkInfo.chunkPosition;
 
     this._file.read(chunkInfo.chunkPosition, readLength, (err?: Error | null, buffer?: Buffer | null) => {
-      if (err || !buffer) {
-        callback(err || new Error("Missing both error and buffer"));
+      if (err != null || buffer == null) {
+        callback(err ?? new Error("Missing both error and buffer"));
         return;
       }
 
@@ -262,7 +262,7 @@ export default class BagReader {
       const { compression } = chunk;
       if (compression !== "none") {
         const decompressFn = decompress[compression];
-        if (!decompressFn) {
+        if (decompressFn == null) {
           callback(new Error(`Unsupported compression type ${chunk.compression}`));
           return;
         }

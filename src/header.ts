@@ -12,7 +12,7 @@ import { Constructor } from "./types";
 // based on the opcode type bit
 export function parseHeader<T extends Record>(buffer: Buffer, cls: Constructor<T> & { opcode: number }): T {
   const fields = extractFields(buffer);
-  if (fields.op === undefined) {
+  if (fields.op == undefined) {
     throw new Error("Header is missing 'op' field.");
   }
   const opcode = fields.op.readUInt8(0);

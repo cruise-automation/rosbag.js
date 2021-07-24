@@ -7,7 +7,6 @@
 import { MessageReader } from "./MessageReader";
 import { MessageWriter } from "./MessageWriter";
 import { parseMessageDefinition } from "./parseMessageDefinition";
-import { TextEncoder } from "web-encoding";
 
 const getStringBytes = (str: string): Uint8Array => {
   const textData = new TextEncoder().encode(str);

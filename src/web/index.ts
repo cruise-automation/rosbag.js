@@ -4,16 +4,18 @@
 // found in the LICENSE file in the root directory of this source tree.
 // You may not use this file except in compliance with the License.
 
+/* eslint-disable filenames/match-exported */
+
 import { Buffer } from "buffer";
 
-import { Callback } from "../types";
-import Bag from "../bag";
+import Bag from "../Bag";
 import BagReader from "../BagReader";
-import { extractFields, extractTime } from "../fields";
 import { MessageReader } from "../MessageReader";
 import { MessageWriter } from "../MessageWriter";
-import { parseMessageDefinition, rosPrimitiveTypes } from "../parseMessageDefinition";
 import * as TimeUtil from "../TimeUtil";
+import { extractFields, extractTime } from "../fields";
+import { parseMessageDefinition, rosPrimitiveTypes } from "../parseMessageDefinition";
+import { Callback } from "../types";
 
 // browser reader for Blob|File objects
 export class Reader {
@@ -27,7 +29,7 @@ export class Reader {
 
   // read length (bytes) starting from offset (bytes)
   // callback(err, buffer)
-  read(offset: number, length: number, cb: Callback<Buffer>) {
+  read(offset: number, length: number, cb: Callback<Buffer>): void {
     const reader = new FileReader();
     reader.onload = function () {
       reader.onload = null;
@@ -43,12 +45,12 @@ export class Reader {
   }
 
   // return the size of the file
-  size() {
+  size(): number {
     return this._size;
   }
 }
 
-const open = async (file: File | string) => {
+const open = async (file: File | string): Promise<Bag> => {
   if (!(file instanceof Blob)) {
     throw new Error(
       "Expected file to be a File or Blob. Make sure you are correctly importing the node or web version of Bag."

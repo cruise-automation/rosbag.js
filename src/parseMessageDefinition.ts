@@ -45,7 +45,7 @@ function newArrayDefinition(type: string, name: string, arrayLength: number | nu
     type: normalizedType,
     name,
     isArray: true,
-    arrayLength: arrayLength === null ? undefined : arrayLength,
+    arrayLength: arrayLength == null ? undefined : arrayLength,
     isComplex: !rosPrimitiveTypes.has(normalizedType),
   };
 }
@@ -72,17 +72,17 @@ const buildType = (lines: { isJson: boolean; line: string }[]): RosMsgDefinition
       return;
     }
     // consume comments
-    const type = splits[0].trim();
+    const type = splits[0]!.trim();
     const name = splits[1].trim();
     if (type === "MSG:") {
       complexTypeName = name;
-    } else if (name.indexOf("=") > -1 || splits.indexOf("=") > -1) {
+    } else if (name.includes("=") || splits.includes("=")) {
       // constant type parsing
-      const matches = line.match(/(\S+)\s*=\s*(.*)\s*/);
-      if (!matches) {
+      const matches = /(\S+)\s*=\s*(.*)\s*/.exec(line);
+      if (matches == null) {
         throw new Error("Malformed line: " + line);
       }
-      let match: string = matches[2];
+      let match: string = matches[2]!;
       let value: string | number | boolean = match;
       if (type !== "string") {
         // handle special case of python bool values
@@ -90,9 +90,9 @@ const buildType = (lines: { isJson: boolean; line: string }[]): RosMsgDefinition
         match = match.replace(/False/gi, "false");
         value = match;
         try {
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
           value = JSON.parse(match.replace(/\s*#.*/g, ""));
         } catch (error) {
-          // eslint-disable-next-line no-console
           console.warn(`Error in this constant definition: ${line}`);
           throw error;
         }
@@ -104,20 +104,19 @@ const buildType = (lines: { isJson: boolean; line: string }[]): RosMsgDefinition
         (type.includes("int") && Number(value) > Number.MAX_SAFE_INTEGER) ||
         Number(value) < Number.MIN_SAFE_INTEGER
       ) {
-        // eslint-disable-next-line no-console
         console.warn(`Found integer constant outside safe integer range: ${line}`);
       }
       definitions.push({
         type: normalizeType(type),
-        name: matches[1],
+        name: matches[1]!,
         isConstant: true,
         value,
       });
     } else if (type.indexOf("]") === type.length - 1) {
       // array type parsing
       const typeSplits = type.split("[");
-      const baseType = typeSplits[0];
-      const len = typeSplits[1].replace("]", "");
+      const baseType = typeSplits[0]!;
+      const len = typeSplits[1]!.replace("]", "");
       definitions.push(newArrayDefinition(baseType, name, len ? parseInt(len, 10) : undefined));
     } else {
       definitions.push(newDefinition(isJson ? "json" : type, name));
@@ -128,20 +127,20 @@ const buildType = (lines: { isJson: boolean; line: string }[]): RosMsgDefinition
 
 const findTypeByName = (types: RosMsgDefinition[], name: string): RosMsgDefinition => {
   const matches = types.filter((type) => {
-    const typeName = type.name || "";
+    const typeName = type.name ?? "";
     // if the search is empty, return unnamed types
     if (!name) {
       return !typeName;
     }
     // return if the search is in the type name
     // or matches exactly if a fully-qualified name match is passed to us
-    const nameEnd = name.indexOf("/") > -1 ? name : `/${name}`;
+    const nameEnd = name.includes("/") ? name : `/${name}`;
     return typeName.endsWith(nameEnd);
   });
   if (matches.length !== 1) {
     throw new Error(`Expected 1 top level type definition for '${name}' but found ${matches.length}`);
   }
-  return matches[0];
+  return matches[0]!;
 };
 
 // Given a raw message definition string, parse it into an object representation.
@@ -160,7 +159,7 @@ const findTypeByName = (types: RosMsgDefinition[], name: string): RosMsgDefiniti
 // }, ... ]
 //
 // See unit tests for more examples.
-export function parseMessageDefinition(messageDefinition: string) {
+export function parseMessageDefinition(messageDefinition: string): RosMsgDefinition[] {
   // read all the lines and remove empties
   const allLines = messageDefinition
     .split("\n")
@@ -195,9 +194,9 @@ export function parseMessageDefinition(messageDefinition: string) {
   // Fix up complex type names
   types.forEach(({ definitions }) => {
     definitions.forEach((definition) => {
-      if (definition.isComplex) {
+      if (definition.isComplex === true) {
         const foundName = findTypeByName(types, definition.type).name;
-        if (foundName === undefined) {
+        if (foundName == undefined) {
           throw new Error(`Missing type definition for ${definition.type}`);
         }
         definition.type = foundName;

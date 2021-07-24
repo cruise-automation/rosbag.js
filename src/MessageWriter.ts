@@ -6,8 +6,6 @@
 
 import { Time, RosMsgDefinition, NamedRosMsgDefinition } from "./types";
 
-import { TextEncoder } from "web-encoding";
-
 // write a Time object to a DataView.
 function writeTime(time: Time, view: DataView, offset: number): void {
   view.setUint32(offset, time.sec, true);
@@ -154,17 +152,11 @@ class StandardTypeWriter {
   }
 
   int64(value: bigint | number): void {
-    if (typeof value !== "bigint") {
-      value = BigInt(value);
-    }
-    this.view.setBigInt64(this.offsetCalculator.int64(), value, true);
+    this.view.setBigInt64(this.offsetCalculator.int64(), BigInt(value), true);
   }
 
   uint64(value: bigint | number): void {
-    if (typeof value !== "bigint") {
-      value = BigInt(value);
-    }
-    this.view.setBigUint64(this.offsetCalculator.uint64(), value, true);
+    this.view.setBigUint64(this.offsetCalculator.uint64(), BigInt(value), true);
   }
 
   time(time: Time): void {
@@ -177,16 +169,16 @@ class StandardTypeWriter {
 }
 
 const findTypeByName = (types: RosMsgDefinition[], name = ""): NamedRosMsgDefinition => {
-  let foundName = ""; // track name separately in a non-null variable to appease Flow
+  let foundName = "";
   const matches = types.filter((type) => {
-    const typeName = type.name || "";
+    const typeName = type.name ?? "";
     // if the search is empty, return unnamed types
     if (!name) {
       return !typeName;
     }
     // return if the search is in the type name
     // or matches exactly if a fully-qualified name match is passed to us
-    const nameEnd = name.indexOf("/") > -1 ? name : `/${name}`;
+    const nameEnd = name.includes("/") ? name : `/${name}`;
     if (typeName.endsWith(nameEnd)) {
       foundName = typeName;
       return true;
@@ -196,7 +188,7 @@ const findTypeByName = (types: RosMsgDefinition[], name = ""): NamedRosMsgDefini
   if (matches.length !== 1) {
     throw new Error(`Expected 1 top level type definition for '${name}' but found ${matches.length}.`);
   }
-  return { ...matches[0], name: foundName };
+  return { ...matches[0]!, name: foundName };
 };
 
 const friendlyName = (name: string): string => name.replace(/\//g, "_");
@@ -210,28 +202,27 @@ function createWriterAndSizeCalculator(types: RosMsgDefinition[]): WriterAndSize
   if (unnamedTypes.length !== 1) {
     throw new Error("multiple unnamed types");
   }
-
-  const [unnamedType] = unnamedTypes;
+  const unnamedType = unnamedTypes[0]!;
 
   const namedTypes: NamedRosMsgDefinition[] = types.filter((type) => !!type.name) as NamedRosMsgDefinition[];
 
   const constructorBody = (
     type: RosMsgDefinition | NamedRosMsgDefinition,
     argName: "offsetCalculator" | "writer"
-  ): string | undefined => {
+  ): string => {
     const lines: string[] = [];
     type.definitions.forEach((def) => {
-      if (def.isConstant) {
+      if (def.isConstant === true) {
         return;
       }
 
       // Accesses the field we are currently writing. Pulled out for easy reuse.
       const accessMessageField = `message["${def.name}"]`;
-      if (def.isArray) {
+      if (def.isArray === true) {
         const lenField = `length_${def.name}`;
         // set a variable pointing to the parsed fixed array length
         // or write the byte indicating the dynamic length
-        if (def.arrayLength) {
+        if (def.arrayLength != undefined) {
           lines.push(`var ${lenField} = ${def.arrayLength};`);
         } else {
           lines.push(`var ${lenField} = ${accessMessageField}.length;`);
@@ -241,7 +232,7 @@ function createWriterAndSizeCalculator(types: RosMsgDefinition[]): WriterAndSize
         // start the for-loop
         lines.push(`for (var i = 0; i < ${lenField}; i++) {`);
         // if the sub type is complex we need to allocate it and parse its values
-        if (def.isComplex) {
+        if (def.isComplex === true) {
           const defType = findTypeByName(types, def.type);
           // recursively call the function for the sub-type
           lines.push(`  ${friendlyName(defType.name)}(${argName}, ${accessMessageField}[i]);`);
@@ -250,7 +241,7 @@ function createWriterAndSizeCalculator(types: RosMsgDefinition[]): WriterAndSize
           lines.push(`  ${argName}.${def.type}(${accessMessageField}[i]);`);
         }
         lines.push("}"); // close the for-loop
-      } else if (def.isComplex) {
+      } else if (def.isComplex === true) {
         const defType = findTypeByName(types, def.type);
         lines.push(`${friendlyName(defType.name)}(${argName}, ${accessMessageField});`);
       } else {
@@ -286,29 +277,31 @@ function createWriterAndSizeCalculator(types: RosMsgDefinition[]): WriterAndSize
     return offsetCalculator.offset;
   };`;
 
-  let _write: (writer: StandardTypeWriter, message: unknown) => Uint8Array;
-  let _calculateSize: (offsetCalculator: StandardTypeOffsetCalculator, message: unknown) => number;
+  let write: (writer: StandardTypeWriter, message: unknown) => Uint8Array;
+  let calculateSize: (offsetCalculator: StandardTypeOffsetCalculator, message: unknown) => number;
   try {
-    _write = eval(`(function buildWriter() { ${writerJs} })()`);
+    // eslint-disable-next-line no-eval, @typescript-eslint/no-unsafe-assignment
+    write = eval(`(function buildWriter() { ${writerJs} })()`);
   } catch (e) {
-    console.error("error building writer:", writerJs); // eslint-disable-line no-console
+    console.error("error building writer:", writerJs);
     throw e;
   }
   try {
-    _calculateSize = eval(`(function buildSizeCalculator() { ${calculateSizeJs} })()`);
+    // eslint-disable-next-line no-eval, @typescript-eslint/no-unsafe-assignment
+    calculateSize = eval(`(function buildSizeCalculator() { ${calculateSizeJs} })()`);
   } catch (e) {
-    console.error("error building size calculator:", calculateSizeJs); // eslint-disable-line no-console
+    console.error("error building size calculator:", calculateSizeJs);
     throw e;
   }
 
   return {
-    writer: function (message: unknown, data: Uint8Array): Uint8Array {
+    writer(message: unknown, data: Uint8Array): Uint8Array {
       const writer = new StandardTypeWriter(data);
-      return _write(writer, message);
+      return write(writer, message);
     },
     byteSizeCalculator(message: unknown): number {
       const offsetCalculator = new StandardTypeOffsetCalculator();
-      return _calculateSize(offsetCalculator, message);
+      return calculateSize(offsetCalculator, message);
     },
   };
 }
@@ -333,10 +326,6 @@ export class MessageWriter {
 
   // output is optional - if it is not provided, a Uint8Array will be generated.
   writeMessage(message: unknown, output?: Uint8Array): Uint8Array {
-    if (output == undefined) {
-      const dataSize = this.calculateByteSize(message);
-      output = new Uint8Array(dataSize);
-    }
-    return this.writer(message, output);
+    return this.writer(message, output ?? new Uint8Array(this.calculateByteSize(message)));
   }
 }

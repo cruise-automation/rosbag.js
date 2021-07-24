@@ -1,4 +1,5 @@
 {
+  "extends": "@foxglove/tsconfig/base",
   "compilerOptions": {
     "outDir": "./dist",
     "rootDir": "src",

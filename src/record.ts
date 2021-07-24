@@ -6,8 +6,8 @@
 
 import int53 from "int53";
 
-import { extractFields, extractTime } from "./fields";
 import { MessageReader } from "./MessageReader";
+import { extractFields, extractTime } from "./fields";
 import { Time } from "./types";
 
 const readUInt64LE = (buffer: Buffer) => {
@@ -20,7 +20,7 @@ export class Record {
   end?: number;
   length?: number;
 
-  parseData(buffer: Buffer): void {
+  parseData(_buffer: Buffer): void {
     /* no-op */
   }
 }
@@ -33,9 +33,9 @@ export class BagHeader extends Record {
 
   constructor(fields: { [key: string]: Buffer }) {
     super();
-    this.indexPosition = readUInt64LE(fields.index_pos);
-    this.connectionCount = fields.conn_count.readInt32LE(0);
-    this.chunkCount = fields.chunk_count.readInt32LE(0);
+    this.indexPosition = readUInt64LE(fields.index_pos!);
+    this.connectionCount = fields.conn_count!.readInt32LE(0);
+    this.chunkCount = fields.chunk_count!.readInt32LE(0);
   }
 }
 
@@ -47,11 +47,11 @@ export class Chunk extends Record {
 
   constructor(fields: { [key: string]: Buffer }) {
     super();
-    this.compression = fields.compression.toString();
-    this.size = fields.size.readUInt32LE(0);
+    this.compression = fields.compression!.toString();
+    this.size = fields.size!.readUInt32LE(0);
   }
 
-  parseData(buffer: Buffer) {
+  override parseData(buffer: Buffer): void {
     this.data = buffer;
   }
 }
@@ -62,10 +62,10 @@ const getField = (
   },
   key: string
 ) => {
-  if (fields[key] === undefined) {
+  if (fields[key] == undefined) {
     throw new Error(`Connection header is missing ${key}.`);
   }
-  return fields[key].toString();
+  return fields[key]!.toString();
 };
 
 export class Connection extends Record {
@@ -81,22 +81,22 @@ export class Connection extends Record {
 
   constructor(fields: { [key: string]: Buffer }) {
     super();
-    this.conn = fields.conn.readUInt32LE(0);
-    this.topic = fields.topic.toString();
+    this.conn = fields.conn!.readUInt32LE(0);
+    this.topic = fields.topic!.toString();
     this.type = undefined;
     this.md5sum = undefined;
     this.messageDefinition = "";
   }
 
-  parseData(buffer: Buffer) {
+  override parseData(buffer: Buffer): void {
     const fields = extractFields(buffer);
     this.type = getField(fields, "type");
     this.md5sum = getField(fields, "md5sum");
     this.messageDefinition = getField(fields, "message_definition");
-    if (fields.callerid !== undefined) {
+    if (fields.callerid != undefined) {
       this.callerid = fields.callerid.toString();
     }
-    if (fields.latching !== undefined) {
+    if (fields.latching != undefined) {
       this.latching = fields.latching.toString() === "1";
     }
   }
@@ -110,11 +110,11 @@ export class MessageData extends Record {
 
   constructor(fields: { [key: string]: Buffer }) {
     super();
-    this.conn = fields.conn.readUInt32LE(0);
-    this.time = extractTime(fields.time, 0);
+    this.conn = fields.conn!.readUInt32LE(0);
+    this.time = extractTime(fields.time!, 0);
   }
 
-  parseData(buffer: Buffer) {
+  override parseData(buffer: Buffer): void {
     this.data = buffer;
   }
 }
@@ -128,12 +128,12 @@ export class IndexData extends Record {
 
   constructor(fields: { [key: string]: Buffer }) {
     super();
-    this.ver = fields.ver.readUInt32LE(0);
-    this.conn = fields.conn.readUInt32LE(0);
-    this.count = fields.count.readUInt32LE(0);
+    this.ver = fields.ver!.readUInt32LE(0);
+    this.conn = fields.conn!.readUInt32LE(0);
+    this.count = fields.count!.readUInt32LE(0);
   }
 
-  parseData(buffer: Buffer) {
+  override parseData(buffer: Buffer): void {
     this.indices = [];
     for (let i = 0; i < this.count; i++) {
       this.indices.push({
@@ -156,14 +156,14 @@ export class ChunkInfo extends Record {
 
   constructor(fields: { [key: string]: Buffer }) {
     super();
-    this.ver = fields.ver.readUInt32LE(0);
-    this.chunkPosition = readUInt64LE(fields.chunk_pos);
-    this.startTime = extractTime(fields.start_time, 0);
-    this.endTime = extractTime(fields.end_time, 0);
-    this.count = fields.count.readUInt32LE(0);
+    this.ver = fields.ver!.readUInt32LE(0);
+    this.chunkPosition = readUInt64LE(fields.chunk_pos!);
+    this.startTime = extractTime(fields.start_time!, 0);
+    this.endTime = extractTime(fields.end_time!, 0);
+    this.count = fields.count!.readUInt32LE(0);
   }
 
-  parseData(buffer: Buffer) {
+  override parseData(buffer: Buffer): void {
     this.connections = [];
     for (let i = 0; i < this.count; i++) {
       this.connections.push({

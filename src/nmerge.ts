@@ -6,25 +6,25 @@
 
 import Heap from "heap";
 
-function nmerge<T>(key: (a: T, b: T) => number, ...iterables: Array<Iterator<T>>) {
+function nmerge<T>(key: (a: T, b: T) => number, ...iterables: Array<Iterator<T>>): Iterator<T> {
   const heap: Heap<{ i: number; value: T }> = new Heap((a, b) => {
     return key(a.value, b.value);
   });
   for (let i = 0; i < iterables.length; i++) {
-    const { value, done } = iterables[i].next();
-    if (!done) {
-      heap.push({ i, value });
+    const result = iterables[i]!.next();
+    if (result.done !== true) {
+      heap.push({ i, value: result.value });
     }
   }
 
   return {
     next: () => {
       if (heap.empty()) {
-        return { done: true };
+        return { done: true, value: undefined };
       }
       const { i } = heap.front();
-      const next = iterables[i].next();
-      if (next.done) {
+      const next = iterables[i]!.next();
+      if (next.done === true) {
         return { value: heap.pop().value, done: false };
       }
       return { value: heap.replace({ i, value: next.value }).value, done: false };

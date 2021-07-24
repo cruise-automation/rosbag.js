@@ -1,27 +1,25 @@
 root: true
-parser: "@typescript-eslint/parser"
-
-plugins:
-  - "@typescript-eslint"
-  - prettier
-
-extends:
-  - "eslint:recommended"
-  - "plugin:@typescript-eslint/eslint-recommended"
-  - "plugin:@typescript-eslint/recommended"
-  - "prettier/@typescript-eslint"
-
-rules:
-  "prettier/prettier": "error"
-  "@typescript-eslint/camelcase": "off"
-  "@typescript-eslint/no-explicit-any": "error"
-  "@typescript-eslint/explicit-function-return-type": "warn"
-
-parserOptions:
-  ecmaVersion: 2019
-
 env:
   browser: true
   node: true
   jest: true
   es6: true
+
+extends:
+  - plugin:@foxglove/base
+  - plugin:@foxglove/jest
+
+ignorePatterns:
+  - dist
+
+overrides:
+  - files: ["*.ts", "*.tsx"]
+    extends:
+      - plugin:@foxglove/typescript
+    parserOptions:
+      project: ./tsconfig.json
+
+    rules:
+      "@typescript-eslint/no-empty-function": off
+      "@typescript-eslint/no-unsafe-member-access": off
+      "@typescript-eslint/restrict-template-expressions": [error, { allowAny: true }]
