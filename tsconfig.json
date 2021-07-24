@@ -1,25 +1,10 @@
 {
   "extends": "@foxglove/tsconfig/base",
+  "include": ["./src/**/*"],
   "compilerOptions": {
-    "outDir": "./dist",
-    "rootDir": "src",
-    "target": "es2019",
-    "baseUrl": ".",
-    "module": "commonjs",
-    "moduleResolution": "node",
-    "declaration": true,
-    "esModuleInterop": true,
-    "allowSyntheticDefaultImports": true,
-    "lib": ["es2019", "DOM"],
-    "newLine": "lf",
-    "noUnusedLocals": true,
-    "noImplicitAny": true,
-    "noImplicitReturns": true,
-    "experimentalDecorators": true,
-    "allowUnreachableCode": false,
-    "strict": true,
+    "rootDir": "./src",
+    "outDir": "./dist/esm",
+    "lib": ["es2020", "dom"],
     "typeRoots": ["./node_modules/@types", "./typings"]
-  },
-  "include": ["src/**/*"],
-  "exclude": ["node_modules"]
+  }
 }

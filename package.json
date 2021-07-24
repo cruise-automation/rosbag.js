@@ -6,27 +6,27 @@
     "type": "git",
     "url": "https://github.com/foxglove/rosbag.git"
   },
+  "main": "dist/cjs/node/index.js",
+  "module": "dist/esm/node/index.js",
+  "browser": "dist/esm/web/index.js",
+  "files": [
+    "dist",
+    "src"
+  ],
+  "scripts": {
+    "clean": "rimraf dist *.tsbuildinfo",
+    "prepack": "tsc -b tsconfig.json tsconfig.cjs.json",
+    "build": "tsc -b tsconfig.json tsconfig.cjs.json",
+    "lint": "eslint --report-unused-disable-directives --fix .",
+    "lint:ci": "eslint --report-unused-disable-directives .",
+    "test": "jest"
+  },
   "dependencies": {
     "@foxglove/rosmsg": "1.0.0",
     "@foxglove/rosmsg-serialization": "1.0.1",
     "@foxglove/rostime": "1.1.0",
     "buffer": "6.0.3",
     "heap": "0.2.6"
-  },
-  "main": "dist/node/index.js",
-  "browser": "dist/web/index.js",
-  "files": [
-    "dist",
-    "src"
-  ],
-  "scripts": {
-    "prepack": "yarn run build",
-    "lint": "eslint --report-unused-disable-directives --fix .",
-    "lint:ci": "eslint --report-unused-disable-directives .",
-    "test": "jest",
-    "clean": "rimraf dist",
-    "docs": "yarn typedoc",
-    "build": "yarn clean && tsc -p tsconfig.dist.json"
   },
   "devDependencies": {
     "@foxglove/eslint-plugin": "0.13.0",
@@ -52,8 +52,7 @@
     "lz4js": "0.2.0",
     "prettier": "2.3.2",
     "rimraf": "3.0.2",
-    "ts-jest": "27.0.3",
-    "typedoc": "0.20.23",
+    "ts-jest": "27.0.4",
     "typescript": "4.3.5"
   },
   "prettier": {

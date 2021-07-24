@@ -1,14 +1,5 @@
-node_modules
-yarn-error.log
-build
-dist
-junit.xml
 .DS_Store
-docs
-
-# Yarn
-.yarn/*
-!.yarn/releases
-!.yarn/plugins
-!.yarn/sdks
-.pnp.*
+*.log
+*.tsbuildinfo
+dist/
+node_modules/
