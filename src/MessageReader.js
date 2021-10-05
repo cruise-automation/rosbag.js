@@ -81,7 +81,13 @@ class StandardTypeReader {
       this._intializeTextDecoder();
     }
     if (this._decoder) {
-      return this._decoder.decode(codePoints);
+      // TextDecoder does not support Uint8Arrays that are backed by SharedArrayBuffer, so copy the array here.
+      // SharedArrayBuffer support has been added to the spec, but most browsers have not implemented this change.
+      // See spec change: https://github.com/whatwg/encoding/pull/182
+      // Track browser support here: https://github.com/whatwg/encoding/pull/182#issuecomment-539932294
+      const input = codePoints.buffer instanceof global.SharedArrayBuffer ? new Uint8Array(codePoints) : codePoints;
+
+      return this._decoder.decode(input);
     }
 
     // Otherwise, use string concatentation.

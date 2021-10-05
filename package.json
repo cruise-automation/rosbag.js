@@ -1,6 +1,6 @@
 {
   "name": "rosbag",
-  "version": "2.6.3",
+  "version": "2.6.4",
   "license": "Apache-2.0",
   "repository": "cruise-automation/rosbag.js",
   "dependencies": {
