@@ -24,7 +24,8 @@ describe("MessageWriter", () => {
       const message = { foo: expected };
       cb(buffer);
       it(`writes message ${JSON.stringify(message)} containing ${type}`, () => {
-        const writer = new MessageWriter(parseMessageDefinition(`${type} foo`));
+        const typeName = "foo_msgs/Bar";
+        const writer = new MessageWriter(parseMessageDefinition(`${type} foo`, typeName), typeName);
         expect(
           writer.writeMessage({
             foo: expected,
@@ -43,13 +44,18 @@ describe("MessageWriter", () => {
     testNum("float64", 8, 0xdeadbeefcafebabe, (buffer) => buffer.writeDoubleLE(0xdeadbeefcafebabe, 0));
 
     it("writes strings", () => {
-      const writer = new MessageWriter(parseMessageDefinition("string name"));
+      const typeName = "foo_msgs/Bar";
+      const writer = new MessageWriter(parseMessageDefinition("string name", typeName), typeName);
       const buff = getStringBuffer("test");
       expect(writer.writeMessage({ name: "test" })).toEqual(buff);
     });
 
     it("writes JSON", () => {
-      const writer = new MessageWriter(parseMessageDefinition("#pragma rosbag_parse_json\nstring dummy"));
+      const typeName = "custom_type/User";
+      const writer = new MessageWriter(
+        parseMessageDefinition("#pragma rosbag_parse_json\nstring dummy", typeName),
+        typeName
+      );
       const buff = getStringBuffer('{"foo":123,"bar":{"nestedFoo":456}}');
       expect(
         writer.writeMessage({
@@ -58,14 +64,18 @@ describe("MessageWriter", () => {
       ).toEqual(buff);
 
       const writerWithNestedComplexType = new MessageWriter(
-        parseMessageDefinition(`#pragma rosbag_parse_json
+        parseMessageDefinition(
+          `#pragma rosbag_parse_json
       string dummy
       Account account
       ============
       MSG: custom_type/Account
       string name
       uint16 id
-      `)
+      `,
+          typeName
+        ),
+        typeName
       );
       expect(
         writerWithNestedComplexType.writeMessage({
@@ -75,7 +85,8 @@ describe("MessageWriter", () => {
       ).toEqual(Buffer.concat([buff, getStringBuffer('{"first":"First","last":"Last"}}'), new Buffer([100, 0x00])]));
 
       const writerWithTrailingPragmaComment = new MessageWriter(
-        parseMessageDefinition(`#pragma rosbag_parse_json
+        parseMessageDefinition(
+          `#pragma rosbag_parse_json
       string dummy
       Account account
       #pragma rosbag_parse_json
@@ -83,7 +94,10 @@ describe("MessageWriter", () => {
       MSG: custom_type/Account
       string name
       uint16 id
-      `)
+      `,
+          typeName
+        ),
+        typeName
       );
       expect(
         writerWithTrailingPragmaComment.writeMessage({
@@ -94,7 +108,8 @@ describe("MessageWriter", () => {
     });
 
     it("writes time", () => {
-      const writer = new MessageWriter(parseMessageDefinition("time right_now"));
+      const typeName = "foo_msgs/Bar";
+      const writer = new MessageWriter(parseMessageDefinition("time right_now", typeName), typeName);
       const buff = new Buffer(8);
       const now = new Date();
       now.setSeconds(31);
@@ -116,7 +131,8 @@ describe("MessageWriter", () => {
 
   describe("array", () => {
     it("writes variable length string array", () => {
-      const writer = new MessageWriter(parseMessageDefinition("string[] names"));
+      const typeName = "foo_msgs/Bar";
+      const writer = new MessageWriter(parseMessageDefinition("string[] names", typeName), typeName);
       const buffer = Buffer.concat([
         // variable length array has int32 as first entry
         new Buffer([0x03, 0x00, 0x00, 0x00]),
@@ -132,9 +148,10 @@ describe("MessageWriter", () => {
     });
 
     it("writes fixed length arrays", () => {
-      const writer1 = new MessageWriter(parseMessageDefinition("string[1] names"));
-      const writer2 = new MessageWriter(parseMessageDefinition("string[2] names"));
-      const writer3 = new MessageWriter(parseMessageDefinition("string[3] names"));
+      const typeName = "foo_msgs/Bar";
+      const writer1 = new MessageWriter(parseMessageDefinition("string[1] names", typeName), typeName);
+      const writer2 = new MessageWriter(parseMessageDefinition("string[2] names", typeName), typeName);
+      const writer3 = new MessageWriter(parseMessageDefinition("string[3] names", typeName), typeName);
       expect(
         writer1.writeMessage({
           names: ["foo", "bar", "baz"],
@@ -153,7 +170,8 @@ describe("MessageWriter", () => {
     });
 
     it("does not write any data for a zero length array", () => {
-      const writer = new MessageWriter(parseMessageDefinition("string[] names"));
+      const typeName = "foo_msgs/Bar";
+      const writer = new MessageWriter(parseMessageDefinition("string[] names", typeName), typeName);
       const buffer = Buffer.concat([
         // variable length array has int32 as first entry
         new Buffer([0x00, 0x00, 0x00, 0x00]),
@@ -165,7 +183,8 @@ describe("MessageWriter", () => {
 
     describe("typed arrays", () => {
       it("writes a uint8[]", () => {
-        const writer = new MessageWriter(parseMessageDefinition("uint8[] values\nuint8 after"));
+        const typeName = "foo_msgs/Bar";
+        const writer = new MessageWriter(parseMessageDefinition("uint8[] values\nuint8 after", typeName), typeName);
         const message = { values: Uint8Array.from([1, 2, 3]), after: 4 };
         const result = writer.writeMessage(message);
         const buffer = Buffer.from([0x03, 0x00, 0x00, 0x00, 0x01, 0x02, 0x03, 0x04]);
@@ -173,7 +192,8 @@ describe("MessageWriter", () => {
       });
 
       it("writes a uint8[] with a fixed length", () => {
-        const writer = new MessageWriter(parseMessageDefinition("uint8[3] values\nuint8 after"));
+        const typeName = "foo_msgs/Bar";
+        const writer = new MessageWriter(parseMessageDefinition("uint8[3] values\nuint8 after", typeName), typeName);
         const message = { values: Uint8Array.from([1, 2, 3]), after: 4 };
         const result = writer.writeMessage(message);
         const buffer = Buffer.from([0x01, 0x02, 0x03, 0x04]);
@@ -184,7 +204,11 @@ describe("MessageWriter", () => {
 
   describe("complex types", () => {
     it("writes single complex type", () => {
-      const writer = new MessageWriter(parseMessageDefinition("string firstName \n string lastName\nuint16 age"));
+      const typeName = "foo_msgs/Bar";
+      const writer = new MessageWriter(
+        parseMessageDefinition("string firstName \n string lastName\nuint16 age", typeName),
+        typeName
+      );
       const buffer = Buffer.concat([getStringBuffer("foo"), getStringBuffer("bar"), new Buffer([0x05, 0x00])]);
       const message = {
         firstName: "foo",
@@ -203,7 +227,8 @@ describe("MessageWriter", () => {
       string name
       uint16 id
       `;
-      const writer = new MessageWriter(parseMessageDefinition(messageDefinition));
+      const typeName = "custom_type/User";
+      const writer = new MessageWriter(parseMessageDefinition(messageDefinition, typeName), typeName);
       const buffer = Buffer.concat([getStringBuffer("foo"), getStringBuffer("bar"), new Buffer([100, 0x00])]);
       const message = {
         username: "foo",
@@ -224,7 +249,8 @@ describe("MessageWriter", () => {
       string name
       uint16 id
       `;
-      const writer = new MessageWriter(parseMessageDefinition(messageDefinition));
+      const typeName = "custom_type/User";
+      const writer = new MessageWriter(parseMessageDefinition(messageDefinition, typeName), typeName);
       const buffer = Buffer.concat([
         getStringBuffer("foo"),
         // uint32LE length of array (2)
@@ -266,7 +292,8 @@ describe("MessageWriter", () => {
       uint8 id
       `;
 
-      const writer = new MessageWriter(parseMessageDefinition(messageDefinition));
+      const typeName = "custom_type/User";
+      const writer = new MessageWriter(parseMessageDefinition(messageDefinition, typeName), typeName);
       const buffer = Buffer.concat([
         getStringBuffer("foo"),
         // uint32LE length of Account array (2)
@@ -358,7 +385,8 @@ describe("MessageWriter", () => {
       string name # a description of the test/component reporting`;
 
     it("writes bytes and constants", () => {
-      const writer = new MessageWriter(parseMessageDefinition(withBytesAndBools));
+      const typeName = "diagnostic_msgs/DiagnosticArray";
+      const writer = new MessageWriter(parseMessageDefinition(withBytesAndBools, typeName), typeName);
       const buffer = Buffer.concat([Buffer.from([0x01]), Buffer.from([0x00]), getStringBuffer("foo")]);
 
       const message = {
@@ -421,7 +449,8 @@ describe("MessageWriter", () => {
         ],
       };
 
-      const writer = new MessageWriter(parseMessageDefinition(messageDefinition));
+      const typeName = "custom_type/User";
+      const writer = new MessageWriter(parseMessageDefinition(messageDefinition, typeName), typeName);
       expect(writer.calculateBufferSize(message)).toEqual(108);
     });
   });
@@ -475,8 +504,10 @@ describe("MessageWriter", () => {
         ],
       };
 
-      const reader = new MessageReader(parseMessageDefinition(messageDefinition));
-      const writer = new MessageWriter(parseMessageDefinition(messageDefinition));
+      const typeName = "custom_type/User";
+      const parsedDefinition = parseMessageDefinition(messageDefinition, typeName);
+      const reader = new MessageReader(parsedDefinition, typeName);
+      const writer = new MessageWriter(parsedDefinition, typeName);
       expect(reader.readMessage(writer.writeMessage(message))).toEqual(message);
     });
   });

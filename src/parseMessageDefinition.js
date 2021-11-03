@@ -61,24 +61,24 @@ function newDefinition(type: string, name: string): RosMsgField {
   };
 }
 
-const buildType = (lines: { isJson: boolean, line: string }[]): RosMsgDefinition => {
+const tokenizeLine = (line: string) =>
+  line
+    .replace(/#.*/gi, "")
+    .split(" ")
+    .filter((word) => word);
+
+const buildNamedType = (lines: { isJson: boolean, line: string }[], typeName: string): RosMsgDefinition => {
   const definitions: RosMsgField[] = [];
-  let complexTypeName: ?string;
   lines.forEach(({ isJson, line }) => {
     // remove comments and extra whitespace from each line
-    const splits = line
-      .replace(/#.*/gi, "")
-      .split(" ")
-      .filter((word) => word);
+    const splits = tokenizeLine(line);
     if (!splits[1]) {
       return;
     }
     // consume comments
     const type = splits[0].trim();
     const name = splits[1].trim();
-    if (type === "MSG:") {
-      complexTypeName = name;
-    } else if (name.indexOf("=") > -1 || splits.indexOf("=") > -1) {
+    if (name.indexOf("=") > -1 || splits.indexOf("=") > -1) {
       // constant type parsing
       const matches = line.match(/(\S+)\s*=\s*(.*)\s*/);
       if (!matches) {
@@ -120,31 +120,40 @@ const buildType = (lines: { isJson: boolean, line: string }[]): RosMsgDefinition
       definitions.push(newDefinition(isJson ? "json" : type, name));
     }
   });
-  return { name: complexTypeName, definitions };
+  return { name: typeName, definitions };
 };
 
-const findTypeByName = (types: RosMsgDefinition[], name: string): RosMsgDefinition => {
-  const matches = types.filter((type) => {
-    const typeName = type.name || "";
-    // if the search is empty, return unnamed types
-    if (!name) {
-      return !typeName;
-    }
-    // return if the search is in the type name
-    // or matches exactly if a fully-qualified name match is passed to us
-    const nameEnd = name.indexOf("/") > -1 ? name : `/${name}`;
-    return typeName.endsWith(nameEnd);
-  });
+const buildType = (lines: { isJson: boolean, line: string }[]): RosMsgDefinition => {
+  if (lines.length === 0) {
+    throw new Error("Empty message definition.");
+  }
+  if (!lines[0].line.startsWith("MSG: ")) {
+    throw new Error(`Malformed message definition name: ${lines[0].line}`);
+  }
+  const typeName = tokenizeLine(lines[0].line)[1].trim();
+  return buildNamedType(lines.slice(1), typeName);
+};
+
+const findTypeByName = (types: RosMsgDefinition[], name: string, rosPackage: string): RosMsgDefinition => {
+  const fullName = name.includes("/") ? name : name === "Header" ? "std_msgs/Header" : `${rosPackage}/${name}`;
+  const matches = types.filter((type) => type.name === fullName);
   if (matches.length !== 1) {
-    throw new Error(`Expected 1 top level type definition for '${name}' but found ${matches.length}`);
+    throw new Error(
+      `Expected 1 top level type definition for '${name}' but found ${matches.length}, ${JSON.stringify({
+        fullName,
+        k: types.map((type) => type.name),
+      })}`
+    );
   }
   return matches[0];
 };
 
 // Given a raw message definition string, parse it into an object representation.
+// Type names in all positions are always fully-qualified.
+//
 // Example return value:
 // [{
-//   name: undefined,
+//   name: "foo_msgs/Bar",
 //   definitions: [
 //     {
 //       arrayLength: undefined,
@@ -157,7 +166,7 @@ const findTypeByName = (types: RosMsgDefinition[], name: string): RosMsgDefiniti
 // }, ... ]
 //
 // See unit tests for more examples.
-export function parseMessageDefinition(messageDefinition: string) {
+export function parseMessageDefinition(messageDefinition: string, typeName: string) {
   // read all the lines and remove empties
   const allLines = messageDefinition
     .split("\n")
@@ -180,20 +189,23 @@ export function parseMessageDefinition(messageDefinition: string) {
     // definitions are split by equal signs
     if (line.startsWith("==")) {
       nextDefinitionIsJson = false;
-      types.push(buildType(definitionLines));
+      const definition = types.length === 0 ? buildNamedType(definitionLines, typeName) : buildType(definitionLines);
+      types.push(definition);
       definitionLines = [];
     } else {
       definitionLines.push({ isJson: nextDefinitionIsJson, line });
       nextDefinitionIsJson = false;
     }
   });
-  types.push(buildType(definitionLines));
+  const definition = types.length === 0 ? buildNamedType(definitionLines, typeName) : buildType(definitionLines);
+  types.push(definition);
 
   // Fix up complex type names
-  types.forEach(({ definitions }) => {
+  types.forEach(({ name, definitions }) => {
+    const typePackage = name.split("/")[0];
     definitions.forEach((definition) => {
       if (definition.isComplex) {
-        const foundName = findTypeByName(types, definition.type).name;
+        const foundName = findTypeByName(types, definition.type, typePackage).name;
         if (foundName === undefined) {
           throw new Error(`Missing type definition for ${definition.type}`);
         }

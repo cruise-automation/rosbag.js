@@ -8,7 +8,7 @@
 
 import int53 from "int53";
 import { extractTime } from "./fields";
-import type { RosMsgDefinition, NamedRosMsgDefinition } from "./types";
+import type { RosMsgDefinition } from "./types";
 import { parseMessageDefinition } from "./parseMessageDefinition";
 
 type TypedArrayConstructor = (
@@ -179,42 +179,26 @@ class StandardTypeReader {
   }
 }
 
-const findTypeByName = (types: RosMsgDefinition[], name = ""): NamedRosMsgDefinition => {
-  let foundName = ""; // track name separately in a non-null variable to appease Flow
-  const matches = types.filter((type) => {
-    const typeName = type.name || "";
-    // if the search is empty, return unnamed types
-    if (!name) {
-      return !typeName;
-    }
-    // return if the search is in the type name
-    // or matches exactly if a fully-qualified name match is passed to us
-    const nameEnd = name.indexOf("/") > -1 ? name : `/${name}`;
-    if (typeName.endsWith(nameEnd)) {
-      foundName = typeName;
-      return true;
-    }
-    return false;
-  });
+const findTypeByName = (types: RosMsgDefinition[], name: string): RosMsgDefinition => {
+  const matches = types.filter((type) => type.name === name);
   if (matches.length !== 1) {
     throw new Error(`Expected 1 top level type definition for '${name}' but found ${matches.length}.`);
   }
-  return { ...matches[0], name: foundName };
+  return matches[0];
 };
 
 const friendlyName = (name: string) => name.replace(/\//g, "_");
 
-const createParser = (types: RosMsgDefinition[], freeze: boolean) => {
-  const unnamedTypes = types.filter((type) => !type.name);
-  if (unnamedTypes.length !== 1) {
-    throw new Error("multiple unnamed types");
+const createParser = (types: RosMsgDefinition[], typeName: string, freeze: boolean) => {
+  const topLevelTypes = types.filter((type) => type.name === typeName);
+  if (topLevelTypes.length !== 1) {
+    throw new Error("multiple top-level types");
   }
+  const [topLevelType] = topLevelTypes;
 
-  const [unnamedType] = unnamedTypes;
+  const nestedTypes: RosMsgDefinition[] = types.filter((type) => type.name !== typeName);
 
-  const namedTypes: NamedRosMsgDefinition[] = (types.filter((type) => !!type.name): any[]);
-
-  const constructorBody = (type: RosMsgDefinition | NamedRosMsgDefinition) => {
+  const constructorBody = (type: RosMsgDefinition) => {
     const readerLines: string[] = [];
     type.definitions.forEach((def) => {
       if (def.isConstant) {
@@ -264,10 +248,10 @@ const createParser = (types: RosMsgDefinition[], freeze: boolean) => {
 
   let js = `
   var Record = function (reader) {
-    ${constructorBody(unnamedType)}
+    ${constructorBody(topLevelType)}
   };\n`;
 
-  namedTypes.forEach((t) => {
+  nestedTypes.forEach((t) => {
     js += `
   Record.${friendlyName(t.name)} = function(reader) {
     ${constructorBody(t)}
@@ -299,16 +283,16 @@ export class MessageReader {
   // takes an object message definition and returns
   // a message reader which can be used to read messages based
   // on the message definition
-  constructor(definitions: RosMsgDefinition[], options: { freeze?: ?boolean } = {}) {
+  constructor(definitions: RosMsgDefinition[], typeName: string, options: { freeze?: ?boolean } = {}) {
     let parsedDefinitions = definitions;
     if (typeof parsedDefinitions === "string") {
       // eslint-disable-next-line no-console
       console.warn(
         "Passing string message defintions to MessageReader is deprecated. Instead call `parseMessageDefinition` on it and pass in the resulting parsed message definition object."
       );
-      parsedDefinitions = parseMessageDefinition(parsedDefinitions);
+      parsedDefinitions = parseMessageDefinition(parsedDefinitions, typeName);
     }
-    this.reader = createParser(parsedDefinitions, !!options.freeze);
+    this.reader = createParser(parsedDefinitions, typeName, !!options.freeze);
   }
 
   readMessage(buffer: Buffer) {

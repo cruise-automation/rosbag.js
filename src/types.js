@@ -38,10 +38,6 @@ export type RosMsgField = {|
 |};
 
 export type RosMsgDefinition = {|
-  name?: string,
-  definitions: RosMsgField[],
-|};
-export type NamedRosMsgDefinition = {|
   name: string,
   definitions: RosMsgField[],
 |};

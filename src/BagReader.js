@@ -293,13 +293,13 @@ export default class BagReader {
   // read an individual record from a buffer
   readRecordFromBuffer<T: Record>(buffer: Buffer, fileOffset: number, cls: Class<T> & { opcode: number }): T {
     const headerLength = buffer.readInt32LE(0);
-    const record = parseHeader(buffer.slice(4, 4 + headerLength), cls);
+    const headerFields = parseHeader(buffer.slice(4, 4 + headerLength), cls);
 
     const dataOffset = 4 + headerLength + 4;
     const dataLength = buffer.readInt32LE(4 + headerLength);
     const data = buffer.slice(dataOffset, dataOffset + dataLength);
 
-    record.parseData(data);
+    const record = new cls(headerFields, data);
 
     record.offset = fileOffset;
     record.dataOffset = record.offset + 4 + headerLength + 4;
