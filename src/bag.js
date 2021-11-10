@@ -99,14 +99,14 @@ export default class Bag {
 
     function parseMsg(msg: MessageData, chunkOffset: number): ReadResult<any> {
       const connection = connections[msg.conn];
-      const { topic } = connection;
+      const { topic, type } = connection;
       const { data, time: timestamp } = msg;
       let message = null;
       if (!opts.noParse) {
         // lazily create a reader for this connection if it doesn't exist
         connection.reader =
           connection.reader ||
-          new MessageReader(parseMessageDefinition(connection.messageDefinition), { freeze: opts.freeze });
+          new MessageReader(parseMessageDefinition(connection.messageDefinition, type), type, { freeze: opts.freeze });
         message = connection.reader.readMessage(data);
       }
       return new ReadResult(topic, message, timestamp, data, chunkOffset, chunkInfos.length, opts.freeze);

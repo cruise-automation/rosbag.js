@@ -22,9 +22,7 @@ export class Record {
   end: number;
   length: number;
 
-  constructor(_fields: { [key: string]: any }) {}
-
-  parseData(_buffer: Buffer) {}
+  constructor(_fields: { [key: string]: any }, _buffer: Buffer) {}
 }
 
 export class BagHeader extends Record {
@@ -33,8 +31,8 @@ export class BagHeader extends Record {
   connectionCount: number;
   chunkCount: number;
 
-  constructor(fields: { [key: string]: Buffer }) {
-    super(fields);
+  constructor(fields: { [key: string]: Buffer }, buffer: Buffer) {
+    super(fields, buffer);
     this.indexPosition = readUInt64LE(fields.index_pos);
     this.connectionCount = fields.conn_count.readInt32LE(0);
     this.chunkCount = fields.chunk_count.readInt32LE(0);
@@ -47,13 +45,10 @@ export class Chunk extends Record {
   size: number;
   data: Buffer;
 
-  constructor(fields: { [key: string]: Buffer }) {
-    super(fields);
+  constructor(fields: { [key: string]: Buffer }, buffer: Buffer) {
+    super(fields, buffer);
     this.compression = fields.compression.toString();
     this.size = fields.size.readUInt32LE(0);
-  }
-
-  parseData(buffer: Buffer) {
     this.data = buffer;
   }
 }
@@ -69,32 +64,28 @@ export class Connection extends Record {
   static opcode = 7;
   conn: number;
   topic: string;
-  type: ?string;
-  md5sum: ?string;
+  type: string;
+  md5sum: string;
   messageDefinition: string;
   callerid: ?string;
   latching: ?boolean;
   reader: ?MessageReader;
 
-  constructor(fields: { [key: string]: Buffer }) {
-    super(fields);
+  constructor(fields: { [key: string]: Buffer }, buffer: Buffer) {
+    super(fields, buffer);
     this.conn = fields.conn.readUInt32LE(0);
     this.topic = fields.topic.toString();
-    this.type = undefined;
-    this.md5sum = undefined;
     this.messageDefinition = "";
-  }
 
-  parseData(buffer: Buffer) {
-    const fields = extractFields(buffer);
-    this.type = getField(fields, "type");
-    this.md5sum = getField(fields, "md5sum");
-    this.messageDefinition = getField(fields, "message_definition");
-    if (fields.callerid !== undefined) {
-      this.callerid = fields.callerid.toString();
+    const bufferFields = extractFields(buffer);
+    this.type = getField(bufferFields, "type");
+    this.md5sum = getField(bufferFields, "md5sum");
+    this.messageDefinition = getField(bufferFields, "message_definition");
+    if (bufferFields.callerid !== undefined) {
+      this.callerid = bufferFields.callerid.toString();
     }
-    if (fields.latching !== undefined) {
-      this.latching = fields.latching.toString() === "1";
+    if (bufferFields.latching !== undefined) {
+      this.latching = bufferFields.latching.toString() === "1";
     }
   }
 }
@@ -105,13 +96,10 @@ export class MessageData extends Record {
   time: Time;
   data: Buffer;
 
-  constructor(fields: { [key: string]: Buffer }) {
-    super(fields);
+  constructor(fields: { [key: string]: Buffer }, buffer: Buffer) {
+    super(fields, buffer);
     this.conn = fields.conn.readUInt32LE(0);
     this.time = extractTime(fields.time, 0);
-  }
-
-  parseData(buffer: Buffer) {
     this.data = buffer;
   }
 }
@@ -123,14 +111,12 @@ export class IndexData extends Record {
   count: number;
   indices: Array<{ time: Time, offset: number }>;
 
-  constructor(fields: { [key: string]: Buffer }) {
-    super(fields);
+  constructor(fields: { [key: string]: Buffer }, buffer: Buffer) {
+    super(fields, buffer);
     this.ver = fields.ver.readUInt32LE(0);
     this.conn = fields.conn.readUInt32LE(0);
     this.count = fields.count.readUInt32LE(0);
-  }
 
-  parseData(buffer: Buffer) {
     this.indices = [];
     for (let i = 0; i < this.count; i++) {
       this.indices.push({
@@ -151,16 +137,14 @@ export class ChunkInfo extends Record {
   connections: Array<{ conn: number, count: number }>;
   nextChunk: ?ChunkInfo;
 
-  constructor(fields: { [key: string]: Buffer }) {
-    super(fields);
+  constructor(fields: { [key: string]: Buffer }, buffer: Buffer) {
+    super(fields, buffer);
     this.ver = fields.ver.readUInt32LE(0);
     this.chunkPosition = readUInt64LE(fields.chunk_pos);
     this.startTime = extractTime(fields.start_time, 0);
     this.endTime = extractTime(fields.end_time, 0);
     this.count = fields.count.readUInt32LE(0);
-  }
 
-  parseData(buffer: Buffer) {
     this.connections = [];
     for (let i = 0; i < this.count; i++) {
       this.connections.push({

@@ -11,7 +11,7 @@ import { Record } from "./record";
 
 // given a buffer parses out the record within the buffer
 // based on the opcode type bit
-export function parseHeader<T: Record>(buffer: Buffer, cls: Class<T> & { opcode: number }): T {
+export function parseHeader<T: Record>(buffer: Buffer, cls: Class<T> & { opcode: number }): { [key: string]: Buffer } {
   const fields = extractFields(buffer);
   if (fields.op === undefined) {
     throw new Error("Header is missing 'op' field.");
@@ -21,5 +21,5 @@ export function parseHeader<T: Record>(buffer: Buffer, cls: Class<T> & { opcode:
     throw new Error(`Expected ${cls.name} (${cls.opcode}) but found ${opcode}`);
   }
 
-  return new cls(fields);
+  return fields;
 }

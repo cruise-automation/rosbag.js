@@ -7,7 +7,7 @@
 // @flow
 
 import int53 from "int53";
-import type { Time, RosMsgDefinition, NamedRosMsgDefinition } from "./types";
+import type { Time, RosMsgDefinition } from "./types";
 
 // write a Time object to a buffer.
 function writeTime(time: Time, buffer: Buffer, offset: number) {
@@ -167,27 +167,12 @@ class StandardTypeWriter {
   }
 }
 
-const findTypeByName = (types: RosMsgDefinition[], name = ""): NamedRosMsgDefinition => {
-  let foundName = ""; // track name separately in a non-null variable to appease Flow
-  const matches = types.filter((type) => {
-    const typeName = type.name || "";
-    // if the search is empty, return unnamed types
-    if (!name) {
-      return !typeName;
-    }
-    // return if the search is in the type name
-    // or matches exactly if a fully-qualified name match is passed to us
-    const nameEnd = name.indexOf("/") > -1 ? name : `/${name}`;
-    if (typeName.endsWith(nameEnd)) {
-      foundName = typeName;
-      return true;
-    }
-    return false;
-  });
-  if (matches.length !== 1) {
-    throw new Error(`Expected 1 top level type definition for '${name}' but found ${matches.length}.`);
+const findTypeByName = (types: RosMsgDefinition[], name: string): RosMsgDefinition => {
+  const ret = types.find((type) => type.name === name);
+  if (ret == null) {
+    throw new Error(`Type '${name}' but not found.`);
   }
-  return { ...matches[0], name: foundName };
+  return ret;
 };
 
 const friendlyName = (name: string) => name.replace(/\//g, "_");
@@ -196,17 +181,11 @@ type WriterAndSizeCalculator = {|
   bufferSizeCalculator: (message: any) => number,
 |};
 
-function createWriterAndSizeCalculator(types: RosMsgDefinition[]): WriterAndSizeCalculator {
-  const unnamedTypes = types.filter((type) => !type.name);
-  if (unnamedTypes.length !== 1) {
-    throw new Error("multiple unnamed types");
-  }
+function createWriterAndSizeCalculator(types: RosMsgDefinition[], typeName: string): WriterAndSizeCalculator {
+  const topLevelType = findTypeByName(types, typeName);
+  const nestedTypes = types.filter((type) => type.name !== typeName);
 
-  const [unnamedType] = unnamedTypes;
-
-  const namedTypes: NamedRosMsgDefinition[] = (types.filter((type) => !!type.name): any[]);
-
-  const constructorBody = (type: RosMsgDefinition | NamedRosMsgDefinition, argName: "offsetCalculator" | "writer") => {
+  const constructorBody = (type: RosMsgDefinition, argName: "offsetCalculator" | "writer") => {
     const lines: string[] = [];
     type.definitions.forEach((def) => {
       if (def.isConstant) {
@@ -252,7 +231,7 @@ function createWriterAndSizeCalculator(types: RosMsgDefinition[]): WriterAndSize
   let writerJs = "";
   let calculateSizeJs = "";
 
-  namedTypes.forEach((t) => {
+  nestedTypes.forEach((t) => {
     writerJs += `
   function ${friendlyName(t.name)}(writer, message) {
     ${constructorBody(t, "writer")}
@@ -265,12 +244,12 @@ function createWriterAndSizeCalculator(types: RosMsgDefinition[]): WriterAndSize
 
   writerJs += `
   return function write(writer, message) {
-    ${constructorBody(unnamedType, "writer")}
+    ${constructorBody(topLevelType, "writer")}
     return writer.buffer;
   };`;
   calculateSizeJs += `
   return function calculateSize(offsetCalculator, message) {
-    ${constructorBody(unnamedType, "offsetCalculator")}
+    ${constructorBody(topLevelType, "offsetCalculator")}
     return offsetCalculator.offset;
   };`;
 
@@ -308,8 +287,8 @@ export class MessageWriter {
   // takes an object string message definition and returns
   // a message writer which can be used to write messages based
   // on the message definition
-  constructor(definitions: RosMsgDefinition[]) {
-    const { writer, bufferSizeCalculator } = createWriterAndSizeCalculator(definitions);
+  constructor(definitions: RosMsgDefinition[], typeName: string) {
+    const { writer, bufferSizeCalculator } = createWriterAndSizeCalculator(definitions, typeName);
     this.writer = writer;
     this.bufferSizeCalculator = bufferSizeCalculator;
   }

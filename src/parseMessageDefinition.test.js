@@ -10,7 +10,7 @@ import { parseMessageDefinition } from "./parseMessageDefinition";
 
 describe("parseMessageDefinition", () => {
   it("parses a single field from a single message", () => {
-    const types = parseMessageDefinition("string name");
+    const types = parseMessageDefinition("string name", "foo_msgs/Bar");
     expect(types).toEqual([
       {
         definitions: [
@@ -22,7 +22,7 @@ describe("parseMessageDefinition", () => {
             type: "string",
           },
         ],
-        name: undefined,
+        name: "foo_msgs/Bar",
       },
     ]);
   });
@@ -34,7 +34,7 @@ describe("parseMessageDefinition", () => {
       MSG: geometry_msgs/Point
       float64 x
     `;
-    const types = parseMessageDefinition(messageDefinition);
+    const types = parseMessageDefinition(messageDefinition, "geometry_msgs/Polygon");
     expect(types).toEqual([
       {
         definitions: [
@@ -46,7 +46,7 @@ describe("parseMessageDefinition", () => {
             type: "geometry_msgs/Point",
           },
         ],
-        name: undefined,
+        name: "geometry_msgs/Polygon",
       },
       {
         definitions: [
@@ -63,8 +63,39 @@ describe("parseMessageDefinition", () => {
     ]);
   });
 
+  it("resolves seemingly-ambiguous unqualified names", () => {
+    const messageDefinition = `
+      Header header # doesn't say std_msgs, but we special-case it.
+      Ambiguous m1 # refers to this_msgs/Ambiguous
+      other_msgs/Other
+      ============
+      MSG: other_msgs/Other
+      Ambiguous # refers to other_msgs/Ambiguous
+      ============
+      MSG: this_msgs/Ambiguous
+      ============
+      MSG: other_msgs/Ambiguous
+      ============
+      MSG: std_msgs/Header
+    `;
+    const types = parseMessageDefinition(messageDefinition, "this_msgs/Message");
+    expect(types).toEqual([
+      {
+        definitions: [
+          { isArray: false, isComplex: true, name: "header", type: "std_msgs/Header" },
+          { isArray: false, isComplex: true, name: "m1", type: "this_msgs/Ambiguous" },
+        ],
+        name: "this_msgs/Message",
+      },
+      { definitions: [], name: "other_msgs/Other" },
+      { definitions: [], name: "this_msgs/Ambiguous" },
+      { definitions: [], name: "other_msgs/Ambiguous" },
+      { definitions: [], name: "std_msgs/Header" },
+    ]);
+  });
+
   it("normalizes aliases", () => {
-    const types = parseMessageDefinition("char x\nbyte y");
+    const types = parseMessageDefinition("char x\nbyte y", "foo_msgs/Bar");
     expect(types).toEqual([
       {
         definitions: [
@@ -83,7 +114,7 @@ describe("parseMessageDefinition", () => {
             type: "int8",
           },
         ],
-        name: undefined,
+        name: "foo_msgs/Bar",
       },
     ]);
   });
@@ -97,7 +128,7 @@ describe("parseMessageDefinition", () => {
     ### foo bar baz?
     string lastName
     `;
-    const types = parseMessageDefinition(messageDefinition);
+    const types = parseMessageDefinition(messageDefinition, "foo_msgs/Bar");
     expect(types).toEqual([
       {
         definitions: [
@@ -116,13 +147,13 @@ describe("parseMessageDefinition", () => {
             type: "string",
           },
         ],
-        name: undefined,
+        name: "foo_msgs/Bar",
       },
     ]);
   });
 
   it("parses variable length string array", () => {
-    const types = parseMessageDefinition("string[] names");
+    const types = parseMessageDefinition("string[] names", "foo_msgs/Bar");
     expect(types).toEqual([
       {
         definitions: [
@@ -134,13 +165,13 @@ describe("parseMessageDefinition", () => {
             type: "string",
           },
         ],
-        name: undefined,
+        name: "foo_msgs/Bar",
       },
     ]);
   });
 
   it("parses fixed length string array", () => {
-    const types = parseMessageDefinition("string[3] names");
+    const types = parseMessageDefinition("string[3] names", "foo_msgs/Bar");
     expect(types).toEqual([
       {
         definitions: [
@@ -152,7 +183,7 @@ describe("parseMessageDefinition", () => {
             type: "string",
           },
         ],
-        name: undefined,
+        name: "foo_msgs/Bar",
       },
     ]);
   });
@@ -166,7 +197,7 @@ describe("parseMessageDefinition", () => {
     string name
     uint16 id
     `;
-    const types = parseMessageDefinition(messageDefinition);
+    const types = parseMessageDefinition(messageDefinition, "custom_type/CustomMessage");
     expect(types).toEqual([
       {
         definitions: [
@@ -185,7 +216,7 @@ describe("parseMessageDefinition", () => {
             type: "custom_type/Account",
           },
         ],
-        name: undefined,
+        name: "custom_type/CustomMessage",
       },
       {
         definitions: [
@@ -218,7 +249,7 @@ describe("parseMessageDefinition", () => {
       string fooStr = Foo    ${""}
       string EXAMPLE="#comments" are ignored, and leading and trailing whitespace removed
     `;
-    const types = parseMessageDefinition(messageDefinition);
+    const types = parseMessageDefinition(messageDefinition, "foo_msgs/Bar");
     expect(types).toEqual([
       {
         definitions: [
@@ -259,7 +290,7 @@ describe("parseMessageDefinition", () => {
             value: '"#comments" are ignored, and leading and trailing whitespace removed',
           },
         ],
-        name: undefined,
+        name: "foo_msgs/Bar",
       },
     ]);
   });
@@ -269,7 +300,7 @@ describe("parseMessageDefinition", () => {
       bool Alive=True
       bool Dead=False
     `;
-    const types = parseMessageDefinition(messageDefinition);
+    const types = parseMessageDefinition(messageDefinition, "foo_msgs/Bar");
     expect(types).toEqual([
       {
         definitions: [
@@ -286,7 +317,7 @@ describe("parseMessageDefinition", () => {
             value: false,
           },
         ],
-        name: undefined,
+        name: "foo_msgs/Bar",
       },
     ]);
   });
