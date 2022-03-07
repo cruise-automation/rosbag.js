@@ -4,12 +4,11 @@
   "license": "Apache-2.0",
   "repository": "cruise-automation/rosbag.js",
   "dependencies": {
-    "buffer": "5.2.1",
     "heap": "0.2.6",
     "int53": "1.0.0"
   },
   "engines": {
-    "node": ">=8.0.0"
+    "node": ">=11.0.0"
   },
   "main": "dist/node",
   "browser": "dist/web",
@@ -60,6 +59,7 @@
     "lz4js": "0.2.0",
     "prettier": "1.14.3",
     "regenerator-runtime": "0.12.1",
+    "text-encoding": "0.7.0",
     "webpack": "4.21.0",
     "webpack-cli": "3.1.2",
     "webpack-node-externals": "1.7.2"
@@ -74,6 +74,9 @@
     "reporters": [
       "default",
       "jest-junit"
+    ],
+    "setupFiles": [
+      "./src/jest_setup.js"
     ]
   }
 }

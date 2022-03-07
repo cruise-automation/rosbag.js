@@ -30,13 +30,13 @@ type TypedArrayConstructor = (
 // of the standard message types http://docs.ros.org/api/std_msgs/html/index-msg.html
 // eventually custom types decompose into these standard types
 class StandardTypeReader {
-  buffer: Buffer;
+  buffer: Uint8Array;
   offset: number;
   view: DataView;
   _decoder: ?TextDecoder;
   _decoderStatus: "NOT_INITIALIZED" | "INITIALIZED" | "NOT_AVAILABLE" = "NOT_INITIALIZED";
 
-  constructor(buffer: Buffer) {
+  constructor(buffer: Uint8Array) {
     this.buffer = buffer;
     this.offset = 0;
     this.view = new DataView(buffer.buffer, buffer.byteOffset);
@@ -271,14 +271,14 @@ const createParser = (types: RosMsgDefinition[], typeName: string, freeze: boole
     throw e;
   }
 
-  return function(buffer: Buffer) {
+  return function(buffer: Uint8Array) {
     const reader = new StandardTypeReader(buffer);
     return _read(reader);
   };
 };
 
 export class MessageReader {
-  reader: (buffer: Buffer) => any;
+  reader: (buffer: Uint8Array) => any;
 
   // takes an object message definition and returns
   // a message reader which can be used to read messages based
@@ -295,7 +295,7 @@ export class MessageReader {
     this.reader = createParser(parsedDefinitions, typeName, !!options.freeze);
   }
 
-  readMessage(buffer: Buffer) {
+  readMessage(buffer: Uint8Array) {
     return this.reader(buffer);
   }
 }

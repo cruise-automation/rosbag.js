@@ -19,7 +19,7 @@ interface ChunkReadResult {
 }
 
 export type Decompress = {
-  [compression: string]: (buffer: Buffer, size: number) => Buffer,
+  [compression: string]: (buffer: Uint8Array, size: number) => Uint8Array,
 };
 
 const HEADER_READAHEAD = 4096;
@@ -40,7 +40,7 @@ export default class BagReader {
   }
 
   verifyBagHeader(callback: Callback<BagHeader>, next: () => void) {
-    this._file.read(0, HEADER_OFFSET, (error: Error | null, buffer?: Buffer) => {
+    this._file.read(0, HEADER_OFFSET, (error: Error | null, buffer?: Uint8Array) => {
       if (error || !buffer) {
         return callback(error || new Error("Missing both error and buffer"));
       }
@@ -49,7 +49,7 @@ export default class BagReader {
         return callback(new Error("Missing file header."));
       }
 
-      if (buffer.toString() !== "#ROSBAG V2.0\n") {
+      if (new TextDecoder().decode(buffer) !== "#ROSBAG V2.0\n") {
         return callback(new Error("Cannot identify bag format."));
       }
       next();
@@ -61,7 +61,7 @@ export default class BagReader {
   // because you need the header information to call readConnectionsAndChunkInfo
   readHeader(callback: Callback<BagHeader>) {
     this.verifyBagHeader(callback, () => {
-      return this._file.read(HEADER_OFFSET, HEADER_READAHEAD, (error: Error | null, buffer?: Buffer) => {
+      return this._file.read(HEADER_OFFSET, HEADER_READAHEAD, (error: Error | null, buffer?: Uint8Array) => {
         if (error || !buffer) {
           return callback(error || new Error("Missing both error and buffer"));
         }
@@ -71,7 +71,9 @@ export default class BagReader {
           return callback(new Error(`Record at position ${HEADER_OFFSET} is truncated.`));
         }
 
-        const headerLength = buffer.readInt32LE(0);
+        const view = new DataView(buffer.buffer);
+        const headerLength = view.getInt32(buffer.byteOffset, true);
+
         if (read < headerLength + 8) {
           return callback(new Error(`Record at position ${HEADER_OFFSET} header too large: ${headerLength}.`));
         }
@@ -102,7 +104,7 @@ export default class BagReader {
     chunkCount: number,
     callback: Callback<{ connections: Connection[], chunkInfos: ChunkInfo[] }>
   ) {
-    this._file.read(fileOffset, this._file.size() - fileOffset, (err: Error | null, buffer?: Buffer) => {
+    this._file.read(fileOffset, this._file.size() - fileOffset, (err: Error | null, buffer?: Uint8Array) => {
       if (err || !buffer) {
         return callback(err || new Error("Missing both error and buffer"));
       }
@@ -114,7 +116,7 @@ export default class BagReader {
       const connections = this.readRecordsFromBuffer(buffer, connectionCount, fileOffset, Connection);
       const connectionBlockLength = connections[connectionCount - 1].end - connections[0].offset;
       const chunkInfos = this.readRecordsFromBuffer(
-        buffer.slice(connectionBlockLength),
+        buffer.subarray(connectionBlockLength),
         chunkCount,
         fileOffset + connectionBlockLength,
         ChunkInfo
@@ -201,7 +203,7 @@ export default class BagReader {
       }
 
       const messages = entries.map((entry) => {
-        return this.readRecordFromBuffer(chunk.data.slice(entry.offset), chunk.dataOffset, MessageData);
+        return this.readRecordFromBuffer(chunk.data.subarray(entry.offset), chunk.dataOffset, MessageData);
       });
 
       return callback(null, messages);
@@ -245,7 +247,7 @@ export default class BagReader {
       ? nextChunk.chunkPosition - chunkInfo.chunkPosition
       : this._file.size() - chunkInfo.chunkPosition;
 
-    this._file.read(chunkInfo.chunkPosition, readLength, (err: Error | null, buffer?: Buffer) => {
+    this._file.read(chunkInfo.chunkPosition, readLength, (err: Error | null, buffer?: Uint8Array) => {
       if (err || !buffer) {
         return callback(err || new Error("Missing both error and buffer"));
       }
@@ -261,7 +263,7 @@ export default class BagReader {
         chunk.data = result;
       }
       const indices = this.readRecordsFromBuffer(
-        buffer.slice(chunk.length),
+        buffer.subarray(chunk.length),
         chunkInfo.count,
         chunkInfo.chunkPosition + chunk.length,
         IndexData
@@ -275,7 +277,7 @@ export default class BagReader {
 
   // reads count records from a buffer starting at fileOffset
   readRecordsFromBuffer<T: Record>(
-    buffer: Buffer,
+    buffer: Uint8Array,
     count: number,
     fileOffset: number,
     cls: Class<T> & { opcode: number }
@@ -283,7 +285,7 @@ export default class BagReader {
     const records = [];
     let bufferOffset = 0;
     for (let i = 0; i < count; i++) {
-      const record = this.readRecordFromBuffer(buffer.slice(bufferOffset), fileOffset + bufferOffset, cls);
+      const record = this.readRecordFromBuffer(buffer.subarray(bufferOffset), fileOffset + bufferOffset, cls);
       bufferOffset += record.end - record.offset;
       records.push(record);
     }
@@ -291,13 +293,17 @@ export default class BagReader {
   }
 
   // read an individual record from a buffer
-  readRecordFromBuffer<T: Record>(buffer: Buffer, fileOffset: number, cls: Class<T> & { opcode: number }): T {
-    const headerLength = buffer.readInt32LE(0);
-    const headerFields = parseHeader(buffer.slice(4, 4 + headerLength), cls);
+  readRecordFromBuffer<T: Record>(buffer: Uint8Array, fileOffset: number, cls: Class<T> & { opcode: number }): T {
+    const view = new DataView(buffer.buffer);
+    const headerLength = view.getInt32(buffer.byteOffset, true);
+
+    const headerFields = parseHeader(buffer.subarray(4, 4 + headerLength), cls);
 
     const dataOffset = 4 + headerLength + 4;
-    const dataLength = buffer.readInt32LE(4 + headerLength);
-    const data = buffer.slice(dataOffset, dataOffset + dataLength);
+    const dataLength = view.getInt32(buffer.byteOffset + 4 + headerLength, true);
+    const data = buffer.subarray(dataOffset, dataOffset + dataLength);
+
+    // console.log({buffer, dataLength, cls});
 
     const record = new cls(headerFields, data);
 

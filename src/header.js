@@ -11,12 +11,17 @@ import { Record } from "./record";
 
 // given a buffer parses out the record within the buffer
 // based on the opcode type bit
-export function parseHeader<T: Record>(buffer: Buffer, cls: Class<T> & { opcode: number }): { [key: string]: Buffer } {
+export function parseHeader<T: Record>(
+  buffer: Uint8Array,
+  cls: Class<T> & { opcode: number }
+): { [key: string]: Uint8Array } {
   const fields = extractFields(buffer);
   if (fields.op === undefined) {
     throw new Error("Header is missing 'op' field.");
   }
-  const opcode = fields.op.readUInt8(0);
+  const view = new DataView(fields.op.buffer);
+  const opcode = view.getUint8(fields.op.byteOffset);
+
   if (opcode !== cls.opcode) {
     throw new Error(`Expected ${cls.name} (${cls.opcode}) but found ${opcode}`);
   }

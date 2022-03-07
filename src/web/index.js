@@ -6,7 +6,6 @@
 
 // @flow
 
-import { Buffer } from "buffer";
 import {
   MessageReader,
   MessageWriter,
@@ -32,14 +31,14 @@ export class Reader {
 
   // read length (bytes) starting from offset (bytes)
   // callback(err, buffer)
-  read(offset: number, length: number, cb: Callback<Buffer>) {
+  read(offset: number, length: number, cb: Callback<Uint8Array>) {
     const reader = new FileReader();
     reader.onload = function() {
       // $FlowFixMe - flow doesn't allow null
       reader.onload = null;
       // $FlowFixMe - flow doesn't allow null
       reader.onerror = null;
-      setImmediate(cb, null, Buffer.from(reader.result));
+      setImmediate(cb, null, new Uint8Array(((reader.result: any): ArrayBuffer)));
     };
     reader.onerror = function() {
       // $FlowFixMe - flow doesn't allow null

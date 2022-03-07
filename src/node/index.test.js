@@ -18,10 +18,10 @@ describe("node entrypoint", () => {
 
     it("should read bytes from a file", (done) => {
       const reader = new Reader(fixture);
-      reader.read(5, 10, (err: Error | null, buff: any) => {
+      reader.read(5, 10, (err: Error | null, buff: Uint8Array) => {
         assert(!err);
         assert.equal(reader.size(), fs.statSync(fixture).size);
-        assert.equal("6789012345", buff.toString());
+        assert.equal("6789012345", new TextDecoder().decode(buff));
         reader.close(done);
       });
     });

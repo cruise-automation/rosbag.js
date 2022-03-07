@@ -19,7 +19,7 @@ export interface Time {
 }
 
 export interface Filelike {
-  read(offset: number, length: number, callback: Callback<Buffer>): void;
+  read(offset: number, length: number, callback: Callback<Uint8Array>): void;
   size(): number;
 }
 

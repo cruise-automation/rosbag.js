@@ -12,7 +12,7 @@ import BagReader from "./BagReader";
 function int64Buffer(number: number) {
   const buff = Buffer.alloc(8);
   int53.writeInt64LE(number, buff, 0);
-  return buff;
+  return new Uint8Array(buff.buffer, buff.byteOffset, buff.byteOffset + buff.length);
 }
 
 function int32Buffer(number: number) {

@@ -15,7 +15,7 @@ describe("browser reader", () => {
     reader.read(0, 2, (err: Error | null, res: any) => {
       expect(err).toBeNull();
       expect(res).toHaveLength(2);
-      expect(res instanceof Buffer).toBe(true);
+      expect(res instanceof Uint8Array).toBe(true);
       expect(res[0]).toBe(0x00);
       expect(res[1]).toBe(0x01);
       done();
