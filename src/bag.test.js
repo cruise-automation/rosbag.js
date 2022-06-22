@@ -211,6 +211,14 @@ describe("rosbag - high-level api", () => {
     expect(messages).toHaveLength(9);
   });
 
+  it("computes start and end time for unsorted chunks", async () => {
+    const filename = getFixture("example-unsorted-chunks");
+    expect(fs.existsSync(filename)).toBe(true);
+    const bag = await Bag.open(filename);
+    expect(bag.startTime).toEqual({ sec: 1, nsec: 0 });
+    expect(bag.endTime).toEqual({ sec: 3, nsec: 0 });
+  });
+
   describe("compression", () => {
     it("throws if compression scheme is not registered", async () => {
       let errorThrown = false;

@@ -68,8 +68,14 @@ export default class Bag {
     this.chunkInfos = result.chunkInfos;
 
     if (chunkCount > 0) {
-      this.startTime = this.chunkInfos[0].startTime;
-      this.endTime = this.chunkInfos[chunkCount - 1].endTime;
+      // Get the earliest startTime among all chunks
+      this.startTime = this.chunkInfos
+        .map((x) => x.startTime)
+        .reduce((prev, current) => (TimeUtil.compare(prev, current) <= 0 ? prev : current));
+      // Get the latest endTime among all chunks
+      this.endTime = this.chunkInfos
+        .map((x) => x.endTime)
+        .reduce((prev, current) => (TimeUtil.compare(prev, current) > 0 ? prev : current));
     }
   }
 
