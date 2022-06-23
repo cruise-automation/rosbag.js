@@ -12,31 +12,32 @@ import type { Time } from "./types";
 // pairs - the buffer is expected to have length prefixed utf8 strings
 // with a '=' separating the key and value
 const EQUALS_CHARCODE = "=".charCodeAt(0);
-export function extractFields(buffer: Buffer) {
+export function extractFields(buffer: Uint8Array) {
+  // console.log(buffer.length)
   if (buffer.length < 4) {
     throw new Error("Header fields are truncated.");
   }
 
   let i = 0;
-  const fields: { [key: string]: Buffer } = {};
+  const fields: { [key: string]: Uint8Array } = {};
+  const view = new DataView(buffer.buffer);
 
   while (i < buffer.length) {
-    const length = buffer.readInt32LE(i);
+    const length = view.getInt32(buffer.byteOffset + i, true);
     i += 4;
 
     if (i + length > buffer.length) {
       throw new Error("Header fields are corrupt.");
     }
 
-    // Passing a number into "indexOf" explicitly to avoid Buffer polyfill
-    // slow path. See issue #87.
-    const field = buffer.slice(i, i + length);
+    const field = buffer.subarray(i, i + length);
     const index = field.indexOf(EQUALS_CHARCODE);
     if (index === -1) {
       throw new Error("Header field is missing equals sign.");
     }
 
-    fields[field.slice(0, index).toString()] = field.slice(index + 1);
+    const decoder = new TextDecoder();
+    fields[decoder.decode(field.subarray(0, index))] = field.subarray(index + 1);
     i += length;
   }
 
@@ -44,8 +45,10 @@ export function extractFields(buffer: Buffer) {
 }
 
 // reads a Time object out of a buffer at the given offset
-export function extractTime(buffer: Buffer, offset: number): Time {
-  const sec = buffer.readUInt32LE(offset);
-  const nsec = buffer.readUInt32LE(offset + 4);
+export function extractTime(buffer: Uint8Array, offset: number): Time {
+  const view = new DataView(buffer.buffer);
+
+  const sec = view.getInt32(buffer.byteOffset + offset, true);
+  const nsec = view.getInt32(buffer.byteOffset + offset + 4, true);
   return { sec, nsec };
 }

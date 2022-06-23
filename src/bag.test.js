@@ -15,6 +15,10 @@ import Bag from "./node";
 import ReadResult from "./ReadResult";
 import * as TimeUtil from "./TimeUtil";
 
+const { TextDecoder } = require("util");
+
+global.TextDecoder = TextDecoder;
+
 const FILENAME = "example";
 
 function getFixture(filename = FILENAME) {
@@ -24,7 +28,7 @@ function getFixture(filename = FILENAME) {
 async function fullyReadBag(name: string, opts?: ReadOptions): Promise<ReadResult<any>[]> {
   const filename = getFixture(name);
   expect(fs.existsSync(filename)).toBe(true);
-  const bag = await Bag.open(filename);
+  const bag: Bag = await Bag.open(filename);
   const messages = [];
   await bag.readMessages(opts || {}, (msg) => {
     messages.push(msg);
@@ -75,7 +79,7 @@ describe("rosbag - high-level api", () => {
 
   it("returns chunkOffset and totalChunks on read results", async () => {
     const filename = getFixture();
-    const bag = await Bag.open(filename);
+    const bag: Bag = await Bag.open(filename);
     const messages = [];
     await bag.readMessages({}, (msg) => {
       messages.push(msg);
@@ -85,7 +89,7 @@ describe("rosbag - high-level api", () => {
   });
 
   it("reads topics", async () => {
-    const bag = await Bag.open(getFixture());
+    const bag: Bag = await Bag.open(getFixture());
     const topics = Object.keys(bag.connections).map((con: any) => bag.connections[con].topic);
     expect(topics).toEqual([
       "/rosout",
@@ -109,7 +113,7 @@ describe("rosbag - high-level api", () => {
   });
 
   it("can read bag twice at once", async () => {
-    const bag = await Bag.open(getFixture());
+    const bag: Bag = await Bag.open(getFixture());
     const messages1 = [];
     const messages2 = [];
     const readPromise1 = bag.readMessages({ topics: ["/tf"] }, (msg) => {
@@ -156,7 +160,7 @@ describe("rosbag - high-level api", () => {
       // $FlowFixMe - adding invalid field
       frozenMsg.test = "test";
     }).toThrow();
-    // As far as I can tell, we can't make the Buffer / underlying ArrayBuffer immutable. :(
+    // As far as I can tell, we can't make the underlying ArrayBuffer immutable. :(
   });
 
   it("reads messages filtered to a specific topic", async () => {
@@ -222,7 +226,7 @@ describe("rosbag - high-level api", () => {
   describe("compression", () => {
     it("throws if compression scheme is not registered", async () => {
       let errorThrown = false;
-      const bag = await Bag.open(getFixture("example-bz2"));
+      const bag: Bag = await Bag.open(getFixture("example-bz2"));
       try {
         await bag.readMessages({}, () => {});
       } catch (e) {
@@ -236,9 +240,9 @@ describe("rosbag - high-level api", () => {
       const messages = await fullyReadBag("example-bz2", {
         topics: ["/turtle1/color_sensor"],
         decompress: {
-          bz2: (buffer: Buffer) => {
+          bz2: (buffer: Uint8Array) => {
             const arr = compress.Bzip2.decompressFile(buffer);
-            return Buffer.from(arr);
+            return arr;
           },
         },
       });
@@ -251,7 +255,7 @@ describe("rosbag - high-level api", () => {
       const messages = await fullyReadBag("example-lz4", {
         topics: ["/turtle1/color_sensor"],
         decompress: {
-          lz4: (buffer: Buffer) => new Buffer(lz4.decompress(buffer)),
+          lz4: (buffer: Uint8Array) => lz4.decompress(buffer),
         },
       });
       const topics = messages.map((msg) => msg.topic);
@@ -265,9 +269,9 @@ describe("rosbag - high-level api", () => {
         endTime: { sec: 1396293887, nsec: 846735850 },
         topics: ["/turtle1/color_sensor"],
         decompress: {
-          lz4: (buffer: Buffer, size: number) => {
+          lz4: (buffer: Uint8Array, size: number) => {
             expect(size).toBe(743449);
-            const buff = new Buffer(lz4.decompress(buffer));
+            const buff: Uint8Array = lz4.decompress(buffer);
             expect(buff.byteLength).toBe(size);
             return buff;
           },

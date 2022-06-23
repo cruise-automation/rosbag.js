@@ -119,8 +119,8 @@ const bagOptions = {
   // The decompression callback is also passed the uncompressedByteLength which is stored in the bag.
   // This byte length can be used with some decompression libraries to increase decompression efficiency.
   decompress?: {|
-    bz2?: (buffer: Buffer, uncompressedByteLength: number) => Buffer,
-    lz4?: (buffer: Buffer, uncompressedByteLength: number) => Buffer,
+    bz2?: (buffer: Uint8Array, uncompressedByteLength: number) => Uint8Array,
+    lz4?: (buffer: Uint8Array, uncompressedByteLength: number) => Uint8Array,
   |},
 
   // by default the individual parsed binary messages will be parsed based on their [ROS message definition](http://wiki.ros.org/msg)

@@ -6,7 +6,6 @@
 
 // @flow
 
-import { Buffer } from "buffer";
 import * as fs from "fs";
 import {
   MessageReader,
@@ -26,13 +25,13 @@ export class Reader {
   _filename: string;
   _fd: ?number;
   _size: number;
-  _buffer: Buffer;
+  _buffer: Uint8Array;
 
   constructor(filename: string) {
     this._filename = filename;
     this._fd = undefined;
     this._size = 0;
-    this._buffer = Buffer.allocUnsafe(0);
+    this._buffer = new Uint8Array(0);
   }
 
   // open a file for reading
@@ -62,14 +61,14 @@ export class Reader {
 
   // read length (bytes) starting from offset (bytes)
   // callback(err, buffer)
-  read(offset: number, length: number, cb: Callback<Buffer>): void {
+  read(offset: number, length: number, cb: Callback<Uint8Array>): void {
     if (this._fd == null) {
       return this._open((err) => {
         return err ? cb(err) : this.read(offset, length, cb);
       });
     }
     if (length > this._buffer.byteLength) {
-      this._buffer = Buffer.alloc(length);
+      this._buffer = new Uint8Array(length);
     }
     return fs.read(this._fd, this._buffer, 0, length, offset, (err, bytes, buff) => {
       return err ? cb(err) : cb(null, buff);
