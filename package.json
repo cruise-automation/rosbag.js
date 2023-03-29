@@ -60,6 +60,7 @@
     "lz4js": "0.2.0",
     "prettier": "1.14.3",
     "regenerator-runtime": "0.12.1",
+    "typescript": "5.0.2",
     "webpack": "4.21.0",
     "webpack-cli": "3.1.2",
     "webpack-node-externals": "1.7.2"
