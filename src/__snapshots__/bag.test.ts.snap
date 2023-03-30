@@ -2,25 +2,25 @@
 
 exports[`rosbag - high-level api reads correct fields on /tf message 1`] = `
 Record {
-  "transforms": Array [
-    Object {
+  "transforms": [
+    {
       "child_frame_id": "turtle2",
-      "header": Object {
+      "header": {
         "frame_id": "world",
         "seq": 0,
-        "stamp": Object {
+        "stamp": {
           "nsec": 56065082,
           "sec": 1396293888,
         },
       },
-      "transform": Object {
-        "rotation": Object {
+      "transform": {
+        "rotation": {
           "w": 1,
           "x": 0,
           "y": 0,
           "z": 0,
         },
-        "translation": Object {
+        "translation": {
           "x": 4,
           "y": 9.088889122009277,
           "z": 0,

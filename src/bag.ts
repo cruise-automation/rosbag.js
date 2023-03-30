@@ -43,11 +43,9 @@ export default class Bag {
     this.reader = bagReader;
   }
 
-  static open = (_file: File | string) => {
-    Promise.reject(new Error(
-      "This method should have been overridden based on the environment. Make sure you are correctly importing the node or web version of Bag."
-    ));
-  };
+  static open = (_file: File | string): Promise<Bag> => Promise.reject(new Error(
+    "This method should have been overridden based on the environment. Make sure you are correctly importing the node or web version of Bag."
+  ));
 
   // eslint-disable-next-line no-use-before-define
   private assertOpen(): asserts this is OpenBag {

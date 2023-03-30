@@ -4,8 +4,6 @@
 // found in the LICENSE file in the root directory of this source tree.
 // You may not use this file except in compliance with the License.
 
-// @flow
-
 import compress from "compressjs";
 import fs from "fs";
 import lz4 from "lz4js";
@@ -13,6 +11,7 @@ import lz4 from "lz4js";
 import type { ReadOptions } from "./bag";
 import Bag from "./node";
 import ReadResult from "./ReadResult";
+import { Connection } from "./record";
 import * as TimeUtil from "./TimeUtil";
 
 const FILENAME = "example";
@@ -25,7 +24,7 @@ async function fullyReadBag(name: string, opts?: ReadOptions): Promise<ReadResul
   const filename = getFixture(name);
   expect(fs.existsSync(filename)).toBe(true);
   const bag = await Bag.open(filename);
-  const messages = [];
+  const messages: ReadResult<unknown>[] = [];
   await bag.readMessages(opts || {}, (msg) => {
     messages.push(msg);
   });
@@ -76,7 +75,7 @@ describe("rosbag - high-level api", () => {
   it("returns chunkOffset and totalChunks on read results", async () => {
     const filename = getFixture();
     const bag = await Bag.open(filename);
-    const messages = [];
+    const messages: ReadResult<unknown>[] = [];
     await bag.readMessages({}, (msg) => {
       messages.push(msg);
     });
@@ -86,7 +85,7 @@ describe("rosbag - high-level api", () => {
 
   it("reads topics", async () => {
     const bag = await Bag.open(getFixture());
-    const topics = Object.keys(bag.connections).map((con: any) => bag.connections[con].topic);
+    const topics = Object.values(bag.connections || {}).map((con: Connection) => con.topic);
     expect(topics).toEqual([
       "/rosout",
       "/turtle1/color_sensor",
@@ -110,8 +109,8 @@ describe("rosbag - high-level api", () => {
 
   it("can read bag twice at once", async () => {
     const bag = await Bag.open(getFixture());
-    const messages1 = [];
-    const messages2 = [];
+    const messages1: ReadResult<unknown>[] = [];
+    const messages2: ReadResult<unknown>[] = [];
     const readPromise1 = bag.readMessages({ topics: ["/tf"] }, (msg) => {
       messages1.push(msg);
     });
@@ -153,7 +152,7 @@ describe("rosbag - high-level api", () => {
       frozenMsg.timestamp.sec = 0;
     }).toThrow();
     expect(() => {
-      // $FlowFixMe - adding invalid field
+      // @ts-expect-error Property 'test' does not exist on type 'ReadResult<any>'.
       frozenMsg.test = "test";
     }).toThrow();
     // As far as I can tell, we can't make the Buffer / underlying ArrayBuffer immutable. :(
@@ -224,9 +223,10 @@ describe("rosbag - high-level api", () => {
       let errorThrown = false;
       const bag = await Bag.open(getFixture("example-bz2"));
       try {
+        // eslint-disable-next-line @typescript-eslint/no-empty-function
         await bag.readMessages({}, () => {});
       } catch (e) {
-        expect(e.message).toContain("compression");
+        expect((e as Error).message).toContain("compression");
         errorThrown = true;
       }
       expect(errorThrown).toBe(true);
