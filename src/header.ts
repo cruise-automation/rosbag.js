@@ -5,11 +5,11 @@
 // You may not use this file except in compliance with the License.
 
 import { extractFields } from "./fields";
-import { RosbagRecordConstructor } from "./record";
+import { RosbagRecord, RosbagRecordConstructor } from "./record";
 
 // given a buffer parses out the record within the buffer
 // based on the opcode type bit
-export function parseHeader<T extends RosbagRecordConstructor>(buffer: Buffer, cls: T): Record<string, Buffer> {
+export function parseHeader<T extends RosbagRecord>(buffer: Buffer, Cls: RosbagRecordConstructor<T>): Record<string, Buffer> {
   const fields = extractFields(buffer);
 
   if (fields.op === undefined) {
@@ -18,8 +18,8 @@ export function parseHeader<T extends RosbagRecordConstructor>(buffer: Buffer, c
 
   const opcode = fields.op.readUInt8(0);
 
-  if (opcode !== cls.opcode) {
-    throw new Error(`Expected ${cls.name} (${cls.opcode}) but found ${opcode}`);
+  if (opcode !== Cls.opcode) {
+    throw new Error(`Expected ${Cls.name} (${Cls.opcode}) but found ${opcode}`);
   }
 
   return fields;

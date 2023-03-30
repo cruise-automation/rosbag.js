@@ -4,24 +4,17 @@
 // found in the LICENSE file in the root directory of this source tree.
 // You may not use this file except in compliance with the License.
 
-// @flow
-
 import type { Time, Callback, Filelike } from "./types";
-
 import { parseHeader } from "./header";
 import nmerge from "./nmerge";
-import { Record, BagHeader, Chunk, ChunkInfo, Connection, IndexData, MessageData } from "./record";
+import { RosbagRecord, RosbagRecordConstructor, BagHeader, Chunk, ChunkInfo, Connection, IndexData, MessageData } from "./record";
 import * as TimeUtil from "./TimeUtil";
 
 interface ChunkReadResult {
   chunk: Chunk;
   indices: IndexData[];
 }
-
-export type Decompress = {
-  [compression: string]: (buffer: Buffer, size: number) => Buffer,
-};
-
+export type Decompress = Record<string, (buffer: Buffer, size: number) => Buffer>;
 const HEADER_READAHEAD = 4096;
 const HEADER_OFFSET = 13;
 
@@ -32,7 +25,7 @@ const HEADER_OFFSET = 13;
 export default class BagReader {
   _lastReadResult: ChunkReadResult;
   _file: Filelike;
-  _lastChunkInfo: ?ChunkInfo;
+  _lastChunkInfo?: ChunkInfo;
 
   constructor(filelike: Filelike) {
     this._file = filelike;
@@ -42,16 +35,20 @@ export default class BagReader {
   verifyBagHeader(callback: Callback<BagHeader>, next: () => void) {
     this._file.read(0, HEADER_OFFSET, (error: Error | null, buffer?: Buffer) => {
       if (error || !buffer) {
-        return callback(error || new Error("Missing both error and buffer"));
+        callback(error || new Error("Missing both error and buffer"));
+        return;
       }
 
       if (this._file.size() < HEADER_OFFSET) {
-        return callback(new Error("Missing file header."));
+        callback(new Error("Missing file header."));
+        return;
       }
 
       if (buffer.toString() !== "#ROSBAG V2.0\n") {
-        return callback(new Error("Cannot identify bag format."));
+        callback(new Error("Cannot identify bag format."));
+        return;
       }
+
       next();
     });
   }
@@ -60,29 +57,32 @@ export default class BagReader {
   // generally you call this first
   // because you need the header information to call readConnectionsAndChunkInfo
   readHeader(callback: Callback<BagHeader>) {
-    this.verifyBagHeader(callback, () => {
-      return this._file.read(HEADER_OFFSET, HEADER_READAHEAD, (error: Error | null, buffer?: Buffer) => {
+    this.verifyBagHeader(callback, () =>
+      this._file.read(HEADER_OFFSET, HEADER_READAHEAD, (error: Error | null, buffer?: Buffer) => {
         if (error || !buffer) {
           return callback(error || new Error("Missing both error and buffer"));
         }
 
         const read = buffer.length;
+
         if (read < 8) {
           return callback(new Error(`Record at position ${HEADER_OFFSET} is truncated.`));
         }
 
         const headerLength = buffer.readInt32LE(0);
+
         if (read < headerLength + 8) {
           return callback(new Error(`Record at position ${HEADER_OFFSET} header too large: ${headerLength}.`));
         }
+
         try {
           const header = this.readRecordFromBuffer(buffer, HEADER_OFFSET, BagHeader);
           return callback(null, header);
         } catch (e) {
           return callback(new Error(`Could not read header from rosbag file buffer - ${e.message}`));
         }
-      });
-    });
+      })
+    );
   }
 
   // promisified version of readHeader
@@ -100,7 +100,10 @@ export default class BagReader {
     fileOffset: number,
     connectionCount: number,
     chunkCount: number,
-    callback: Callback<{ connections: Connection[], chunkInfos: ChunkInfo[] }>
+    callback: Callback<{
+      connections: Connection[];
+      chunkInfos: ChunkInfo[];
+    }>
   ) {
     this._file.read(fileOffset, this._file.size() - fileOffset, (err: Error | null, buffer?: Buffer) => {
       if (err || !buffer) {
@@ -108,7 +111,10 @@ export default class BagReader {
       }
 
       if (connectionCount === 0) {
-        return callback(null, { connections: [], chunkInfos: [] });
+        return callback(null, {
+          connections: [],
+          chunkInfos: [],
+        });
       }
 
       const connections = this.readRecordsFromBuffer(buffer, connectionCount, fileOffset, Connection);
@@ -124,10 +130,14 @@ export default class BagReader {
         for (let i = 0; i < chunkCount - 1; i++) {
           chunkInfos[i].nextChunk = chunkInfos[i + 1];
         }
-        chunkInfos[chunkCount - 1].nextChunk = null;
+
+        chunkInfos[chunkCount - 1].nextChunk = undefined;
       }
 
-      return callback(null, { connections, chunkInfos });
+      return callback(null, {
+        connections,
+        chunkInfos,
+      });
     });
   }
 
@@ -136,14 +146,22 @@ export default class BagReader {
     fileOffset: number,
     connectionCount: number,
     chunkCount: number
-  ): Promise<{ connections: Connection[], chunkInfos: ChunkInfo[] }> {
+  ): Promise<{
+    connections: Connection[];
+    chunkInfos: ChunkInfo[];
+  }> {
     return new Promise((resolve, reject) => {
       this.readConnectionsAndChunkInfo(
         fileOffset,
         connectionCount,
         chunkCount,
-        (err: Error | null, result?: { connections: Connection[], chunkInfos: ChunkInfo[] }) =>
-          err || !result ? reject(err) : resolve(result)
+        (
+          err: Error | null,
+          result?: {
+            connections: Connection[];
+            chunkInfos: ChunkInfo[];
+          }
+        ) => (err || !result ? reject(err) : resolve(result))
       );
     });
   }
@@ -159,51 +177,52 @@ export default class BagReader {
     decompress: Decompress,
     callback: Callback<MessageData[]>
   ) {
-    const start = startTime || { sec: 0, nsec: 0 };
-    const end = endTime || { sec: Number.MAX_VALUE, nsec: Number.MAX_VALUE };
-    const conns =
-      connections ||
-      chunkInfo.connections.map((connection) => {
-        return connection.conn;
-      });
-
+    const start = startTime || {
+      sec: 0,
+      nsec: 0,
+    };
+    const end = endTime || {
+      sec: Number.MAX_VALUE,
+      nsec: Number.MAX_VALUE,
+    };
+    const conns = connections || chunkInfo.connections.map((connection) => connection.conn);
     this.readChunk(chunkInfo, decompress, (error: Error | null, result?: ChunkReadResult) => {
       if (error || !result) {
         return callback(error || new Error("Missing both error and result"));
       }
 
-      const chunk = result.chunk;
-      const indices: { [conn: number]: IndexData } = {};
+      const {chunk} = result;
+      const indices: Record<number, IndexData> = {};
       result.indices.forEach((index) => {
         indices[index.conn] = index;
       });
-      const presentConnections = conns.filter((conn) => {
-        return indices[conn] !== undefined;
-      });
-      const iterables = presentConnections.map((conn) => {
-        // $FlowFixMe https://github.com/facebook/flow/issues/1163
-        return indices[conn].indices[Symbol.iterator]();
-      });
+      const presentConnections = conns.filter((conn) => indices[conn] !== undefined);
+      const iterables = presentConnections.map((conn) =>
+        indices[conn].indices[Symbol.iterator]()
+      );
       const iter = nmerge((a, b) => TimeUtil.compare(a.time, b.time), ...iterables);
-
-      const entries = [];
+      const entries: IndexData["indices"] = [];
       let item = iter.next();
+
       while (!item.done) {
         const { value } = item;
         item = iter.next();
+
         if (!value || TimeUtil.isGreaterThan(start, value.time)) {
+          // eslint-disable-next-line no-continue
           continue;
         }
+
         if (TimeUtil.isGreaterThan(value.time, end)) {
           break;
         }
+
         entries.push(value);
       }
 
-      const messages = entries.map((entry) => {
-        return this.readRecordFromBuffer(chunk.data.slice(entry.offset), chunk.dataOffset, MessageData);
-      });
-
+      const messages = entries.map((entry) =>
+        this.readRecordFromBuffer(chunk.data.slice(entry.offset), chunk.dataOffset, MessageData)
+      );
       return callback(null, messages);
     });
   }
@@ -237,10 +256,11 @@ export default class BagReader {
       // always callback async, even if we have the result
       // https://oren.github.io/blog/zalgo.html
       const lastReadResult = this._lastReadResult;
-      return setImmediate(() => callback(null, lastReadResult));
+      setImmediate(() => callback(null, lastReadResult));
+      return;
     }
-    const { nextChunk } = chunkInfo;
 
+    const { nextChunk } = chunkInfo;
     const readLength = nextChunk
       ? nextChunk.chunkPosition - chunkInfo.chunkPosition
       : this._file.size() - chunkInfo.chunkPosition;
@@ -252,54 +272,62 @@ export default class BagReader {
 
       const chunk = this.readRecordFromBuffer(buffer, chunkInfo.chunkPosition, Chunk);
       const { compression } = chunk;
+
       if (compression !== "none") {
         const decompressFn = decompress[compression];
+
         if (!decompressFn) {
           return callback(new Error(`Unsupported compression type ${chunk.compression}`));
         }
+
         const result = decompressFn(chunk.data, chunk.size);
         chunk.data = result;
       }
+
       const indices = this.readRecordsFromBuffer(
         buffer.slice(chunk.length),
         chunkInfo.count,
         chunkInfo.chunkPosition + chunk.length,
         IndexData
       );
-
       this._lastChunkInfo = chunkInfo;
-      this._lastReadResult = { chunk, indices };
+      this._lastReadResult = {
+        chunk,
+        indices,
+      };
       return callback(null, this._lastReadResult);
     });
   }
 
   // reads count records from a buffer starting at fileOffset
-  readRecordsFromBuffer<T: Record>(
+  readRecordsFromBuffer<T extends RosbagRecord>(
     buffer: Buffer,
     count: number,
     fileOffset: number,
-    cls: Class<T> & { opcode: number }
+    Cls: RosbagRecordConstructor<T>
   ): T[] {
-    const records = [];
+    const records: T[] = [];
     let bufferOffset = 0;
+
     for (let i = 0; i < count; i++) {
-      const record = this.readRecordFromBuffer(buffer.slice(bufferOffset), fileOffset + bufferOffset, cls);
+      const record = this.readRecordFromBuffer(buffer.slice(bufferOffset), fileOffset + bufferOffset, Cls);
       bufferOffset += record.end - record.offset;
       records.push(record);
     }
+
     return records;
   }
 
   // read an individual record from a buffer
-  readRecordFromBuffer<T: Record>(buffer: Buffer, fileOffset: number, cls: Class<T> & { opcode: number }): T {
+  // eslint-disable-next-line class-methods-use-this
+  readRecordFromBuffer<T extends RosbagRecord>(buffer: Buffer, fileOffset: number, Cls: RosbagRecordConstructor<T>): T {
     const headerLength = buffer.readInt32LE(0);
-    const headerFields = parseHeader(buffer.slice(4, 4 + headerLength), cls);
-
+    const headerFields = parseHeader(buffer.slice(4, 4 + headerLength), Cls);
     const dataOffset = 4 + headerLength + 4;
     const dataLength = buffer.readInt32LE(4 + headerLength);
     const data = buffer.slice(dataOffset, dataOffset + dataLength);
 
-    const record = new cls(headerFields, data);
+    const record = new Cls(headerFields, data);
 
     record.offset = fileOffset;
     record.dataOffset = record.offset + 4 + headerLength + 4;
