@@ -4,9 +4,8 @@
 // found in the LICENSE file in the root directory of this source tree.
 // You may not use this file except in compliance with the License.
 
-// @flow
-
-import BagReader, { type Decompress } from "./BagReader";
+import type { Decompress } from "./BagReader";
+import BagReader from "./BagReader";
 import { MessageReader } from "./MessageReader";
 import ReadResult from "./ReadResult";
 import { BagHeader, ChunkInfo, Connection, MessageData } from "./record";
@@ -14,14 +13,14 @@ import type { Time } from "./types";
 import * as TimeUtil from "./TimeUtil";
 import { parseMessageDefinition } from "./parseMessageDefinition";
 
-export type ReadOptions = {|
-  decompress?: Decompress,
-  noParse?: boolean,
-  topics?: string[],
-  startTime?: Time,
-  endTime?: Time,
-  freeze?: ?boolean,
-|};
+export type ReadOptions = {
+  decompress?: Decompress;
+  noParse?: boolean;
+  topics?: string[];
+  startTime?: Time;
+  endTime?: Time;
+  freeze?: boolean;
+};
 
 // the high level rosbag interface
 // create a new bag by calling:
@@ -34,18 +33,17 @@ export type ReadOptions = {|
 export default class Bag {
   reader: BagReader;
   header: BagHeader;
-  connections: { [conn: number]: Connection };
+  connections: Record<number, Connection>;
   chunkInfos: ChunkInfo[];
-  startTime: ?Time;
-  endTime: ?Time;
+  startTime?: Time;
+  endTime?: Time;
 
   // you can optionally create a bag manually passing in a bagReader instance
   constructor(bagReader: BagReader) {
     this.reader = bagReader;
   }
 
-  // eslint-disable-next-line no-unused-vars
-  static open = (file: File | string) => {
+  static open = (_file: File | string) => {
     throw new Error(
       "This method should have been overridden based on the environment. Make sure you are correctly importing the node or web version of Bag."
     );
@@ -79,47 +77,51 @@ export default class Bag {
     }
   }
 
-  async readMessages(opts: ReadOptions, callback: (msg: ReadResult<any>) => void) {
-    const connections = this.connections;
-
-    const startTime = opts.startTime || { sec: 0, nsec: 0 };
-    const endTime = opts.endTime || { sec: Number.MAX_VALUE, nsec: Number.MAX_VALUE };
+  async readMessages(opts: ReadOptions, callback: (msg: ReadResult<unknown>) => void) {
+    const {connections} = this;
+    const startTime = opts.startTime || {
+      sec: 0,
+      nsec: 0,
+    };
+    const endTime = opts.endTime || {
+      sec: Number.MAX_VALUE,
+      nsec: Number.MAX_VALUE,
+    };
     const topics =
       opts.topics ||
-      Object.keys(connections).map((id: any) => {
-        return connections[id].topic;
-      });
+      Object.keys(connections).map((id: string) => connections[id].topic);
 
     const filteredConnections = Object.keys(connections)
-      .filter((id: any) => {
-        return topics.indexOf(connections[id].topic) !== -1;
-      })
+      .filter((id: string) => topics.indexOf(connections[id].topic) !== -1)
       .map((id) => +id);
 
     const { decompress = {} } = opts;
 
     // filter chunks to those which fall within the time range we're attempting to read
-    const chunkInfos = this.chunkInfos.filter((info) => {
-      return TimeUtil.compare(info.startTime, endTime) <= 0 && TimeUtil.compare(startTime, info.endTime) <= 0;
-    });
+    const chunkInfos = this.chunkInfos.filter((info) => TimeUtil.compare(info.startTime, endTime) <= 0 && TimeUtil.compare(startTime, info.endTime) <= 0);
 
-    function parseMsg(msg: MessageData, chunkOffset: number): ReadResult<any> {
+    function parseMsg(msg: MessageData, chunkOffset: number): ReadResult<unknown> {
       const connection = connections[msg.conn];
       const { topic, type } = connection;
       const { data, time: timestamp } = msg;
       let message = null;
+
       if (!opts.noParse) {
         // lazily create a reader for this connection if it doesn't exist
         connection.reader =
           connection.reader ||
-          new MessageReader(parseMessageDefinition(connection.messageDefinition, type), type, { freeze: opts.freeze });
+          new MessageReader(parseMessageDefinition(connection.messageDefinition, type), type, {
+            freeze: opts.freeze,
+          });
         message = connection.reader.readMessage(data);
       }
+
       return new ReadResult(topic, message, timestamp, data, chunkOffset, chunkInfos.length, opts.freeze);
     }
 
     for (let i = 0; i < chunkInfos.length; i++) {
       const info = chunkInfos[i];
+      // eslint-disable-next-line no-await-in-loop
       const messages = await this.reader.readChunkMessagesAsync(
         info,
         filteredConnections,
