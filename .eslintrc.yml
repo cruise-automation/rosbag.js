@@ -20,26 +20,29 @@ plugins:
 globals:
   GIT_INFO: false
 rules:
+  '@typescript-eslint/no-unused-vars': [error, {argsIgnorePattern: "^_"}]
   arrow-parens: [error, always]
   arrow-spacing: error
   comma-spacing: error
   comma-style: error
   eol-last: error
   import/extensions: off
-  import/no-named-as-default-member: off
   import/no-extraneous-dependencies: off
+  import/no-named-as-default-member: off
   import/no-unresolved: off
   import/no-webpack-loader-syntax: off
   import/prefer-default-export: off
   indent: [error, 2, {SwitchCase: 1}]
   keyword-spacing: error
   linebreak-style: [error, unix]
+  lines-between-class-members: off
   no-console: error
   no-constant-condition: off
   no-param-reassign: [error, {props: false}]
+  no-plusplus: off
   no-tabs: error
   no-trailing-spaces: error
-  '@typescript-eslint/no-unused-vars': [error, {argsIgnorePattern: "^_"}]
+  no-underscore-dangle: off
   no-var: error
   prefer-const: error
   quotes: [error, double, {avoidEscape: true}]
