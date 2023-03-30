@@ -21,11 +21,11 @@
   ],
   "scripts": {
     "prepack": "yarn run build",
-    "lint": "yarn run flow && eslint src && prettier -l 'src/**/*.js'",
+    "lint": "yarn run tsc && eslint src && prettier -l 'src/**/*.js'",
     "lint:fix": "eslint --fix src && prettier --write -l 'src/**/*.js'",
     "test": "yarn run jest --verbose && yarn run lint",
     "clean": "rm -rf build dist",
-    "build": "yarn run clean && mkdir -p dist && yarn run flow && yarn run build-node && yarn run build-web && yarn run flow-copy-source src dist",
+    "build": "yarn run clean && mkdir -p dist && yarn run tsc && yarn run build-node && yarn run build-web && yarn run flow-copy-source src dist",
     "build-node": "cross-env ROSBAG_TARGET=node webpack --mode development",
     "build-web": "cross-env ROSBAG_TARGET=web webpack --mode development"
   },
@@ -37,6 +37,8 @@
     "@babel/plugin-syntax-object-rest-spread": "7.0.0",
     "@babel/preset-env": "7.1.0",
     "@babel/preset-flow": "7.0.0",
+    "@types/heap": "0.2.31",
+    "@types/int53": "1.0.0",
     "@types/node": "18.15.11",
     "@typescript-eslint/eslint-plugin": "5.57.0",
     "@typescript-eslint/parser": "5.57.0",

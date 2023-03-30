@@ -749,12 +749,24 @@
     universal-user-agent "^2.0.0"
     url-template "^2.0.8"
 
+"@types/heap@0.2.31":
+  version "0.2.31"
+  resolved "https://registry.yarnpkg.com/@types/heap/-/heap-0.2.31.tgz#aaae2b2f7a915810fb783b1bbbf1c0748e399ba9"
+  integrity sha1-qq4rL3qRWBD7eDsbu/HAdI45m6k=
+
+"@types/int53@1.0.0":
+  version "1.0.0"
+  resolved "https://registry.yarnpkg.com/@types/int53/-/int53-1.0.0.tgz#1279ac906bb2bec486c13353c5b6e8c97201de33"
+  integrity sha1-EnmskGuyvsSGwTNTxbboyXIB3jM=
+  dependencies:
+    "@types/node" "*"
+
 "@types/json-schema@^7.0.9":
   version "7.0.11"
   resolved "https://registry.yarnpkg.com/@types/json-schema/-/json-schema-7.0.11.tgz#d421b6c527a3037f7c84433fd2c4229e016863d3"
   integrity sha1-1CG2xSejA398hEM/0sQingFoY9M=
 
-"@types/node@18.15.11":
+"@types/node@*", "@types/node@18.15.11":
   version "18.15.11"
   resolved "https://registry.yarnpkg.com/@types/node/-/node-18.15.11.tgz#b3b790f09cb1696cffcec605de025b088fa4225f"
   integrity sha1-s7eQ8JyxaWz/zsYF3gJbCI+kIl8=
