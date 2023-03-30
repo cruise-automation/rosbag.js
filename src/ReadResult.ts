@@ -4,8 +4,6 @@
 // found in the LICENSE file in the root directory of this source tree.
 // You may not use this file except in compliance with the License.
 
-// @flow
-
 import type { Time } from "./types";
 
 // represents a result passed to the callback from the high-level call:
@@ -25,7 +23,7 @@ export default class ReadResult<T> {
     data: Buffer,
     chunkOffset: number,
     totalChunks: number,
-    freeze?: ?boolean
+    freeze?: boolean
   ) {
     // string: the topic the message was on
     this.topic = topic;

@@ -4,16 +4,16 @@
 // found in the LICENSE file in the root directory of this source tree.
 // You may not use this file except in compliance with the License.
 
-// @flow
-
 import type { Time } from "./types";
 
 export function fromDate(date: Date) {
   const sec = Math.floor(date.getTime() / 1000);
   const nsec = date.getMilliseconds() * 1e6;
-  return { sec, nsec };
+  return {
+    sec,
+    nsec,
+  };
 }
-
 export function toDate(time: Time) {
   return new Date(time.sec * 1e3 + time.nsec / 1e6);
 }
@@ -56,11 +56,16 @@ export function add(left: Time, right: Time) {
   const newNanos = Math.abs(
     Math.sign(remainingDurationNanos) === -1 ? 1e9 + remainingDurationNanos : remainingDurationNanos
   );
-  const result = { sec: newSecs, nsec: newNanos };
+  const result = {
+    sec: newSecs,
+    nsec: newNanos,
+  };
+
   if (result.sec < 0 || result.nsec < 0) {
     throw new Error(
       `Invalid time: ${toString(result)} produced from TimeUtil.add(${toString(left)}, ${toString(right)}})`
     );
   }
+
   return result;
 }

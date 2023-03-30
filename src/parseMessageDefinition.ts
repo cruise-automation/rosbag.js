@@ -4,8 +4,6 @@
 // found in the LICENSE file in the root directory of this source tree.
 // You may not use this file except in compliance with the License.
 
-// @flow
-
 import type { RosMsgField, RosMsgDefinition } from "./types";
 
 // Set of built-in ros types. See http://wiki.ros.org/msg#Field_Types
@@ -30,18 +28,21 @@ export const rosPrimitiveTypes: Set<string> = new Set([
 function normalizeType(type: string) {
   // Normalize deprecated aliases.
   let normalizedType = type;
+
   if (type === "char") {
     normalizedType = "uint8";
   }
+
   if (type === "byte") {
     normalizedType = "int8";
   }
+
   return normalizedType;
 }
 
 // represents a single line in a message definition type
 // e.g. 'string name' 'CustomType[] foo' 'string[3] names'
-function newArrayDefinition(type: string, name: string, arrayLength: ?number): RosMsgField {
+function newArrayDefinition(type: string, name: string, arrayLength?: number): RosMsgField {
   const normalizedType = normalizeType(type);
   return {
     type: normalizedType,
@@ -51,6 +52,7 @@ function newArrayDefinition(type: string, name: string, arrayLength: ?number): R
     isComplex: !rosPrimitiveTypes.has(normalizedType),
   };
 }
+
 function newDefinition(type: string, name: string): RosMsgField {
   const normalizedType = normalizeType(type);
   return {
@@ -67,28 +69,41 @@ const tokenizeLine = (line: string) =>
     .split(" ")
     .filter((word) => word);
 
-const buildNamedType = (lines: { isJson: boolean, line: string }[], typeName: string): RosMsgDefinition => {
+const buildNamedType = (
+  lines: {
+    isJson: boolean;
+    line: string;
+  }[],
+  typeName: string
+): RosMsgDefinition => {
   const definitions: RosMsgField[] = [];
   lines.forEach(({ isJson, line }) => {
     // remove comments and extra whitespace from each line
     const splits = tokenizeLine(line);
+
     if (!splits[1]) {
       return;
     }
+
     // consume comments
     const type = splits[0].trim();
     const name = splits[1].trim();
+
     if (name.indexOf("=") > -1 || splits.indexOf("=") > -1) {
       // constant type parsing
       const matches = line.match(/(\S+)\s*=\s*(.*)\s*/);
+
       if (!matches) {
-        throw new Error("Malformed line: " + line);
+        throw new Error(`Malformed line: ${line}`);
       }
-      let value: any = matches[2];
+
+      let value: string | number | boolean = matches[2];
+
       if (type !== "string") {
         // handle special case of python bool values
         value = value.replace(/True/gi, "true");
         value = value.replace(/False/gi, "false");
+
         try {
           value = JSON.parse(value.replace(/\s*#.*/g, ""));
         } catch (error) {
@@ -96,14 +111,17 @@ const buildNamedType = (lines: { isJson: boolean, line: string }[], typeName: st
           console.warn(`Error in this constant definition: ${line}`);
           throw error;
         }
+
         if (type === "bool") {
           value = Boolean(value);
         }
       }
+
       if ((type.includes("int") && value > Number.MAX_SAFE_INTEGER) || value < Number.MIN_SAFE_INTEGER) {
         // eslint-disable-next-line no-console
         console.warn(`Found integer constant outside safe integer range: ${line}`);
       }
+
       definitions.push({
         type: normalizeType(type),
         name: matches[1],
@@ -120,23 +138,35 @@ const buildNamedType = (lines: { isJson: boolean, line: string }[], typeName: st
       definitions.push(newDefinition(isJson ? "json" : type, name));
     }
   });
-  return { name: typeName, definitions };
+  return {
+    name: typeName,
+    definitions,
+  };
 };
 
-const buildType = (lines: { isJson: boolean, line: string }[]): RosMsgDefinition => {
+const buildType = (
+  lines: {
+    isJson: boolean;
+    line: string;
+  }[]
+): RosMsgDefinition => {
   if (lines.length === 0) {
     throw new Error("Empty message definition.");
   }
+
   if (!lines[0].line.startsWith("MSG: ")) {
     throw new Error(`Malformed message definition name: ${lines[0].line}`);
   }
+
   const typeName = tokenizeLine(lines[0].line)[1].trim();
   return buildNamedType(lines.slice(1), typeName);
 };
 
 const findTypeByName = (types: RosMsgDefinition[], name: string, rosPackage: string): RosMsgDefinition => {
+  // eslint-disable-next-line no-nested-ternary
   const fullName = name.includes("/") ? name : name === "Header" ? "std_msgs/Header" : `${rosPackage}/${name}`;
   const matches = types.filter((type) => type.name === fullName);
+
   if (matches.length !== 1) {
     throw new Error(
       `Expected 1 top level type definition for '${name}' but found ${matches.length}, ${JSON.stringify({
@@ -145,6 +175,7 @@ const findTypeByName = (types: RosMsgDefinition[], name: string, rosPackage: str
       })}`
     );
   }
+
   return matches[0];
 };
 
@@ -172,10 +203,12 @@ export function parseMessageDefinition(messageDefinition: string, typeName: stri
     .split("\n")
     .map((line) => line.trim())
     .filter((line) => line);
-
-  let definitionLines: { isJson: boolean, line: string }[] = [];
+  let definitionLines: {
+    isJson: boolean;
+    line: string;
+  }[] = [];
   const types: RosMsgDefinition[] = [];
-  let nextDefinitionIsJson: boolean = false;
+  let nextDefinitionIsJson = false;
   // group lines into individual definitions
   allLines.forEach((line) => {
     // ignore comment lines unless they start with #pragma rosbag_parse_json
@@ -183,6 +216,7 @@ export function parseMessageDefinition(messageDefinition: string, typeName: stri
       if (line.startsWith("#pragma rosbag_parse_json")) {
         nextDefinitionIsJson = true;
       }
+
       return;
     }
 
@@ -193,12 +227,15 @@ export function parseMessageDefinition(messageDefinition: string, typeName: stri
       types.push(definition);
       definitionLines = [];
     } else {
-      definitionLines.push({ isJson: nextDefinitionIsJson, line });
+      definitionLines.push({
+        isJson: nextDefinitionIsJson,
+        line,
+      });
       nextDefinitionIsJson = false;
     }
   });
-  const definition = types.length === 0 ? buildNamedType(definitionLines, typeName) : buildType(definitionLines);
-  types.push(definition);
+  const typeDefinition = types.length === 0 ? buildNamedType(definitionLines, typeName) : buildType(definitionLines);
+  types.push(typeDefinition);
 
   // Fix up complex type names
   types.forEach(({ name, definitions }) => {
@@ -206,9 +243,11 @@ export function parseMessageDefinition(messageDefinition: string, typeName: stri
     definitions.forEach((definition) => {
       if (definition.isComplex) {
         const foundName = findTypeByName(types, definition.type, typePackage).name;
+
         if (foundName === undefined) {
           throw new Error(`Missing type definition for ${definition.type}`);
         }
+
         definition.type = foundName;
       }
     });

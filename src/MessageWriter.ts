@@ -4,8 +4,6 @@
 // found in the LICENSE file in the root directory of this source tree.
 // You may not use this file except in compliance with the License.
 
-// @flow
-
 import int53 from "int53";
 import type { Time, RosMsgDefinition } from "./types";
 
@@ -20,13 +18,13 @@ class StandardTypeOffsetCalculator {
 
   // Returns the current offset and increments the next offset by `byteCount`.
   _incrementAndReturn(byteCount: number) {
-    const offset = this.offset;
+    const {offset} = this;
     this.offset += byteCount;
     return offset;
   }
 
   // These are not actually used in the StandardTypeWriter, so they must be kept in sync with those implementations.
-  json(value: any) {
+  json(value: unknown) {
     return this.string(JSON.stringify(value));
   }
 
@@ -104,7 +102,7 @@ class StandardTypeWriter {
     this.offsetCalculator = new StandardTypeOffsetCalculator();
   }
 
-  json(value: any) {
+  json(value: unknown) {
     this.string(JSON.stringify(value));
   }
 
@@ -169,17 +167,20 @@ class StandardTypeWriter {
 
 const findTypeByName = (types: RosMsgDefinition[], name: string): RosMsgDefinition => {
   const ret = types.find((type) => type.name === name);
+
   if (ret == null) {
     throw new Error(`Type '${name}' but not found.`);
   }
+
   return ret;
 };
 
 const friendlyName = (name: string) => name.replace(/\//g, "_");
-type WriterAndSizeCalculator = {|
-  writer: (message: any, bufferToWrite: Buffer) => Buffer,
-  bufferSizeCalculator: (message: any) => number,
-|};
+
+type WriterAndSizeCalculator = {
+  writer: (message: unknown, bufferToWrite: Buffer) => Buffer;
+  bufferSizeCalculator: (message: unknown) => number;
+};
 
 function createWriterAndSizeCalculator(types: RosMsgDefinition[], typeName: string): WriterAndSizeCalculator {
   const topLevelType = findTypeByName(types, typeName);
@@ -194,8 +195,10 @@ function createWriterAndSizeCalculator(types: RosMsgDefinition[], typeName: stri
 
       // Accesses the field we are currently writing. Pulled out for easy reuse.
       const accessMessageField = `message["${def.name}"]`;
+
       if (def.isArray) {
         const lenField = `length_${def.name}`;
+
         // set a variable pointing to the parsed fixed array length
         // or write the byte indicating the dynamic length
         if (def.arrayLength) {
@@ -207,6 +210,7 @@ function createWriterAndSizeCalculator(types: RosMsgDefinition[], typeName: stri
 
         // start the for-loop
         lines.push(`for (var i = 0; i < ${lenField}; i++) {`);
+
         // if the sub type is complex we need to allocate it and parse its values
         if (def.isComplex) {
           const defType = findTypeByName(types, def.type);
@@ -216,6 +220,7 @@ function createWriterAndSizeCalculator(types: RosMsgDefinition[], typeName: stri
           // if the subtype is not complex its a simple low-level operation
           lines.push(`  ${argName}.${def.type}(${accessMessageField}[i]);`);
         }
+
         lines.push("}"); // close the for-loop
       } else if (def.isComplex) {
         const defType = findTypeByName(types, def.type);
@@ -230,7 +235,6 @@ function createWriterAndSizeCalculator(types: RosMsgDefinition[], typeName: stri
 
   let writerJs = "";
   let calculateSizeJs = "";
-
   nestedTypes.forEach((t) => {
     writerJs += `
   function ${friendlyName(t.name)}(writer, message) {
@@ -241,7 +245,6 @@ function createWriterAndSizeCalculator(types: RosMsgDefinition[], typeName: stri
     ${constructorBody(t, "offsetCalculator")}
   };\n`;
   });
-
   writerJs += `
   return function write(writer, message) {
     ${constructorBody(topLevelType, "writer")}
@@ -253,27 +256,33 @@ function createWriterAndSizeCalculator(types: RosMsgDefinition[], typeName: stri
     return offsetCalculator.offset;
   };`;
 
-  let _write: (writer: StandardTypeWriter, message: any) => Buffer;
-  let _calculateSize: (offsetCalculator: StandardTypeOffsetCalculator, message: any) => number;
+  let _write: (writer: StandardTypeWriter, message: unknown) => Buffer;
+
+  let _calculateSize: (offsetCalculator: StandardTypeOffsetCalculator, message: unknown) => number;
+
   try {
     _write = eval(`(function buildWriter() { ${writerJs} })()`);
   } catch (e) {
     console.error("error building writer:", writerJs); // eslint-disable-line no-console
+
     throw e;
   }
+
   try {
     _calculateSize = eval(`(function buildSizeCalculator() { ${calculateSizeJs} })()`);
   } catch (e) {
     console.error("error building size calculator:", calculateSizeJs); // eslint-disable-line no-console
+
     throw e;
   }
 
   return {
-    writer: function(message: any, buffer: Buffer): Buffer {
+    writer(message: unknown, buffer: Buffer): Buffer {
       const writer = new StandardTypeWriter(buffer);
       return _write(writer, message);
     },
-    bufferSizeCalculator(message: any): number {
+
+    bufferSizeCalculator(message: unknown): number {
       const offsetCalculator = new StandardTypeOffsetCalculator();
       return _calculateSize(offsetCalculator, message);
     },
@@ -281,8 +290,8 @@ function createWriterAndSizeCalculator(types: RosMsgDefinition[], typeName: stri
 }
 
 export class MessageWriter {
-  writer: (message: any, bufferToWrite: Buffer) => Buffer;
-  bufferSizeCalculator: (message: any) => number;
+  writer: (message: unknown, bufferToWrite: Buffer) => Buffer;
+  bufferSizeCalculator: (message: unknown) => number;
 
   // takes an object string message definition and returns
   // a message writer which can be used to write messages based
@@ -294,17 +303,19 @@ export class MessageWriter {
   }
 
   // Calculates the buffer size needed to write this message in bytes.
-  calculateBufferSize(message: any) {
+  calculateBufferSize(message: unknown) {
     return this.bufferSizeCalculator(message);
   }
 
   // bufferToWrite is optional - if it is not provided, a buffer will be generated.
-  writeMessage(message: any, bufferToWrite?: Buffer) {
+  writeMessage(message: unknown, bufferToWrite?: Buffer) {
     let buffer = bufferToWrite;
+
     if (!buffer) {
       const bufferSize = this.calculateBufferSize(message);
       buffer = Buffer.allocUnsafe(bufferSize);
     }
+
     return this.writer(message, buffer);
   }
 }

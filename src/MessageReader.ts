@@ -4,27 +4,21 @@
 // found in the LICENSE file in the root directory of this source tree.
 // You may not use this file except in compliance with the License.
 
-// @flow
-
 import int53 from "int53";
 import { extractTime } from "./fields";
 import type { RosMsgDefinition } from "./types";
 import { parseMessageDefinition } from "./parseMessageDefinition";
 
-type TypedArrayConstructor = (
-  buffer: ArrayBuffer,
-  byteOffset: number,
-  length: number
-) =>
-  | Int8Array
-  | Uint8Array
-  | Int16Array
-  | Uint16Array
-  | Int32Array
-  | Uint32Array
-  | Uint8ClampedArray
-  | Float32Array
-  | Float64Array;
+type TypedArrayConstructor =
+  | Int8ArrayConstructor
+  | Uint8ArrayConstructor
+  | Int16ArrayConstructor
+  | Uint16ArrayConstructor
+  | Int32ArrayConstructor
+  | Uint32ArrayConstructor
+  | Uint8ClampedArrayConstructor
+  | Float32ArrayConstructor
+  | Float64ArrayConstructor;
 
 // this has hard-coded buffer reading functions for each
 // of the standard message types http://docs.ros.org/api/std_msgs/html/index-msg.html
@@ -33,7 +27,7 @@ class StandardTypeReader {
   buffer: Buffer;
   offset: number;
   view: DataView;
-  _decoder: ?TextDecoder;
+  _decoder?: TextDecoder;
   _decoderStatus: "NOT_INITIALIZED" | "INITIALIZED" | "NOT_AVAILABLE" = "NOT_INITIALIZED";
 
   constructor(buffer: Buffer) {
@@ -57,8 +51,9 @@ class StandardTypeReader {
     }
   }
 
-  json(): mixed {
+  json(): unknown {
     const resultString = this.string();
+
     try {
       return JSON.parse(resultString);
     } catch {
@@ -80,6 +75,7 @@ class StandardTypeReader {
     if (this._decoderStatus === "NOT_INITIALIZED") {
       this._intializeTextDecoder();
     }
+
     if (this._decoder) {
       // TextDecoder does not support Uint8Arrays that are backed by SharedArrayBuffer, so copy the array here.
       // SharedArrayBuffer support has been added to the spec, but most browsers have not implemented this change.
@@ -92,9 +88,11 @@ class StandardTypeReader {
 
     // Otherwise, use string concatentation.
     let data = "";
+
     for (let i = 0; i < len; i++) {
       data += String.fromCharCode(codePoints[i]);
     }
+
     return data;
   }
 
@@ -110,11 +108,10 @@ class StandardTypeReader {
     return this.view.getUint8(this.offset++);
   }
 
-  typedArray(len: ?number, arrayType: TypedArrayConstructor) {
+  typedArray(len: number | null, ArrayType: TypedArrayConstructor) {
     const arrayLength = len == null ? this.uint32() : len;
-    const data = new arrayType(this.view.buffer, this.offset + this.view.byteOffset, arrayLength);
+    const data = new ArrayType(this.view.buffer, this.offset + this.view.byteOffset, arrayLength);
     this.offset += arrayLength;
-
     return data;
   }
 
@@ -155,25 +152,25 @@ class StandardTypeReader {
   }
 
   int64() {
-    const offset = this.offset;
+    const {offset} = this;
     this.offset += 8;
     return int53.readInt64LE(this.buffer, offset);
   }
 
   uint64() {
-    const offset = this.offset;
+    const {offset} = this;
     this.offset += 8;
     return int53.readUInt64LE(this.buffer, offset);
   }
 
   time() {
-    const offset = this.offset;
+    const {offset} = this;
     this.offset += 8;
     return extractTime(this.buffer, offset);
   }
 
   duration() {
-    const offset = this.offset;
+    const {offset} = this;
     this.offset += 8;
     return extractTime(this.buffer, offset);
   }
@@ -181,9 +178,11 @@ class StandardTypeReader {
 
 const findTypeByName = (types: RosMsgDefinition[], name: string): RosMsgDefinition => {
   const matches = types.filter((type) => type.name === name);
+
   if (matches.length !== 1) {
     throw new Error(`Expected 1 top level type definition for '${name}' but found ${matches.length}.`);
   }
+
   return matches[0];
 };
 
@@ -191,11 +190,12 @@ const friendlyName = (name: string) => name.replace(/\//g, "_");
 
 const createParser = (types: RosMsgDefinition[], typeName: string, freeze: boolean) => {
   const topLevelTypes = types.filter((type) => type.name === typeName);
+
   if (topLevelTypes.length !== 1) {
     throw new Error("multiple top-level types");
   }
-  const [topLevelType] = topLevelTypes;
 
+  const [topLevelType] = topLevelTypes;
   const nestedTypes: RosMsgDefinition[] = types.filter((type) => type.name !== typeName);
 
   const constructorBody = (type: RosMsgDefinition) => {
@@ -204,6 +204,7 @@ const createParser = (types: RosMsgDefinition[], typeName: string, freeze: boole
       if (def.isConstant) {
         return;
       }
+
       if (def.isArray) {
         if (def.type === "uint8" || def.type === "int8") {
           const arrayType = def.type === "uint8" ? "Uint8Array" : "Int8Array";
@@ -212,6 +213,7 @@ const createParser = (types: RosMsgDefinition[], typeName: string, freeze: boole
         }
 
         const lenField = `length_${def.name}`;
+
         // set a variable pointing to the parsed fixed array length
         // or read the byte indicating the dynamic length
         readerLines.push(`var ${lenField} = ${def.arrayLength ? def.arrayLength : "reader.uint32();"}`);
@@ -221,8 +223,10 @@ const createParser = (types: RosMsgDefinition[], typeName: string, freeze: boole
 
         // allocate the new array to a fixed length since we know it ahead of time
         readerLines.push(`${arrayName} = new Array(${lenField})`);
+
         // start the for-loop
         readerLines.push(`for (var i = 0; i < ${lenField}; i++) {`);
+
         // if the sub type is complex we need to allocate it and parse its values
         if (def.isComplex) {
           const defType = findTypeByName(types, def.type);
@@ -232,6 +236,7 @@ const createParser = (types: RosMsgDefinition[], typeName: string, freeze: boole
           // if the subtype is not complex its a simple low-level reader operation
           readerLines.push(`  ${arrayName}[i] = reader.${def.type}();`);
         }
+
         readerLines.push("}"); // close the for-loop
       } else if (def.isComplex) {
         const defType = findTypeByName(types, def.type);
@@ -240,9 +245,11 @@ const createParser = (types: RosMsgDefinition[], typeName: string, freeze: boole
         readerLines.push(`this.${def.name} = reader.${def.type}();`);
       }
     });
+
     if (freeze) {
       readerLines.push("Object.freeze(this);");
     }
+
     return readerLines.join("\n    ");
   };
 
@@ -264,14 +271,17 @@ const createParser = (types: RosMsgDefinition[], typeName: string, freeze: boole
   };`;
 
   let _read: (reader: StandardTypeReader) => any;
+
   try {
+    // eslint-disable-next-line no-eval
     _read = eval(`(function buildReader() { ${js} })()`);
   } catch (e) {
     console.error("error building parser:", js); // eslint-disable-line no-console
+
     throw e;
   }
 
-  return function(buffer: Buffer) {
+  return function (buffer: Buffer) {
     const reader = new StandardTypeReader(buffer);
     return _read(reader);
   };
@@ -283,8 +293,15 @@ export class MessageReader {
   // takes an object message definition and returns
   // a message reader which can be used to read messages based
   // on the message definition
-  constructor(definitions: RosMsgDefinition[], typeName: string, options: { freeze?: ?boolean } = {}) {
+  constructor(
+    definitions: RosMsgDefinition[],
+    typeName: string,
+    options: {
+      freeze?: boolean;
+    } = {}
+  ) {
     let parsedDefinitions = definitions;
+
     if (typeof parsedDefinitions === "string") {
       // eslint-disable-next-line no-console
       console.warn(
@@ -292,6 +309,7 @@ export class MessageReader {
       );
       parsedDefinitions = parseMessageDefinition(parsedDefinitions, typeName);
     }
+
     this.reader = createParser(parsedDefinitions, typeName, !!options.freeze);
   }
 
