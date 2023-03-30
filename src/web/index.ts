@@ -4,8 +4,6 @@
 // found in the LICENSE file in the root directory of this source tree.
 // You may not use this file except in compliance with the License.
 
-// @flow
-
 import { Buffer } from "buffer";
 import {
   MessageReader,
@@ -16,7 +14,7 @@ import {
   extractFields,
   extractTime,
 } from "../index";
-import { type Callback } from "../types";
+import type { Callback } from "../types";
 import Bag from "../bag";
 import BagReader from "../BagReader";
 
@@ -34,20 +32,23 @@ export class Reader {
   // callback(err, buffer)
   read(offset: number, length: number, cb: Callback<Buffer>) {
     const reader = new FileReader();
-    reader.onload = function() {
+
+    reader.onload = function () {
       // $FlowFixMe - flow doesn't allow null
       reader.onload = null;
       // $FlowFixMe - flow doesn't allow null
       reader.onerror = null;
-      setImmediate(cb, null, Buffer.from(reader.result));
+      setImmediate(cb, null, reader.result ? Buffer.from(reader.result as ArrayBuffer) : undefined);
     };
-    reader.onerror = function() {
+
+    reader.onerror = function () {
       // $FlowFixMe - flow doesn't allow null
       reader.onload = null;
       // $FlowFixMe - flow doesn't allow null
       reader.onerror = null;
-      setImmediate(cb, new Error(reader.error));
+      setImmediate(cb, new Error(reader.error ? reader.error.message : "Unknown reader error."));
     };
+
     reader.readAsArrayBuffer(this._blob.slice(offset, offset + length));
   }
 
@@ -63,10 +64,12 @@ const open = async (file: File | string) => {
       "Expected file to be a File or Blob. Make sure you are correctly importing the node or web version of Bag."
     );
   }
+
   const bag = new Bag(new BagReader(new Reader(file)));
   await bag.open();
   return bag;
 };
+
 Bag.open = open;
 
 export * from "../types";

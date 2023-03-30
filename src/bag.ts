@@ -44,9 +44,9 @@ export default class Bag {
   }
 
   static open = (_file: File | string) => {
-    throw new Error(
+    Promise.reject(new Error(
       "This method should have been overridden based on the environment. Make sure you are correctly importing the node or web version of Bag."
-    );
+    ));
   };
 
   // if the bag is manually created with the constructor, you must call `await open()` on the bag
