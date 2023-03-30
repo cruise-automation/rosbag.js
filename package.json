@@ -37,6 +37,7 @@
     "@babel/plugin-syntax-object-rest-spread": "7.0.0",
     "@babel/preset-env": "7.1.0",
     "@babel/preset-flow": "7.0.0",
+    "@babel/preset-typescript": "7.21.0",
     "@types/heap": "0.2.31",
     "@types/int53": "1.0.0",
     "@types/node": "18.15.11",
