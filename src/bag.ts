@@ -32,9 +32,9 @@ export type ReadOptions = {
 //    (result) => console.log(result.topic, result.message))`
 export default class Bag {
   reader: BagReader;
-  header: BagHeader;
-  connections: Record<number, Connection>;
-  chunkInfos: ChunkInfo[];
+  header?: BagHeader;
+  connections?: Record<number, Connection>;
+  chunkInfos?: ChunkInfo[];
   startTime?: Time;
   endTime?: Time;
 
@@ -49,6 +49,13 @@ export default class Bag {
     ));
   };
 
+  // eslint-disable-next-line no-use-before-define
+  private assertOpen(): asserts this is OpenBag {
+    if (!this.header || !this.connections || !this.chunkInfos) {
+      throw new Error("Bag needs to be opened");
+    }
+  }
+
   // if the bag is manually created with the constructor, you must call `await open()` on the bag
   // generally this is called for you if you're using `const bag = await Bag.open()`
   async open() {
@@ -60,6 +67,7 @@ export default class Bag {
     this.connections = {};
 
     result.connections.forEach((connection) => {
+      // @ts-expect-error Object is possibly 'undefined'.
       this.connections[connection.conn] = connection;
     });
 
@@ -78,6 +86,8 @@ export default class Bag {
   }
 
   async readMessages(opts: ReadOptions, callback: (msg: ReadResult<unknown>) => void) {
+    this.assertOpen();
+
     const {connections} = this;
     const startTime = opts.startTime || {
       sec: 0,
@@ -89,11 +99,11 @@ export default class Bag {
     };
     const topics =
       opts.topics ||
-      Object.keys(connections).map((id: string) => connections[id].topic);
+      Object.values(connections).map((connection) => connection.topic);
 
-    const filteredConnections = Object.keys(connections)
-      .filter((id: string) => topics.indexOf(connections[id].topic) !== -1)
-      .map((id) => +id);
+    const filteredConnections = Object.values(connections)
+      .filter((connection) => topics.indexOf(connection.topic) !== -1)
+      .map((connection) => +connection.conn);
 
     const { decompress = {} } = opts;
 
@@ -132,4 +142,10 @@ export default class Bag {
       messages.forEach((msg) => callback(parseMsg(msg, i)));
     }
   }
+}
+
+interface OpenBag extends Bag {
+  header: BagHeader;
+  connections: Record<number, Connection>;
+  chunkInfos: ChunkInfo[];
 }

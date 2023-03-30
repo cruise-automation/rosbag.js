@@ -7,10 +7,12 @@
 import Heap from "heap";
 
 function nmerge<T>(key: (a: T, b: T) => number, ...iterables: Array<Iterator<T>>) {
-  const heap: Heap<{
+  type Item = {
     i: number;
     value: T;
-  }> = new Heap((a, b) => key(a.value, b.value));
+  };
+
+  const heap: Heap<Item> = new Heap((a, b) => key(a.value, b.value));
 
   for (let i = 0; i < iterables.length; i++) {
     const { value, done } = iterables[i].next();
@@ -31,12 +33,12 @@ function nmerge<T>(key: (a: T, b: T) => number, ...iterables: Array<Iterator<T>>
         };
       }
 
-      const { i } = heap.front();
+      const { i } = heap.front() as Item;
       const next = iterables[i].next();
 
       if (next.done) {
         return {
-          value: heap.pop().value,
+          value: (heap.pop() as Item).value,
           done: false,
         };
       }

@@ -68,7 +68,7 @@ class StandardTypeReader {
 
     // if the string is relatively short we can use apply, but longer strings can benefit from the speed of TextDecoder.
     if (codePoints.length < 1000) {
-      return String.fromCharCode.apply(null, codePoints);
+      return String.fromCharCode.call(null, ...codePoints);
     }
 
     // Use TextDecoder if it is available and supports the "ascii" encoding.
@@ -270,7 +270,7 @@ const createParser = (types: RosMsgDefinition[], typeName: string, freeze: boole
     return new Record(reader);
   };`;
 
-  let _read: (reader: StandardTypeReader) => any;
+  let _read: (reader: StandardTypeReader) => unknown;
 
   try {
     // eslint-disable-next-line no-eval
@@ -288,7 +288,7 @@ const createParser = (types: RosMsgDefinition[], typeName: string, freeze: boole
 };
 
 export class MessageReader {
-  reader: (buffer: Buffer) => any;
+  reader: (buffer: Buffer) => unknown;
 
   // takes an object message definition and returns
   // a message reader which can be used to read messages based

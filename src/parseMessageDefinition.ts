@@ -117,7 +117,7 @@ const buildNamedType = (
         }
       }
 
-      if ((type.includes("int") && value > Number.MAX_SAFE_INTEGER) || value < Number.MIN_SAFE_INTEGER) {
+      if ((type.includes("int") && +value > Number.MAX_SAFE_INTEGER) || +value < Number.MIN_SAFE_INTEGER) {
         // eslint-disable-next-line no-console
         console.warn(`Found integer constant outside safe integer range: ${line}`);
       }

@@ -16,11 +16,18 @@ export class RosbagRecord {
   dataOffset: number;
   end: number;
   length: number;
+
+  constructor(offset: number, dataOffset: number, dataLength: number) {
+    this.offset = offset;
+    this.dataOffset = this.offset + dataOffset;
+    this.end = this.dataOffset + dataLength;
+    this.length = this.end - this.offset;
+  }
 }
 
 export interface RosbagRecordConstructor<T extends RosbagRecord> {
   opcode: number;
-  new (fields: Record<string, any>, buffer: Buffer): T;
+  new (offset: number, dataOffset: number, dataLength: number, fields: Record<string, any>, buffer: Buffer): T;
 }
 
 export class BagHeader extends RosbagRecord {
@@ -29,8 +36,8 @@ export class BagHeader extends RosbagRecord {
   connectionCount: number;
   chunkCount: number;
 
-  constructor(fields: Record<string, Buffer>, _buffer: Buffer) {
-    super();
+  constructor(offset: number, dataOffset: number, dataLength: number, fields: Record<string, Buffer>, _buffer: Buffer) {
+    super(offset, dataOffset, dataLength);
     this.indexPosition = readUInt64LE(fields.index_pos);
     this.connectionCount = fields.conn_count.readInt32LE(0);
     this.chunkCount = fields.chunk_count.readInt32LE(0);
@@ -43,8 +50,8 @@ export class Chunk extends RosbagRecord {
   size: number;
   data: Buffer;
 
-  constructor(fields: Record<string, Buffer>, buffer: Buffer) {
-    super();
+  constructor(offset: number, dataOffset: number, dataLength: number, fields: Record<string, Buffer>, buffer: Buffer) {
+    super(offset, dataOffset, dataLength);
     this.compression = fields.compression.toString();
     this.size = fields.size.readUInt32LE(0);
     this.data = buffer;
@@ -70,8 +77,8 @@ export class Connection extends RosbagRecord {
   latching?: boolean;
   reader?: MessageReader;
 
-  constructor(fields: Record<string, Buffer>, buffer: Buffer) {
-    super();
+  constructor(offset: number, dataOffset: number, dataLength: number, fields: Record<string, Buffer>, buffer: Buffer) {
+    super(offset, dataOffset, dataLength);
     this.conn = fields.conn.readUInt32LE(0);
     this.topic = fields.topic.toString();
     this.messageDefinition = "";
@@ -96,8 +103,8 @@ export class MessageData extends RosbagRecord {
   time: Time;
   data: Buffer;
 
-  constructor(fields: Record<string, Buffer>, buffer: Buffer) {
-    super();
+  constructor(offset: number, dataOffset: number, dataLength: number, fields: Record<string, Buffer>, buffer: Buffer) {
+    super(offset, dataOffset, dataLength);
     this.conn = fields.conn.readUInt32LE(0);
     this.time = extractTime(fields.time, 0);
     this.data = buffer;
@@ -114,8 +121,8 @@ export class IndexData extends RosbagRecord {
     offset: number;
   }>;
 
-  constructor(fields: Record<string, Buffer>, buffer: Buffer) {
-    super();
+  constructor(offset: number, dataOffset: number, dataLength: number, fields: Record<string, Buffer>, buffer: Buffer) {
+    super(offset, dataOffset, dataLength);
     this.ver = fields.ver.readUInt32LE(0);
     this.conn = fields.conn.readUInt32LE(0);
     this.count = fields.count.readUInt32LE(0);
@@ -157,8 +164,8 @@ export class ChunkInfo extends RosbagRecord implements ChunkInfoInterface {
   }[];
   nextChunk?: ChunkInfoInterface;
 
-  constructor(fields: Record<string, Buffer>, buffer: Buffer) {
-    super();
+  constructor(offset: number, dataOffset: number, dataLength: number, fields: Record<string, Buffer>, buffer: Buffer) {
+    super(offset, dataOffset, dataLength);
     this.ver = fields.ver.readUInt32LE(0);
     this.chunkPosition = readUInt64LE(fields.chunk_pos);
     this.startTime = extractTime(fields.start_time, 0);

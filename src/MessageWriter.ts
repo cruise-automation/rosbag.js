@@ -261,6 +261,7 @@ function createWriterAndSizeCalculator(types: RosMsgDefinition[], typeName: stri
   let _calculateSize: (offsetCalculator: StandardTypeOffsetCalculator, message: unknown) => number;
 
   try {
+    // eslint-disable-next-line no-eval
     _write = eval(`(function buildWriter() { ${writerJs} })()`);
   } catch (e) {
     console.error("error building writer:", writerJs); // eslint-disable-line no-console
@@ -269,6 +270,7 @@ function createWriterAndSizeCalculator(types: RosMsgDefinition[], typeName: stri
   }
 
   try {
+    // eslint-disable-next-line no-eval
     _calculateSize = eval(`(function buildSizeCalculator() { ${calculateSizeJs} })()`);
   } catch (e) {
     console.error("error building size calculator:", calculateSizeJs); // eslint-disable-line no-console

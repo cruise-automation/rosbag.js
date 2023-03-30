@@ -23,7 +23,7 @@ const HEADER_OFFSET = 13;
 // can be useful to use directly for efficiently accessing raw pieces from
 // within the bag
 export default class BagReader {
-  _lastReadResult: ChunkReadResult;
+  _lastReadResult?: ChunkReadResult;
   _file: Filelike;
   _lastChunkInfo?: ChunkInfo;
 
@@ -79,7 +79,7 @@ export default class BagReader {
           const header = this.readRecordFromBuffer(buffer, HEADER_OFFSET, BagHeader);
           return callback(null, header);
         } catch (e) {
-          return callback(new Error(`Could not read header from rosbag file buffer - ${e.message}`));
+          return callback(new Error(`Could not read header from rosbag file buffer - ${(e as Error).message}`));
         }
       })
     );
@@ -327,12 +327,7 @@ export default class BagReader {
     const dataLength = buffer.readInt32LE(4 + headerLength);
     const data = buffer.slice(dataOffset, dataOffset + dataLength);
 
-    const record = new Cls(headerFields, data);
-
-    record.offset = fileOffset;
-    record.dataOffset = record.offset + 4 + headerLength + 4;
-    record.end = record.dataOffset + dataLength;
-    record.length = record.end - record.offset;
+    const record = new Cls(fileOffset, dataOffset, dataLength, headerFields, data);
 
     return record;
   }

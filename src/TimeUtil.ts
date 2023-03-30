@@ -28,12 +28,12 @@ export function compare(left: Time, right: Time) {
 
 // returns true if the left time is less than the right time, otherwise false
 export function isLessThan(left: Time, right: Time) {
-  return this.compare(left, right) < 0;
+  return compare(left, right) < 0;
 }
 
 // returns true if the left time is greater than the right time, otherwise false
 export function isGreaterThan(left: Time, right: Time) {
-  return this.compare(left, right) > 0;
+  return compare(left, right) > 0;
 }
 
 // returns true if both times have the same number of seconds and nanoseconds
