@@ -28,11 +28,12 @@ function makeHeaderKeyValuePairBuffer(key: string, value: Buffer) {
 }
 
 class FakeHeaderFilelike {
-  preamble: string = "#ROSBAG V2.0\n";
-  indexPosition: number = 0;
-  connectionCount: number = 0;
-  chunkCount: number = 0;
+  preamble = "#ROSBAG V2.0\n";
+  indexPosition = 0;
+  connectionCount = 0;
+  chunkCount = 0;
 
+  // eslint-disable-next-line class-methods-use-this
   size() {
     return 4096;
   }
@@ -75,7 +76,7 @@ class FakeHeaderFilelike {
       resultBuffer.fill(0x20, currentOffset);
       return callback(null, resultBuffer);
     }
-    return callback(new Error("Unexpected read position: " + offset));
+    return callback(new Error(`Unexpected read position: ${  offset}`));
   }
 }
 
@@ -101,7 +102,8 @@ describe("BagReader", () => {
       const reader = new BagReader(filelike);
       const callback: any = (err: Error | undefined, header: BagHeader) => {
         if (err) {
-          return done(err);
+          done(err);
+          return;
         }
         expect(header.indexPosition).toEqual(1);
         expect(header.connectionCount).toEqual(2);
@@ -120,7 +122,8 @@ describe("BagReader", () => {
       const reader = new BagReader(filelike);
       const callback: any = (err: Error | undefined, header: BagHeader) => {
         if (err) {
-          return done(err);
+          done(err);
+          return;
         }
         expect(header.indexPosition).toEqual(100000);
         expect(header.connectionCount).toEqual(200000);

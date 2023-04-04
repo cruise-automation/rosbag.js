@@ -27,7 +27,7 @@ export class RosbagRecord {
 
 export interface RosbagRecordConstructor<T extends RosbagRecord> {
   opcode: number;
-  new (offset: number, dataOffset: number, dataLength: number, fields: Record<string, any>, buffer: Buffer): T;
+  new (offset: number, dataOffset: number, dataLength: number, fields: Record<string, Buffer>, buffer: Buffer): T;
 }
 
 export class BagHeader extends RosbagRecord {

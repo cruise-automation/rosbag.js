@@ -33,13 +33,13 @@ export class Reader {
   read(offset: number, length: number, cb: Callback<Buffer>) {
     const reader = new FileReader();
 
-    reader.onload = function () {
+    reader.onload = function onload() {
       reader.onload = null;
       reader.onerror = null;
       setImmediate(cb, null, reader.result ? Buffer.from(reader.result as ArrayBuffer) : undefined);
     };
 
-    reader.onerror = function () {
+    reader.onerror = function onerror() {
       reader.onload = null;
       reader.onerror = null;
       setImmediate(cb, new Error(reader.error ? reader.error.message : "Unknown reader error."));
