@@ -5,7 +5,7 @@
   "repository": "cruise-automation/rosbag.js",
   "dependencies": {
     "buffer": "5.2.1",
-    "heap": "0.2.6",
+    "heap": "0.2.7",
     "int53": "1.0.0"
   },
   "engines": {
@@ -30,12 +30,9 @@
     "build-web": "cross-env ROSBAG_TARGET=web webpack --mode development"
   },
   "devDependencies": {
-    "@babel/cli": "7.1.2",
-    "@babel/core": "7.1.2",
-    "@babel/plugin-proposal-class-properties": "7.1.0",
-    "@babel/plugin-proposal-optional-catch-binding": "7.10.1",
-    "@babel/plugin-syntax-object-rest-spread": "7.0.0",
-    "@babel/preset-env": "7.1.0",
+    "@babel/cli": "7.21.0",
+    "@babel/core": "7.21.4",
+    "@babel/preset-env": "7.21.4",
     "@babel/preset-typescript": "7.21.0",
     "@types/heap": "0.2.31",
     "@types/int53": "1.0.0",
@@ -43,10 +40,9 @@
     "@types/node": "18.15.11",
     "@typescript-eslint/eslint-plugin": "5.57.0",
     "@typescript-eslint/parser": "5.57.0",
-    "babel-core": "^7.0.0-bridge.0",
-    "babel-eslint": "10.0.1",
-    "babel-jest": "23.6.0",
-    "babel-loader": "8.0.4",
+    "babel-eslint": "10.1.0",
+    "babel-jest": "29.5.0",
+    "babel-loader": "9.1.2",
     "compressjs": "1.0.3",
     "cross-env": "5.2.0",
     "eslint": "8.37.0",
@@ -63,9 +59,9 @@
     "regenerator-runtime": "0.12.1",
     "ts-jest": "29.0.5",
     "typescript": "5.0.2",
-    "webpack": "4.21.0",
-    "webpack-cli": "3.1.2",
-    "webpack-node-externals": "1.7.2"
+    "webpack": "5.77.0",
+    "webpack-cli": "5.0.1",
+    "webpack-node-externals": "3.0.0"
   },
   "prettier": {
     "arrowParens": "always",
