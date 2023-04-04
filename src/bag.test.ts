@@ -251,7 +251,7 @@ describe("rosbag - high-level api", () => {
       const messages = await fullyReadBag("example-lz4", {
         topics: ["/turtle1/color_sensor"],
         decompress: {
-          lz4: (buffer: Buffer) => new Buffer(lz4.decompress(buffer)),
+          lz4: (buffer: Buffer) => Buffer.from(lz4.decompress(buffer)),
         },
       });
       const topics = messages.map((msg) => msg.topic);
@@ -267,7 +267,7 @@ describe("rosbag - high-level api", () => {
         decompress: {
           lz4: (buffer: Buffer, size: number) => {
             expect(size).toBe(743449);
-            const buff = new Buffer(lz4.decompress(buffer));
+            const buff = Buffer.from(lz4.decompress(buffer));
             expect(buff.byteLength).toBe(size);
             return buff;
           },

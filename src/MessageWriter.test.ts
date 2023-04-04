@@ -11,8 +11,8 @@ import { MessageWriter } from "./MessageWriter";
 import { parseMessageDefinition } from "./parseMessageDefinition";
 
 const getStringBuffer = (str: string) => {
-  const data = new Buffer(str, "utf8");
-  const len = new Buffer(4);
+  const data = Buffer.from(str, "utf8");
+  const len = Buffer.alloc(4);
   len.writeInt32LE(data.byteLength, 0);
   return Buffer.concat([len, data]);
 };
@@ -82,7 +82,7 @@ describe("MessageWriter", () => {
           dummy: { foo: 123, bar: { nestedFoo: 456 } },
           account: { name: '{"first":"First","last":"Last"}}', id: 100 },
         })
-      ).toEqual(Buffer.concat([buff, getStringBuffer('{"first":"First","last":"Last"}}'), new Buffer([100, 0x00])]));
+      ).toEqual(Buffer.concat([buff, getStringBuffer('{"first":"First","last":"Last"}}'), Buffer.from([100, 0x00])]));
 
       const writerWithTrailingPragmaComment = new MessageWriter(
         parseMessageDefinition(
@@ -104,13 +104,13 @@ describe("MessageWriter", () => {
           dummy: { foo: 123, bar: { nestedFoo: 456 } },
           account: { name: '{"first":"First","last":"Last"}}', id: 100 },
         })
-      ).toEqual(Buffer.concat([buff, getStringBuffer('{"first":"First","last":"Last"}}'), new Buffer([100, 0x00])]));
+      ).toEqual(Buffer.concat([buff, getStringBuffer('{"first":"First","last":"Last"}}'), Buffer.from([100, 0x00])]));
     });
 
     it("writes time", () => {
       const typeName = "foo_msgs/Bar";
       const writer = new MessageWriter(parseMessageDefinition("time right_now", typeName), typeName);
-      const buff = new Buffer(8);
+      const buff = Buffer.alloc(8);
       const now = new Date();
       now.setSeconds(31);
       now.setMilliseconds(0);
@@ -135,7 +135,7 @@ describe("MessageWriter", () => {
       const writer = new MessageWriter(parseMessageDefinition("string[] names", typeName), typeName);
       const buffer = Buffer.concat([
         // variable length array has int32 as first entry
-        new Buffer([0x03, 0x00, 0x00, 0x00]),
+        Buffer.from([0x03, 0x00, 0x00, 0x00]),
         getStringBuffer("foo"),
         getStringBuffer("bar"),
         getStringBuffer("baz"),
@@ -174,7 +174,7 @@ describe("MessageWriter", () => {
       const writer = new MessageWriter(parseMessageDefinition("string[] names", typeName), typeName);
       const buffer = Buffer.concat([
         // variable length array has int32 as first entry
-        new Buffer([0x00, 0x00, 0x00, 0x00]),
+        Buffer.from([0x00, 0x00, 0x00, 0x00]),
       ]);
 
       const resultBuffer = writer.writeMessage({ names: [] });
@@ -209,7 +209,7 @@ describe("MessageWriter", () => {
         parseMessageDefinition("string firstName \n string lastName\nuint16 age", typeName),
         typeName
       );
-      const buffer = Buffer.concat([getStringBuffer("foo"), getStringBuffer("bar"), new Buffer([0x05, 0x00])]);
+      const buffer = Buffer.concat([getStringBuffer("foo"), getStringBuffer("bar"), Buffer.from([0x05, 0x00])]);
       const message = {
         firstName: "foo",
         lastName: "bar",
@@ -229,7 +229,7 @@ describe("MessageWriter", () => {
       `;
       const typeName = "custom_type/User";
       const writer = new MessageWriter(parseMessageDefinition(messageDefinition, typeName), typeName);
-      const buffer = Buffer.concat([getStringBuffer("foo"), getStringBuffer("bar"), new Buffer([100, 0x00])]);
+      const buffer = Buffer.concat([getStringBuffer("foo"), getStringBuffer("bar"), Buffer.from([100, 0x00])]);
       const message = {
         username: "foo",
         account: {
@@ -254,11 +254,11 @@ describe("MessageWriter", () => {
       const buffer = Buffer.concat([
         getStringBuffer("foo"),
         // uint32LE length of array (2)
-        new Buffer([0x02, 0x00, 0x00, 0x00]),
+        Buffer.from([0x02, 0x00, 0x00, 0x00]),
         getStringBuffer("bar"),
-        new Buffer([100, 0x00]),
+        Buffer.from([100, 0x00]),
         getStringBuffer("baz"),
-        new Buffer([101, 0x00]),
+        Buffer.from([101, 0x00]),
       ]);
       const message = {
         username: "foo",
@@ -297,33 +297,33 @@ describe("MessageWriter", () => {
       const buffer = Buffer.concat([
         getStringBuffer("foo"),
         // uint32LE length of Account array (2)
-        new Buffer([0x02, 0x00, 0x00, 0x00]),
+        Buffer.from([0x02, 0x00, 0x00, 0x00]),
         // name
         getStringBuffer("bar"),
         // id
-        new Buffer([100, 0x00]),
+        Buffer.from([100, 0x00]),
         // uint32LE length of Photo array (3)
-        new Buffer([0x03, 0x00, 0x00, 0x00]),
+        Buffer.from([0x03, 0x00, 0x00, 0x00]),
         // photo url
         getStringBuffer("http://foo.com"),
         // photo id
-        new Buffer([10]),
+        Buffer.from([10]),
 
         // photo url
         getStringBuffer("http://bar.com"),
         // photo id
-        new Buffer([12]),
+        Buffer.from([12]),
 
         // photo url
         getStringBuffer("http://zug.com"),
         // photo id
-        new Buffer([16]),
+        Buffer.from([16]),
 
         // next account
         getStringBuffer("baz"),
-        new Buffer([101, 0x00]),
+        Buffer.from([101, 0x00]),
         // uint32LE length of Photo array (0)
-        new Buffer([0x00, 0x00, 0x00, 0x00]),
+        Buffer.from([0x00, 0x00, 0x00, 0x00]),
       ]);
 
       const message = {

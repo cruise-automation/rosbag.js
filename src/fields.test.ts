@@ -10,14 +10,14 @@ import { extractFields } from "./fields";
 
 describe("fields", () => {
   it("should extract fields from a buffer", () => {
-    const buffer = new Buffer(24);
+    const buffer = Buffer.alloc(24);
     buffer.writeUInt32LE(7, 0);
     buffer.write("foo=bar", 4);
     buffer.writeUInt32LE(9, 11);
     buffer.write("key=value", 15);
 
     const result = extractFields(buffer);
-    const expected = { foo: new Buffer("bar"), key: new Buffer("value") };
+    const expected = { foo: Buffer.from("bar"), key: Buffer.from("value") };
     expect(result).toEqual(expected);
   });
 });
