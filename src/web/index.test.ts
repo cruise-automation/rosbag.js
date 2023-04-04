@@ -11,7 +11,7 @@ describe("browser reader", () => {
   let mockFileReader: any;
   beforeEach(() => {
     mockFileReader = {
-      readAsArrayBuffer: jest.fn()
+      readAsArrayBuffer: jest.fn(),
     } as any;
 
     global.FileReader = jest.fn(() => mockFileReader) as any;
@@ -46,7 +46,7 @@ describe("browser reader", () => {
       readAsArrayBuffer() {
         setTimeout(() => {
           this.error = {
-            message: "fake error"
+            message: "fake error",
           };
 
           expect(typeof this.onerror).toBe("function");

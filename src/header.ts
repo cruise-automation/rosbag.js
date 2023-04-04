@@ -9,7 +9,10 @@ import { RosbagRecord, RosbagRecordConstructor } from "./record";
 
 // given a buffer parses out the record within the buffer
 // based on the opcode type bit
-export function parseHeader<T extends RosbagRecord>(buffer: Buffer, Cls: RosbagRecordConstructor<T>): Record<string, Buffer> {
+export function parseHeader<T extends RosbagRecord>(
+  buffer: Buffer,
+  Cls: RosbagRecordConstructor<T>
+): Record<string, Buffer> {
   const fields = extractFields(buffer);
 
   if (fields.op === undefined) {
