@@ -18,7 +18,7 @@ class StandardTypeOffsetCalculator {
 
   // Returns the current offset and increments the next offset by `byteCount`.
   _incrementAndReturn(byteCount: number) {
-    const {offset} = this;
+    const { offset } = this;
     this.offset += byteCount;
     return offset;
   }

@@ -22,9 +22,19 @@ describe("TimeUtil", () => {
   });
 
   it("can sort by compare", () => {
-    const times = [{ sec: 1, nsec: 1 }, { sec: 0, nsec: 0 }, { sec: 1, nsec: 0 }, { sec: 0, nsec: 1 }];
+    const times = [
+      { sec: 1, nsec: 1 },
+      { sec: 0, nsec: 0 },
+      { sec: 1, nsec: 0 },
+      { sec: 0, nsec: 1 },
+    ];
     times.sort(TimeUtil.compare);
-    expect(times).toEqual([{ sec: 0, nsec: 0 }, { sec: 0, nsec: 1 }, { sec: 1, nsec: 0 }, { sec: 1, nsec: 1 }]);
+    expect(times).toEqual([
+      { sec: 0, nsec: 0 },
+      { sec: 0, nsec: 1 },
+      { sec: 1, nsec: 0 },
+      { sec: 1, nsec: 1 },
+    ]);
   });
 
   it("has lessThan functionality", () => {

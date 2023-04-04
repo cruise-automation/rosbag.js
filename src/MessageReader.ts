@@ -152,25 +152,25 @@ class StandardTypeReader {
   }
 
   int64() {
-    const {offset} = this;
+    const { offset } = this;
     this.offset += 8;
     return int53.readInt64LE(this.buffer, offset);
   }
 
   uint64() {
-    const {offset} = this;
+    const { offset } = this;
     this.offset += 8;
     return int53.readUInt64LE(this.buffer, offset);
   }
 
   time() {
-    const {offset} = this;
+    const { offset } = this;
     this.offset += 8;
     return extractTime(this.buffer, offset);
   }
 
   duration() {
-    const {offset} = this;
+    const { offset } = this;
     this.offset += 8;
     return extractTime(this.buffer, offset);
   }

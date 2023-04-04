@@ -62,14 +62,14 @@ export class Reader {
   // callback(err, buffer)
   read(offset: number, length: number, cb: Callback<Buffer>): void {
     if (this._fd == null) {
-      return this._open((err) => err ? cb(err) : this.read(offset, length, cb));
+      return this._open((err) => (err ? cb(err) : this.read(offset, length, cb)));
     }
 
     if (length > this._buffer.byteLength) {
       this._buffer = Buffer.alloc(length);
     }
 
-    return fs.read(this._fd, this._buffer, 0, length, offset, (err, bytes, buff) => err ? cb(err) : cb(null, buff));
+    return fs.read(this._fd, this._buffer, 0, length, offset, (err, bytes, buff) => (err ? cb(err) : cb(null, buff)));
   }
 
   // return the size of the file

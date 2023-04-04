@@ -7,7 +7,16 @@
 import type { Time, Callback, Filelike } from "./types";
 import { parseHeader } from "./header";
 import nmerge from "./nmerge";
-import { RosbagRecord, RosbagRecordConstructor, BagHeader, Chunk, ChunkInfo, Connection, IndexData, MessageData } from "./record";
+import {
+  RosbagRecord,
+  RosbagRecordConstructor,
+  BagHeader,
+  Chunk,
+  ChunkInfo,
+  Connection,
+  IndexData,
+  MessageData,
+} from "./record";
 import * as TimeUtil from "./TimeUtil";
 
 interface ChunkReadResult {
@@ -191,15 +200,13 @@ export default class BagReader {
         return callback(error || new Error("Missing both error and result"));
       }
 
-      const {chunk} = result;
+      const { chunk } = result;
       const indices: Record<number, IndexData> = {};
       result.indices.forEach((index) => {
         indices[index.conn] = index;
       });
       const presentConnections = conns.filter((conn) => indices[conn] !== undefined);
-      const iterables = presentConnections.map((conn) =>
-        indices[conn].indices[Symbol.iterator]()
-      );
+      const iterables = presentConnections.map((conn) => indices[conn].indices[Symbol.iterator]());
       const iter = nmerge((a, b) => TimeUtil.compare(a.time, b.time), ...iterables);
       const entries: IndexData["indices"] = [];
       let item = iter.next();

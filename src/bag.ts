@@ -43,9 +43,12 @@ export default class Bag {
     this.reader = bagReader;
   }
 
-  static open = (_file: File | string): Promise<Bag> => Promise.reject(new Error(
-    "This method should have been overridden based on the environment. Make sure you are correctly importing the node or web version of Bag."
-  ));
+  static open = (_file: File | string): Promise<Bag> =>
+    Promise.reject(
+      new Error(
+        "This method should have been overridden based on the environment. Make sure you are correctly importing the node or web version of Bag."
+      )
+    );
 
   // eslint-disable-next-line no-use-before-define
   private assertOpen(): asserts this is OpenBag {
@@ -86,7 +89,7 @@ export default class Bag {
   async readMessages(opts: ReadOptions, callback: (msg: ReadResult<unknown>) => void) {
     this.assertOpen();
 
-    const {connections} = this;
+    const { connections } = this;
     const startTime = opts.startTime || {
       sec: 0,
       nsec: 0,
@@ -95,9 +98,7 @@ export default class Bag {
       sec: Number.MAX_VALUE,
       nsec: Number.MAX_VALUE,
     };
-    const topics =
-      opts.topics ||
-      Object.values(connections).map((connection) => connection.topic);
+    const topics = opts.topics || Object.values(connections).map((connection) => connection.topic);
 
     const filteredConnections = Object.values(connections)
       .filter((connection) => topics.indexOf(connection.topic) !== -1)
@@ -106,7 +107,9 @@ export default class Bag {
     const { decompress = {} } = opts;
 
     // filter chunks to those which fall within the time range we're attempting to read
-    const chunkInfos = this.chunkInfos.filter((info) => TimeUtil.compare(info.startTime, endTime) <= 0 && TimeUtil.compare(startTime, info.endTime) <= 0);
+    const chunkInfos = this.chunkInfos.filter(
+      (info) => TimeUtil.compare(info.startTime, endTime) <= 0 && TimeUtil.compare(startTime, info.endTime) <= 0
+    );
 
     function parseMsg(msg: MessageData, chunkOffset: number): ReadResult<unknown> {
       const connection = connections[msg.conn];

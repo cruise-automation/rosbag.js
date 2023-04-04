@@ -76,7 +76,7 @@ class FakeHeaderFilelike {
       resultBuffer.fill(0x20, currentOffset);
       return callback(null, resultBuffer);
     }
-    return callback(new Error(`Unexpected read position: ${  offset}`));
+    return callback(new Error(`Unexpected read position: ${offset}`));
   }
 }
 
