@@ -51,7 +51,7 @@
     "jest-cli": "29.5.0",
     "jest-junit": "5.2.0",
     "lz4js": "0.2.0",
-    "prettier": "1.14.3",
+    "prettier": "2.8.7",
     "regenerator-runtime": "0.12.1",
     "ts-jest": "29.0.5",
     "ts-loader": "9.4.2",
@@ -62,7 +62,6 @@
   },
   "prettier": {
     "arrowParens": "always",
-    "jsxBracketSameLine": true,
     "printWidth": 120,
     "trailingComma": "es5"
   },
