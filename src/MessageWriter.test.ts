@@ -20,7 +20,7 @@ const getStringBuffer = (str: string) => {
 describe("MessageWriter", () => {
   describe("simple type", () => {
     const testNum = (type: string, size: number, expected: any, cb: (buffer: Buffer) => any) => {
-      const buffer = new Buffer(size);
+      const buffer = Buffer.alloc(size);
       const message = { foo: expected };
       cb(buffer);
       it(`writes message ${JSON.stringify(message)} containing ${type}`, () => {

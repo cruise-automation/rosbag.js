@@ -19,7 +19,12 @@ const getStringBuffer = (str: string) => {
   return Buffer.concat([len, data]);
 };
 
-const getMessageReader = (messageDefinitions, options = {}) => {
+type ValuesAfterMessage = {
+  values: Uint8Array;
+  after: number;
+}
+
+const getMessageReader = (messageDefinitions: string, options: {typeName?: string, readerOptions?: object} = {}) => {
   const typeName = options.typeName || "custom_type/CustomMessage";
   const parsedMessageDefinitions = parseMessageDefinition(messageDefinitions, typeName);
   return new MessageReader(parsedMessageDefinitions, typeName, options.readerOptions);
@@ -65,7 +70,7 @@ describe("MessageReader", () => {
       // $FlowFixMe flow doesn't like util.TextDecoder
       expect(() => new util.TextDecoder("ascii")).not.toThrow();
       // $FlowFixMe flow doesn't like util.TextDecoder
-      global.TextDecoder = util.TextDecoder;
+      (global as any).TextDecoder = util.TextDecoder;
 
       const reader = getMessageReader("string name");
       const string = range(0, 5000)
@@ -75,7 +80,7 @@ describe("MessageReader", () => {
       expect(reader.readMessage(buff)).toEqual({ name: string });
 
       // Reset the TextDecoder
-      delete global.TextDecoder;
+      delete (global as any).TextDecoder;
     });
 
     it("parses JSON", () => {
@@ -220,7 +225,7 @@ describe("MessageReader", () => {
       it("uint8[] uses the same backing buffer", () => {
         const reader = getMessageReader("uint8[] values\nuint8 after");
         const buffer = Buffer.from([0x03, 0x00, 0x00, 0x00, 0x01, 0x02, 0x03, 0x04]);
-        const result = reader.readMessage(buffer);
+        const result = reader.readMessage(buffer) as ValuesAfterMessage;
         const { values, after } = result;
         expect(values instanceof Uint8Array).toBe(true);
         expect(values.buffer).toBe(buffer.buffer);
@@ -237,7 +242,7 @@ describe("MessageReader", () => {
       it("parses uint8[] with a fixed length", () => {
         const reader = getMessageReader("uint8[3] values\nuint8 after");
         const buffer = Buffer.from([0x01, 0x02, 0x03, 0x04]);
-        const result = reader.readMessage(buffer);
+        const result = reader.readMessage(buffer) as ValuesAfterMessage;
         const { values, after } = result;
         expect(values instanceof Uint8Array).toBe(true);
         expect(values.buffer).toBe(buffer.buffer);
@@ -254,7 +259,7 @@ describe("MessageReader", () => {
       it("int8[] uses the same backing buffer", () => {
         const reader = getMessageReader("int8[] values\nint8 after");
         const buffer = new Buffer([0x03, 0x00, 0x00, 0x00, 0x01, 0x02, 0x03, 0x04]);
-        const result = reader.readMessage(buffer);
+        const result = reader.readMessage(buffer) as ValuesAfterMessage;
         const { values, after } = result;
         expect(values instanceof Int8Array).toBe(true);
         expect(values.buffer).toBe(buffer.buffer);
@@ -271,7 +276,7 @@ describe("MessageReader", () => {
       it("parses int8[] with a fixed length", () => {
         const reader = getMessageReader("int8[3] values\nint8 after");
         const buffer = new Buffer([0x01, 0x02, 0x03, 0x04]);
-        const result = reader.readMessage(buffer);
+        const result = reader.readMessage(buffer) as ValuesAfterMessage;
         const { values, after } = result;
         expect(values instanceof Int8Array).toBe(true);
         expect(values.buffer).toBe(buffer.buffer);
@@ -288,7 +293,7 @@ describe("MessageReader", () => {
       it("parses combinations of typed arrays", () => {
         const reader = getMessageReader("int8[] first\nuint8[2] second");
         const buffer = new Buffer([0x02, 0x00, 0x00, 0x00, 0x01, 0x02, 0x03, 0x04]);
-        const result = reader.readMessage(buffer);
+        const result = reader.readMessage(buffer) as {first: Int8Array, second: Uint8Array};
         const { first, second } = result;
 
         expect(first instanceof Int8Array).toBe(true);
@@ -483,7 +488,7 @@ describe("MessageReader", () => {
       });
       const buffer = Buffer.concat([Buffer.from([0x01]), Buffer.from([0x00]), getStringBuffer("foo")]);
 
-      const message = reader.readMessage(buffer);
+      const message = reader.readMessage(buffer) as any;
       const { level, status } = message;
       expect(level).toBe(true);
       expect(status.level).toBe(0);
@@ -498,7 +503,7 @@ describe("MessageReader", () => {
         readerOptions: { freeze: true },
       });
       const buffer = Buffer.concat([getStringBuffer("foo"), getStringBuffer("bar"), new Buffer([0x05, 0x00])]);
-      const output = reader.readMessage(buffer);
+      const output = reader.readMessage(buffer) as {firstName: string, lastName: string, age: number};
       expect(output).toEqual({ firstName: "foo", lastName: "bar", age: 5 });
       expect(() => {
         output.firstName = "boooo";

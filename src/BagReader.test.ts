@@ -8,6 +8,7 @@
 
 import int53 from "int53";
 import BagReader from "./BagReader";
+import { BagHeader } from "./record";
 
 function int64Buffer(number: number) {
   const buff = Buffer.alloc(8);
@@ -86,7 +87,7 @@ describe("BagReader", () => {
       const filelike = new FakeHeaderFilelike();
       filelike.preamble = "#ROSBAG V1.0\n";
       const reader = new BagReader(filelike);
-      const callback: any = (err, header) => {
+      const callback: any = (err?: Error, header?: BagHeader) => {
         expect(err).not.toBeUndefined();
         expect(header).toBeUndefined();
         done();
@@ -94,13 +95,13 @@ describe("BagReader", () => {
       reader.readHeader(callback);
     });
 
-    it("parses header correctly with small int32 values", (done: (?Error) => void) => {
+    it("parses header correctly with small int32 values", (done: (error?: Error) => void) => {
       const filelike = new FakeHeaderFilelike();
       filelike.indexPosition = 1;
       filelike.connectionCount = 2;
       filelike.chunkCount = 3;
       const reader = new BagReader(filelike);
-      const callback: any = (err, header) => {
+      const callback: any = (err: Error | undefined, header: BagHeader) => {
         if (err) {
           return done(err);
         }
@@ -112,14 +113,14 @@ describe("BagReader", () => {
       reader.readHeader(callback);
     });
 
-    it("parses header correctly with large int32 values", (done: (?Error) => void) => {
+    it("parses header correctly with large int32 values", (done: (error?: Error) => void) => {
       const filelike = new FakeHeaderFilelike();
       // 100000, 200000, 300000 etc overflow an Int16, but fit in Int32.
       filelike.indexPosition = 100000;
       filelike.connectionCount = 200000;
       filelike.chunkCount = 300000;
       const reader = new BagReader(filelike);
-      const callback: any = (err, header) => {
+      const callback: any = (err: Error | undefined, header: BagHeader) => {
         if (err) {
           return done(err);
         }

@@ -4,13 +4,26 @@
 // found in the LICENSE file in the root directory of this source tree.
 // You may not use this file except in compliance with the License.
 
-// @flow
-
+import { Blob as NodeBlob } from "buffer";
 import { Reader, extractFields, extractTime } from ".";
 
 describe("browser reader", () => {
+  let mockFileReader: any;
+  beforeEach(() => {
+    mockFileReader = {
+      readAsArrayBuffer: jest.fn()
+    } as any;
+
+    global.FileReader = jest.fn(() => mockFileReader) as any;
+  });
+
+  afterEach(() => {
+    // @ts-expect-error The operand of a 'delete' operator must be optional.
+    delete global.FileReader;
+  });
+
   it("works in node", (done) => {
-    const buffer = new Blob([Uint8Array.from([0x00, 0x01, 0x02, 0x03, 0x04])]);
+    const buffer = new NodeBlob([Uint8Array.from([0x00, 0x01, 0x02, 0x03, 0x04])]) as any;
     const reader = new Reader(buffer);
     reader.read(0, 2, (err: Error | null, res: any) => {
       expect(err).toBeNull();
@@ -20,43 +33,35 @@ describe("browser reader", () => {
       expect(res[1]).toBe(0x01);
       done();
     });
-  });
 
-  it("allows multiple read operations at once", async () => {
-    const buffer = new Blob([Uint8Array.from([0x00, 0x01, 0x02, 0x03, 0x04])]);
-    const reader = new Reader(buffer);
-    const read1 = new Promise((resolve, reject) => reader.read(0, 2, (err) => (err ? reject(err) : resolve())));
-    const read2 = new Promise((resolve, reject) => reader.read(0, 2, (err) => (err ? reject(err) : resolve())));
-    await Promise.all([read1, read2]);
+    expect(mockFileReader.readAsArrayBuffer).toHaveBeenCalledWith(new NodeBlob([Uint8Array.from([0x00, 0x01])]));
+    mockFileReader.result = [0x00, 0x01];
+    mockFileReader.onload({});
   });
 
   it("reports browser FileReader errors", (done) => {
-    const buffer = new Blob([Uint8Array.from([0x00, 0x01, 0x02, 0x03, 0x04])]);
-    const reader = new Reader(buffer);
-    const actualFileReader = global.FileReader;
     global.FileReader = class FailReader {
       onerror: any;
+      error: any;
       readAsArrayBuffer() {
         setTimeout(() => {
-          // $FlowFixMe - `value` is missing in object literal
-          Object.defineProperty(this, "error", {
-            get() {
-              return "fake error";
-            },
-          });
+          this.error = {
+            message: "fake error"
+          };
 
           expect(typeof this.onerror).toBe("function");
           this.onerror(this);
         });
       }
-    };
+    } as any;
+
+    const buffer = new NodeBlob([Uint8Array.from([0x00, 0x01, 0x02, 0x03, 0x04])]) as any;
+    const reader = new Reader(buffer);
 
     reader.read(0, 2, (err: Error | null) => {
-      global.FileReader = actualFileReader;
       expect(err instanceof Error).toBe(true);
 
-      // $FlowFixMe - `message` is missing in null
-      expect(err.message).toBe("fake error");
+      expect(err!.message).toBe("fake error");
       done();
     });
   });

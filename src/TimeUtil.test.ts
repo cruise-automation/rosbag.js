@@ -7,6 +7,7 @@
 // @flow
 
 import * as TimeUtil from "./TimeUtil";
+import { Time } from "./types";
 
 describe("TimeUtil", () => {
   const date = new Date(1511798097280);
@@ -59,7 +60,7 @@ describe("TimeUtil", () => {
     expect(TimeUtil.areSame(min, oneNano)).toBe(false);
   });
 
-  const testAddition = (left, right, expected) => {
+  const testAddition = (left: Time, right: Time, expected: Time) => {
     expect(TimeUtil.add(left, right)).toEqual(expected);
     expect(TimeUtil.add(right, left)).toEqual(expected);
   };
