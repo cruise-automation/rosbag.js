@@ -112,6 +112,7 @@ class StandardTypeReader {
     const arrayLength = len == null ? this.uint32() : len;
     const data = new ArrayType(this.view.buffer, this.offset + this.view.byteOffset, arrayLength);
     this.offset += arrayLength;
+
     return data;
   }
 
@@ -196,6 +197,7 @@ const createParser = (types: RosMsgDefinition[], typeName: string, freeze: boole
   }
 
   const [topLevelType] = topLevelTypes;
+
   const nestedTypes: RosMsgDefinition[] = types.filter((type) => type.name !== typeName);
 
   const constructorBody = (type: RosMsgDefinition) => {

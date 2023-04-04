@@ -126,8 +126,8 @@ export class IndexData extends RosbagRecord {
     this.ver = fields.ver.readUInt32LE(0);
     this.conn = fields.conn.readUInt32LE(0);
     this.count = fields.count.readUInt32LE(0);
-    this.indices = [];
 
+    this.indices = [];
     for (let i = 0; i < this.count; i++) {
       this.indices.push({
         time: extractTime(buffer, i * 12),
@@ -171,8 +171,8 @@ export class ChunkInfo extends RosbagRecord implements ChunkInfoInterface {
     this.startTime = extractTime(fields.start_time, 0);
     this.endTime = extractTime(fields.end_time, 0);
     this.count = fields.count.readUInt32LE(0);
-    this.connections = [];
 
+    this.connections = [];
     for (let i = 0; i < this.count; i++) {
       this.connections.push({
         conn: buffer.readUInt32LE(i * 8),

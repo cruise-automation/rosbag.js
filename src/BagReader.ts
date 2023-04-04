@@ -208,6 +208,7 @@ export default class BagReader {
       const presentConnections = conns.filter((conn) => indices[conn] !== undefined);
       const iterables = presentConnections.map((conn) => indices[conn].indices[Symbol.iterator]());
       const iter = nmerge((a, b) => TimeUtil.compare(a.time, b.time), ...iterables);
+
       const entries: IndexData["indices"] = [];
       let item = iter.next();
 
@@ -230,6 +231,7 @@ export default class BagReader {
       const messages = entries.map((entry) =>
         this.readRecordFromBuffer(chunk.data.slice(entry.offset), chunk.dataOffset, MessageData)
       );
+
       return callback(null, messages);
     });
   }
@@ -268,6 +270,7 @@ export default class BagReader {
     }
 
     const { nextChunk } = chunkInfo;
+
     const readLength = nextChunk
       ? nextChunk.chunkPosition - chunkInfo.chunkPosition
       : this._file.size() - chunkInfo.chunkPosition;

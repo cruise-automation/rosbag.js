@@ -235,6 +235,7 @@ function createWriterAndSizeCalculator(types: RosMsgDefinition[], typeName: stri
 
   let writerJs = "";
   let calculateSizeJs = "";
+
   nestedTypes.forEach((t) => {
     writerJs += `
   function ${friendlyName(t.name)}(writer, message) {
@@ -245,6 +246,7 @@ function createWriterAndSizeCalculator(types: RosMsgDefinition[], typeName: stri
     ${constructorBody(t, "offsetCalculator")}
   };\n`;
   });
+
   writerJs += `
   return function write(writer, message) {
     ${constructorBody(topLevelType, "writer")}
