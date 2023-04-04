@@ -34,17 +34,13 @@ export class Reader {
     const reader = new FileReader();
 
     reader.onload = function () {
-      // $FlowFixMe - flow doesn't allow null
       reader.onload = null;
-      // $FlowFixMe - flow doesn't allow null
       reader.onerror = null;
       setImmediate(cb, null, reader.result ? Buffer.from(reader.result as ArrayBuffer) : undefined);
     };
 
     reader.onerror = function () {
-      // $FlowFixMe - flow doesn't allow null
       reader.onload = null;
-      // $FlowFixMe - flow doesn't allow null
       reader.onerror = null;
       setImmediate(cb, new Error(reader.error ? reader.error.message : "Unknown reader error."));
     };

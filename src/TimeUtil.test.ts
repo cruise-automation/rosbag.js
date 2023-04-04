@@ -4,8 +4,6 @@
 // found in the LICENSE file in the root directory of this source tree.
 // You may not use this file except in compliance with the License.
 
-// @flow
-
 import * as TimeUtil from "./TimeUtil";
 import { Time } from "./types";
 

@@ -6,7 +6,7 @@
 
 module.exports = {
   plugins: ["@babel/plugin-proposal-class-properties", "@babel/plugin-syntax-object-rest-spread", "@babel/plugin-proposal-optional-catch-binding"],
-  presets: ["@babel/preset-flow"],
+  presets: ["@babel/preset-typescript"],
   env: {
     test: {
       presets: ["@babel/preset-env"],

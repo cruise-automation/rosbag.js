@@ -4,8 +4,6 @@
 // found in the LICENSE file in the root directory of this source tree.
 // You may not use this file except in compliance with the License.
 
-// @flow
-
 import { range } from "lodash";
 
 import util from "util";
@@ -67,9 +65,7 @@ describe("MessageReader", () => {
     xit("parses long strings with TextDecoder available", () => {
       // Remove TextDecoder
       expect(typeof TextDecoder).toEqual("undefined");
-      // $FlowFixMe flow doesn't like util.TextDecoder
       expect(() => new util.TextDecoder("ascii")).not.toThrow();
-      // $FlowFixMe flow doesn't like util.TextDecoder
       (global as any).TextDecoder = util.TextDecoder;
 
       const reader = getMessageReader("string name");
