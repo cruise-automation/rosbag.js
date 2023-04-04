@@ -9,10 +9,13 @@
     "int53": "1.0.0"
   },
   "engines": {
-    "node": ">=8.0.0"
+    "node": ">=12.7.0"
   },
-  "main": "dist/node",
-  "browser": "dist/web",
+  "exports": {
+    "browser": "./dist/web/index.js",
+    "require": "./dist/node/index.js",
+    "types": "./dist/index.d.ts"
+  },
   "files": [
     "src",
     "dist",
@@ -21,11 +24,11 @@
   ],
   "scripts": {
     "prepack": "yarn run build",
-    "lint": "yarn run tsc && eslint src && prettier -l 'src/**/*.ts'",
+    "lint": "yarn run tsc --noEmit && eslint src && prettier -l 'src/**/*.ts'",
     "lint:fix": "eslint --fix src && prettier --write -l 'src/**/*.ts'",
     "test": "yarn run jest --verbose && yarn run lint",
     "clean": "rm -rf build dist",
-    "build": "yarn run clean && mkdir -p dist && yarn run tsc && yarn run build-node && yarn run build-web",
+    "build": "yarn run clean && mkdir -p dist && yarn run build-node && yarn run build-web",
     "build-node": "cross-env ROSBAG_TARGET=node webpack --mode development",
     "build-web": "cross-env ROSBAG_TARGET=web webpack --mode development"
   },
