@@ -10,12 +10,15 @@ const nodeExternals = require("webpack-node-externals");
 const target = process.env.ROSBAG_TARGET || "";
 
 module.exports = {
-  entry: `./src/${target}/index.js`,
+  entry: `./src/${target}/index.ts`,
   devtool: "inline-source-map",
+  resolve: {
+    extensions: [".ts", ".js"]
+  },
   module: {
     rules: [
       {
-        test: /\.js$/,
+        test: /\.ts$/,
         use: {
           loader: "babel-loader",
         },
