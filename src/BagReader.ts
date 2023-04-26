@@ -66,32 +66,35 @@ export default class BagReader {
   // generally you call this first
   // because you need the header information to call readConnectionsAndChunkInfo
   readHeader(callback: Callback<BagHeader>) {
-    this.verifyBagHeader(callback, () =>
+    this.verifyBagHeader(callback, () => {
       this._file.read(HEADER_OFFSET, HEADER_READAHEAD, (error: Error | null, buffer?: Buffer) => {
         if (error || !buffer) {
-          return callback(error || new Error("Missing both error and buffer"));
+          callback(error || new Error("Missing both error and buffer"));
+          return;
         }
 
         const read = buffer.length;
 
         if (read < 8) {
-          return callback(new Error(`Record at position ${HEADER_OFFSET} is truncated.`));
+          callback(new Error(`Record at position ${HEADER_OFFSET} is truncated.`));
+          return;
         }
 
         const headerLength = buffer.readInt32LE(0);
 
         if (read < headerLength + 8) {
-          return callback(new Error(`Record at position ${HEADER_OFFSET} header too large: ${headerLength}.`));
+          callback(new Error(`Record at position ${HEADER_OFFSET} header too large: ${headerLength}.`));
+          return;
         }
 
         try {
           const header = this.readRecordFromBuffer(buffer, HEADER_OFFSET, BagHeader);
-          return callback(null, header);
+          callback(null, header);
         } catch (e) {
-          return callback(new Error(`Could not read header from rosbag file buffer - ${(e as Error).message}`));
+          callback(new Error(`Could not read header from rosbag file buffer - ${(e as Error).message}`));
         }
-      })
-    );
+      });
+    });
   }
 
   // promisified version of readHeader

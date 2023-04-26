@@ -66,10 +66,10 @@ export default class Bag {
     const result = await this.reader.readConnectionsAndChunkInfoAsync(indexPosition, connectionCount, chunkCount);
 
     this.connections = {};
-
     result.connections.forEach((connection) => {
-      // @ts-expect-error Object is possibly 'undefined'.
-      this.connections[connection.conn] = connection;
+      // Connections is definitly assigned above
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      this.connections![connection.conn] = connection;
     });
 
     this.chunkInfos = result.chunkInfos;
