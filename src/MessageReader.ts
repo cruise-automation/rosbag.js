@@ -68,7 +68,8 @@ class StandardTypeReader {
 
     // if the string is relatively short we can use apply, but longer strings can benefit from the speed of TextDecoder.
     if (codePoints.length < 1000) {
-      return String.fromCharCode.call(null, ...codePoints);
+      // @ts-expect-error   Type 'Uint8Array' is missing the following properties from type 'number[]': pop, push, concat, shift, and 5 more.
+      return String.fromCharCode.apply(null, codePoints);
     }
 
     // Use TextDecoder if it is available and supports the "ascii" encoding.
