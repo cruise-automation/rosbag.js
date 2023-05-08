@@ -22,14 +22,17 @@ export type ReadOptions = {
   freeze?: boolean;
 };
 
-// the high level rosbag interface
-// create a new bag by calling:
-// `const bag = await Bag.open('./path-to-file.bag')` in node or
-// `const bag = await Bag.open(files[0])` in the browser
-//
-// after that you can consume messages by calling
-// `await bag.readMessages({ topics: ['/foo'] },
-//    (result) => console.log(result.topic, result.message))`
+/**
+ * The high level rosbag interface.
+ *
+ * Create a new bag by calling:
+ * `const bag = await Bag.open('./path-to-file.bag')` in node or
+ * `const bag = await Bag.open(files[0])` in the browser.
+ *
+ * After that you can consume messages by calling
+ * `await bag.readMessages({ topics: ['/foo'] },
+ *    (result) => console.log(result.topic, result.message))`
+ */
 export default class Bag {
   reader: BagReader;
   header?: BagHeader;
@@ -57,8 +60,10 @@ export default class Bag {
     }
   }
 
-  // if the bag is manually created with the constructor, you must call `await open()` on the bag
-  // generally this is called for you if you're using `const bag = await Bag.open()`
+  /**
+   * If the bag is manually created with the constructor, you must call `await open()` on the bag.
+   * Generally this is called for you if you're using `const bag = await Bag.open()`
+   */
   async open() {
     this.header = await this.reader.readHeaderAsync();
     const { connectionCount, chunkCount, indexPosition } = this.header;

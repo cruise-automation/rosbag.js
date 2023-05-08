@@ -179,24 +179,26 @@ const findTypeByName = (types: RosMsgDefinition[], name: string, rosPackage: str
   return matches[0];
 };
 
-// Given a raw message definition string, parse it into an object representation.
-// Type names in all positions are always fully-qualified.
-//
-// Example return value:
-// [{
-//   name: "foo_msgs/Bar",
-//   definitions: [
-//     {
-//       arrayLength: undefined,
-//       isArray: false,
-//       isComplex: false,
-//       name: "name",
-//       type: "string",
-//     }, ...
-//   ],
-// }, ... ]
-//
-// See unit tests for more examples.
+/**
+ * Given a raw message definition string, parse it into an object representation.
+ * Type names in all positions are always fully-qualified.
+ *
+ * Example return value:
+ * [{
+ *   name: "foo_msgs/Bar",
+ *   definitions: [
+ *     {
+ *       arrayLength: undefined,
+ *       isArray: false,
+ *       isComplex: false,
+ *       name: "name",
+ *       type: "string",
+ *     }, ...
+ *   ],
+ * }, ... ]
+ *
+ * See unit tests for more examples.
+ */
 export function parseMessageDefinition(messageDefinition: string, typeName: string) {
   // read all the lines and remove empties
   const allLines = messageDefinition

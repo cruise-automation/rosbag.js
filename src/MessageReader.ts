@@ -20,9 +20,11 @@ type TypedArrayConstructor =
   | Float32ArrayConstructor
   | Float64ArrayConstructor;
 
-// this has hard-coded buffer reading functions for each
-// of the standard message types http://docs.ros.org/api/std_msgs/html/index-msg.html
-// eventually custom types decompose into these standard types
+/**
+ * This has hard-coded buffer reading functions for each
+ * of the standard message types http://docs.ros.org/api/std_msgs/html/index-msg.html
+ * eventually custom types decompose into these standard types
+ */
 class StandardTypeReader {
   buffer: Buffer;
   offset: number;

@@ -6,8 +6,10 @@
 
 import type { Time } from "./types";
 
-// represents a result passed to the callback from the high-level call:
-// bag.readMessages({ opts: any }, callback: (ReadResult) => void) => Promise<void>
+/**
+ * Represents a result passed to the callback from the high-level call:
+ * `bag.readMessages({ opts: any }, callback: (ReadResult) => void) => Promise<void>`
+ */
 export default class ReadResult<T> {
   topic: string;
   message: T;

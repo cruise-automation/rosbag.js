@@ -7,8 +7,10 @@
 import { extractFields } from "./fields";
 import { RosbagRecord, RosbagRecordConstructor } from "./record";
 
-// given a buffer parses out the record within the buffer
-// based on the opcode type bit
+/**
+ * Given a buffer parses out the record within the buffer
+ * based on the opcode type bit.
+ */
 export function parseHeader<T extends RosbagRecord>(
   buffer: Buffer,
   Cls: RosbagRecordConstructor<T>

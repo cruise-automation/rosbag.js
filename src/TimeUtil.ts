@@ -18,25 +18,34 @@ export function toDate(time: Time) {
   return new Date(time.sec * 1e3 + time.nsec / 1e6);
 }
 
-// compare two times, returning a negative value if the right is greater
-// or a positive value if the left is greater or 0 if the times are equal
-// useful to supply to Array.prototype.sort
+/**
+ * Compare two times returning a negative value if the right is greater,
+ * a positive value if the left is greater, or 0 if the times are equal.
+ *
+ * Useful to supply to `Array.prototype.sort`.
+ */
 export function compare(left: Time, right: Time) {
   const secDiff = left.sec - right.sec;
   return secDiff || left.nsec - right.nsec;
 }
 
-// returns true if the left time is less than the right time, otherwise false
+/**
+ * Returns true if the left time is less than the right time, otherwise false.
+ */
 export function isLessThan(left: Time, right: Time) {
   return compare(left, right) < 0;
 }
 
-// returns true if the left time is greater than the right time, otherwise false
+/**
+ * Returns true if the left time is greater than the right time, otherwise false.
+ */
 export function isGreaterThan(left: Time, right: Time) {
   return compare(left, right) > 0;
 }
 
-// returns true if both times have the same number of seconds and nanoseconds
+/**
+ * Returns true if both times have the same number of seconds and nanoseconds.
+ */
 export function areSame(left: Time, right: Time) {
   return left.sec === right.sec && left.nsec === right.nsec;
 }
@@ -45,8 +54,11 @@ function toString(time: Time) {
   return `{${time.sec}, ${time.nsec}}`;
 }
 
-// computes the sum of two times or durations and returns a new time
-// throws an exception if the resulting time is negative
+/**
+ * Computes the sum of two times or durations and returns a new time.
+ *
+ * Throws an exception if the resulting time is negative.
+ */
 export function add(left: Time, right: Time) {
   const durationNanos = left.nsec + right.nsec;
   const secsFromNanos = Math.floor(durationNanos / 1e9);

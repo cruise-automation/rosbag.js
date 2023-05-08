@@ -6,11 +6,13 @@
 
 import type { Time } from "./types";
 
-// reads through a buffer and extracts { [key: string]: value: string }
-// pairs - the buffer is expected to have length prefixed utf8 strings
-// with a '=' separating the key and value
 const EQUALS_CHARCODE = "=".charCodeAt(0);
 
+/**
+ * Reads through a buffer and extracts `{ [key: string]: value: string }`
+ * pairs. The buffer is expected to have length prefixed utf8 strings
+ * with a '=' separating the key and value
+ */
 export function extractFields(buffer: Buffer) {
   if (buffer.length < 4) {
     throw new Error("Header fields are truncated.");
@@ -43,7 +45,9 @@ export function extractFields(buffer: Buffer) {
   return fields;
 }
 
-// reads a Time object out of a buffer at the given offset
+/**
+ * Reads a Time object out of a buffer at the given offset.
+ */
 export function extractTime(buffer: Buffer, offset: number): Time {
   const sec = buffer.readUInt32LE(offset);
   const nsec = buffer.readUInt32LE(offset + 4);

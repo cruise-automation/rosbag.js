@@ -27,10 +27,12 @@ export type Decompress = Record<string, (buffer: Buffer, size: number) => Buffer
 const HEADER_READAHEAD = 4096;
 const HEADER_OFFSET = 13;
 
-// BagReader is a lower level interface for reading specific sections & chunks
-// from a rosbag file - generally it is consumed through the Bag class, but
-// can be useful to use directly for efficiently accessing raw pieces from
-// within the bag
+/**
+ * BagReader is a lower level interface for reading specific sections & chunks
+ * from a rosbag file - generally it is consumed through the Bag class, but
+ * can be useful to use directly for efficiently accessing raw pieces from
+ * within the bag
+ */
 export default class BagReader {
   _lastReadResult?: ChunkReadResult;
   _file: Filelike;
@@ -62,9 +64,11 @@ export default class BagReader {
     });
   }
 
-  // reads the header block from the rosbag file
-  // generally you call this first
-  // because you need the header information to call readConnectionsAndChunkInfo
+  /**
+   * Reads the header block from the rosbag file.
+   *
+   * Generally you call this first because you need the header information to call readConnectionsAndChunkInfo
+   */
   readHeader(callback: Callback<BagHeader>) {
     this.verifyBagHeader(callback, () => {
       this._file.read(HEADER_OFFSET, HEADER_READAHEAD, (error: Error | null, buffer?: Buffer) => {
@@ -104,10 +108,13 @@ export default class BagReader {
     );
   }
 
-  // reads connection and chunk information from the bag
-  // you'll generally call this after reading the header so you can get
-  // connection metadata and chunkInfos which allow you to seek to individual
-  // chunks & read them
+  /**
+   * Reads connection and chunk information from the bag.
+   *
+   * You'll generally call this after reading the header so you can get
+   * connection metadata and chunkInfos which allow you to seek to individual
+   * chunks & read them
+   */
   readConnectionsAndChunkInfo(
     fileOffset: number,
     connectionCount: number,
@@ -178,9 +185,12 @@ export default class BagReader {
     });
   }
 
-  // read individual raw messages from the bag at a given chunk
-  // filters to a specific set of connection ids, start time, & end time
-  // generally the records will be of type MessageData
+  /**
+   * Reads individual raw messages from the bag at a given chunk.
+   *
+   * Filters to a specific set of connection ids, start time, & end time.
+   * Generally the records will be of type MessageData
+   */
   readChunkMessages(
     chunkInfo: ChunkInfo,
     connections: number[],
@@ -259,7 +269,9 @@ export default class BagReader {
     });
   }
 
-  // reads a single chunk record && its index records given a chunkInfo
+  /**
+   * Reads a single chunk record && its index records given a chunkInfo.
+   */
   readChunk(chunkInfo: ChunkInfo, decompress: Decompress, callback: Callback<ChunkReadResult>) {
     // if we're reading the same chunk a second time return the cached version
     // to avoid doing decompression on the same chunk multiple times which is
@@ -312,7 +324,9 @@ export default class BagReader {
     });
   }
 
-  // reads count records from a buffer starting at fileOffset
+  /**
+   * Reads count records from a buffer starting at fileOffset.
+   */
   readRecordsFromBuffer<T extends RosbagRecord>(
     buffer: Buffer,
     count: number,
@@ -331,7 +345,9 @@ export default class BagReader {
     return records;
   }
 
-  // read an individual record from a buffer
+  /**
+   * Reads an individual record from a buffer.
+   */
   // eslint-disable-next-line class-methods-use-this
   readRecordFromBuffer<T extends RosbagRecord>(buffer: Buffer, fileOffset: number, Cls: RosbagRecordConstructor<T>): T {
     const headerLength = buffer.readInt32LE(0);
