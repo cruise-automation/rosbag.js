@@ -1,4 +1,3 @@
-// @flow
 // Copyright (c) 2018-present, Cruise LLC
 
 // This source code is licensed under the Apache License, Version 2.0,
@@ -11,14 +10,17 @@ const nodeExternals = require("webpack-node-externals");
 const target = process.env.ROSBAG_TARGET || "";
 
 module.exports = {
-  entry: `./src/${target}/index.js`,
+  entry: `./src/${target}/index.ts`,
   devtool: "inline-source-map",
+  resolve: {
+    extensions: [".ts", ".js"]
+  },
   module: {
     rules: [
       {
-        test: /\.js$/,
+        test: /\.ts$/,
         use: {
-          loader: "babel-loader",
+          loader: "ts-loader",
         },
         exclude: /node_modules/,
       },

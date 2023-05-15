@@ -1,0 +1,32 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`rosbag - high-level api reads correct fields on /tf message 1`] = `
+Record {
+  "transforms": [
+    {
+      "child_frame_id": "turtle2",
+      "header": {
+        "frame_id": "world",
+        "seq": 0,
+        "stamp": {
+          "nsec": 56065082,
+          "sec": 1396293888,
+        },
+      },
+      "transform": {
+        "rotation": {
+          "w": 1,
+          "x": 0,
+          "y": 0,
+          "z": 0,
+        },
+        "translation": {
+          "x": 4,
+          "y": 9.088889122009277,
+          "z": 0,
+        },
+      },
+    },
+  ],
+}
+`;
