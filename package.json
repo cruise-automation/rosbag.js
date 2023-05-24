@@ -11,11 +11,9 @@
   "engines": {
     "node": ">=14.0.0"
   },
-  "exports": {
-    "browser": "./dist/web/index.js",
-    "require": "./dist/node/index.js",
-    "types": "./dist/index.d.ts"
-  },
+  "main": "./dist/node",
+  "browser": "./dist/web",
+  "types": "./dist/index.d.ts",
   "files": [
     "src",
     "dist",
