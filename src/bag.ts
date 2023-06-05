@@ -23,6 +23,16 @@ export type ReadOptions = {
 };
 
 /**
+ * Represents a bag that has been opened, which guarantees certain properties are available.
+ */
+// eslint-disable-next-line no-use-before-define
+export interface OpenBag extends Bag {
+  header: BagHeader;
+  connections: Record<number, Connection>;
+  chunkInfos: ChunkInfo[];
+}
+
+/**
  * The high level rosbag interface.
  *
  * Create a new bag by calling:
@@ -46,7 +56,7 @@ export default class Bag {
     this.reader = bagReader;
   }
 
-  static open = (_file: File | string): Promise<Bag> =>
+  static open = (_file: File | string): Promise<OpenBag> =>
     Promise.reject(
       new Error(
         "This method should have been overridden based on the environment. Make sure you are correctly importing the node or web version of Bag."
@@ -62,9 +72,11 @@ export default class Bag {
 
   /**
    * If the bag is manually created with the constructor, you must call `await open()` on the bag.
-   * Generally this is called for you if you're using `const bag = await Bag.open()`
+   * Generally this is called for you if you're using `const bag = await Bag.open()`.
+   *
+   * Returns `this` with the type of `OpenBag`.
    */
-  async open() {
+  async open(): Promise<OpenBag> {
     this.header = await this.reader.readHeaderAsync();
     const { connectionCount, chunkCount, indexPosition } = this.header;
 
@@ -89,6 +101,8 @@ export default class Bag {
         .map((x) => x.endTime)
         .reduce((prev, current) => (TimeUtil.compare(prev, current) > 0 ? prev : current));
     }
+
+    return this as OpenBag;
   }
 
   async readMessages(opts: ReadOptions, callback: (msg: ReadResult<unknown>) => void) {
@@ -148,10 +162,4 @@ export default class Bag {
       messages.forEach((msg) => callback(parseMsg(msg, i)));
     }
   }
-}
-
-interface OpenBag extends Bag {
-  header: BagHeader;
-  connections: Record<number, Connection>;
-  chunkInfos: ChunkInfo[];
 }

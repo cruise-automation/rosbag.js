@@ -15,7 +15,7 @@ import {
   extractTime,
 } from "../index";
 import type { Callback } from "../types";
-import Bag from "../bag";
+import Bag, { OpenBag } from "../bag";
 import BagReader from "../BagReader";
 
 // browser reader for Blob|File objects
@@ -54,7 +54,7 @@ export class Reader {
   }
 }
 
-const open = async (file: File | string) => {
+const open = async (file: File | string): Promise<OpenBag> => {
   if (!(file instanceof Blob)) {
     throw new Error(
       "Expected file to be a File or Blob. Make sure you are correctly importing the node or web version of Bag."
@@ -63,7 +63,7 @@ const open = async (file: File | string) => {
 
   const bag = new Bag(new BagReader(new Reader(file)));
   await bag.open();
-  return bag;
+  return bag as OpenBag;
 };
 
 Bag.open = open;
