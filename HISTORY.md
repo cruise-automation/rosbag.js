@@ -1,3 +1,12 @@
+# 4.0.1
+
+* Add explicit exports so that types match code.
+* Export `OpenBag` type.
+
+# 4.0.0
+
+* Convert to Typescript
+
 # 2.5.0
 
 * Added MessageWriter functionality, and deprecated passing the unparsed message definitions direction to MessageReader.
