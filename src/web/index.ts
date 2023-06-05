@@ -68,6 +68,7 @@ const open = async (file: File | string) => {
 
 Bag.open = open;
 
+// These exports must match ../index.ts
 export * from "../types";
 export {
   TimeUtil,
