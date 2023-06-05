@@ -11,8 +11,14 @@ import * as TimeUtil from "./TimeUtil";
 import Bag from "./bag";
 import { extractFields, extractTime } from "./fields";
 import { parseMessageDefinition, rosPrimitiveTypes } from "./parseMessageDefinition";
+import { Filelike } from "./types";
 
 const { open } = Bag;
+
+export declare class Reader implements Filelike {
+  read(): void;
+  size(): number;
+}
 
 // These exports must match node/index.ts and web/index.ts
 export * from "./types";

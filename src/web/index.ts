@@ -72,6 +72,7 @@ Bag.open = open;
 export * from "../types";
 export {
   TimeUtil,
+  Bag,
   BagReader,
   MessageReader,
   MessageWriter,
