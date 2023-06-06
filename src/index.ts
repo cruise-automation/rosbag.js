@@ -4,13 +4,35 @@
 // found in the LICENSE file in the root directory of this source tree.
 // You may not use this file except in compliance with the License.
 
+import BagReader from "./BagReader";
+import { MessageReader } from "./MessageReader";
+import { MessageWriter } from "./MessageWriter";
 import * as TimeUtil from "./TimeUtil";
+import Bag, { OpenBag } from "./bag";
+import { extractFields, extractTime } from "./fields";
+import { parseMessageDefinition, rosPrimitiveTypes } from "./parseMessageDefinition";
+import { Filelike } from "./types";
 
-export * from "./bag";
-export * from "./BagReader";
-export * from "./MessageReader";
-export * from "./MessageWriter";
-export * from "./parseMessageDefinition";
+const { open } = Bag;
+
+export declare class Reader implements Filelike {
+  read(): void;
+  size(): number;
+}
+
+// These exports must match node/index.ts and web/index.ts
 export * from "./types";
-export * from "./fields";
-export { TimeUtil };
+export {
+  TimeUtil,
+  Bag,
+  OpenBag,
+  BagReader,
+  MessageReader,
+  MessageWriter,
+  open,
+  parseMessageDefinition,
+  rosPrimitiveTypes,
+  extractFields,
+  extractTime,
+};
+export default Bag;

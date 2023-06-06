@@ -21,3 +21,11 @@ If any entity institutes patent litigation - including cross-claim or countercla
 **3. Source of Contribution.**
 
 Your contribution is either your original creation, based upon previous work that, to the best of your knowledge, is covered under an appropriate open source license and you have the right under that license to submit that work with modifications, whether created in whole or in part by you, or you have clearly identified the source of the contribution and any license or other restriction (like related patents, trademarks, and license agreements) of which you are personally aware.
+
+## Releasing a new version
+
+1. Update [HISTORY.md](./HISTORY.md) with the changes since the last release.
+2. Run `yarn version` to pick the new version.
+3. Create a new pull request with these changes.
+4. After the pull request has been merged to `main` run `yarn publish`. Pick the same version as above.
+5. Create a [Github release](https://github.com/cruise-automation/rosbag.js/releases/new) for the version.

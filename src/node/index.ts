@@ -16,7 +16,7 @@ import {
   extractTime,
 } from "../index";
 import type { Callback } from "../types";
-import Bag from "../bag";
+import Bag, { OpenBag } from "../bag";
 import BagReader from "../BagReader";
 
 // reader using nodejs fs api
@@ -78,7 +78,7 @@ export class Reader {
   }
 }
 
-const open = async (filename: File | string) => {
+const open = async (filename: File | string): Promise<OpenBag> => {
   if (typeof filename !== "string") {
     throw new Error(
       "Expected filename to be a string. Make sure you are correctly importing the node or web version of Bag."
@@ -87,14 +87,16 @@ const open = async (filename: File | string) => {
 
   const bag = new Bag(new BagReader(new Reader(filename)));
   await bag.open();
-  return bag;
+  return bag as OpenBag;
 };
 
 Bag.open = open;
 
+// These exports must match ../index.ts
 export * from "../types";
 export {
   TimeUtil,
+  Bag,
   BagReader,
   MessageReader,
   MessageWriter,
