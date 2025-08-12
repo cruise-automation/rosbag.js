@@ -1,5 +1,9 @@
 # 4.0.1
 
+* Enable passing BigInts to MessageWriter for int64 and uint64 types
+
+# 4.0.1
+
 * Add explicit exports so that types match code.
 * Export `OpenBag` type.
 
