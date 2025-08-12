@@ -17,10 +17,12 @@ const getStringBuffer = (str: string) => {
 
 describe("MessageWriter", () => {
   describe("simple type", () => {
-    const testNum = <T>(type: string, size: number, expected: T, cb: (buffer: Buffer) => T) => {
+    const testNum = <T>(type: string, size: number, expected: T, cb: (buffer: Buffer) => number) => {
       const buffer = Buffer.alloc(size);
-      const message = { foo: expected };
       cb(buffer);
+
+      // BigInts are not JSON serializable, so we need to stringify them manually
+      const message = { foo: typeof expected === "bigint" ? `${expected.toString()}n` : expected };
       it(`writes message ${JSON.stringify(message)} containing ${type}`, () => {
         const typeName = "foo_msgs/Bar";
         const writer = new MessageWriter(parseMessageDefinition(`${type} foo`, typeName), typeName);
@@ -40,6 +42,12 @@ describe("MessageWriter", () => {
     testNum("uint32", 4, 210010, (buffer) => buffer.writeUInt32LE(210010, 0));
     testNum("float32", 4, 5.5, (buffer) => buffer.writeFloatLE(5.5, 0));
     testNum("float64", 8, 1.7976931348623157e308, (buffer) => buffer.writeDoubleLE(1.7976931348623157e308, 0));
+    testNum("int64", 8, BigInt(Number.MAX_SAFE_INTEGER), (buffer) =>
+      buffer.writeBigInt64LE(BigInt(Number.MAX_SAFE_INTEGER), 0)
+    );
+    testNum("uint64", 8, BigInt(Number.MAX_SAFE_INTEGER), (buffer) =>
+      buffer.writeBigUInt64LE(BigInt(Number.MAX_SAFE_INTEGER), 0)
+    );
 
     it("writes strings", () => {
       const typeName = "foo_msgs/Bar";
