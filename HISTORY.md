@@ -1,4 +1,4 @@
-# 4.0.1
+# 4.1.0
 
 * Enable passing BigInts to MessageWriter for int64 and uint64 types
 
