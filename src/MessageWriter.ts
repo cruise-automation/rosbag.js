@@ -4,7 +4,6 @@
 // found in the LICENSE file in the root directory of this source tree.
 // You may not use this file except in compliance with the License.
 
-import int53 from "int53";
 import type { Time, RosMsgDefinition } from "./types";
 
 // write a Time object to a buffer.
@@ -148,12 +147,12 @@ class StandardTypeWriter {
     this.view.setFloat64(this.offsetCalculator.float64(), value, true);
   }
 
-  int64(value: number) {
-    int53.writeInt64LE(value, this.buffer, this.offsetCalculator.int64());
+  int64(value: number | bigint) {
+    this.view.setBigInt64(this.offsetCalculator.int64(), BigInt(value), true);
   }
 
-  uint64(value: number) {
-    int53.writeUInt64LE(value, this.buffer, this.offsetCalculator.uint64());
+  uint64(value: number | bigint) {
+    this.view.setBigUint64(this.offsetCalculator.uint64(), BigInt(value), true);
   }
 
   time(time: Time) {

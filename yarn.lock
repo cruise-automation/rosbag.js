@@ -750,13 +750,6 @@
   resolved "https://registry.yarnpkg.com/@types/heap/-/heap-0.2.31.tgz#aaae2b2f7a915810fb783b1bbbf1c0748e399ba9"
   integrity sha1-qq4rL3qRWBD7eDsbu/HAdI45m6k=
 
-"@types/int53@1.0.0":
-  version "1.0.0"
-  resolved "https://registry.yarnpkg.com/@types/int53/-/int53-1.0.0.tgz#1279ac906bb2bec486c13353c5b6e8c97201de33"
-  integrity sha1-EnmskGuyvsSGwTNTxbboyXIB3jM=
-  dependencies:
-    "@types/node" "*"
-
 "@types/istanbul-lib-coverage@*", "@types/istanbul-lib-coverage@^2.0.0", "@types/istanbul-lib-coverage@^2.0.1":
   version "2.0.4"
   resolved "https://registry.yarnpkg.com/@types/istanbul-lib-coverage/-/istanbul-lib-coverage-2.0.4.tgz#8467d4b3c087805d63580480890791277ce35c44"
@@ -2400,11 +2393,6 @@ inherits@2:
   version "2.0.4"
   resolved "https://registry.yarnpkg.com/inherits/-/inherits-2.0.4.tgz#0fa2c64f932917c3433a0ded55363aae37416b7c"
   integrity sha1-D6LGT5MpF8NDOg3tVTY6rjdBa3w=
-
-int53@1.0.0:
-  version "1.0.0"
-  resolved "https://registry.yarnpkg.com/int53/-/int53-1.0.0.tgz#65eef2b8e25df0d8d137520f31c47da67c97aaa1"
-  integrity sha512-u8BMiMa05OPBgd32CKTead0CVTsFVgwFk23nNXo1teKPF6Sxcu0lXxEzP//zTcaKzXbGgPDXGmj/woyv+I4C5w==
 
 internal-slot@^1.0.3, internal-slot@^1.0.4, internal-slot@^1.0.5:
   version "1.0.5"
