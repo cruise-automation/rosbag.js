@@ -1,6 +1,7 @@
-# 4.1.0
+# 5.0.0
 
-* Enable passing BigInts to MessageWriter for int64 and uint64 types
+* MessageWriter now accepts bigint in addition to number for int64 and uint64 types
+* MessageReader now always returns bigint instead of number for int64 and uint64 types
 
 # 4.0.1
 
