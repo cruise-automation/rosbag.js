@@ -3,6 +3,7 @@
   "version": "4.0.1",
   "license": "Apache-2.0",
   "repository": "cruise-automation/rosbag.js",
+  "homepage": "https://github.com/cruise-automation/rosbag.js",
   "dependencies": {
     "buffer": "6.0.3",
     "heap": "0.2.7"
