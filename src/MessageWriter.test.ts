@@ -472,6 +472,7 @@ describe("MessageWriter", () => {
       const messageDefinition = `
       string username
       Account[] accounts
+      uint64 favoriteNumber
       ============
       MSG: custom_type/Account
       string name
@@ -485,8 +486,11 @@ describe("MessageWriter", () => {
       uint8[] ids
       `;
 
+      const maxUint64 = BigInt(2) ** BigInt(64) - BigInt(1);
+
       const message = {
         username: "foo",
+        favoriteNumber: maxUint64,
         accounts: [
           {
             name: "bar",

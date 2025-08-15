@@ -49,6 +49,12 @@ describe("MessageReader", () => {
     testNum("uint32", 4, 210010, (buffer) => buffer.writeUInt32LE(210010, 0));
     testNum("float32", 4, 5.5, (buffer) => buffer.writeFloatLE(5.5, 0));
     testNum("float64", 8, 1.7976931348623157e308, (buffer) => buffer.writeDoubleLE(1.7976931348623157e308, 0));
+    testNum("int64", 8, BigInt(Number.MAX_SAFE_INTEGER), (buffer) =>
+      buffer.writeBigInt64LE(BigInt(Number.MAX_SAFE_INTEGER), 0)
+    );
+    testNum("uint64", 8, BigInt(Number.MAX_SAFE_INTEGER), (buffer) =>
+      buffer.writeBigUInt64LE(BigInt(Number.MAX_SAFE_INTEGER), 0)
+    );
 
     it("parses string", () => {
       const reader = getMessageReader("string name");
