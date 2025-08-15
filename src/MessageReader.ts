@@ -4,7 +4,6 @@
 // found in the LICENSE file in the root directory of this source tree.
 // You may not use this file except in compliance with the License.
 
-import int53 from "int53";
 import { extractTime } from "./fields";
 import type { RosMsgDefinition } from "./types";
 import { parseMessageDefinition } from "./parseMessageDefinition";
@@ -158,13 +157,13 @@ class StandardTypeReader {
   int64() {
     const { offset } = this;
     this.offset += 8;
-    return int53.readInt64LE(this.buffer, offset);
+    return this.view.getBigInt64(offset, true);
   }
 
   uint64() {
     const { offset } = this;
     this.offset += 8;
-    return int53.readUInt64LE(this.buffer, offset);
+    return this.view.getBigUint64(offset, true);
   }
 
   time() {
