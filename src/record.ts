@@ -4,12 +4,9 @@
 // found in the LICENSE file in the root directory of this source tree.
 // You may not use this file except in compliance with the License.
 
-import int53 from "int53";
 import { extractFields, extractTime } from "./fields";
 import { MessageReader } from "./MessageReader";
 import type { Time } from "./types";
-
-const readUInt64LE = (buffer: Buffer) => int53.readUInt64LE(buffer, 0);
 
 export class RosbagRecord {
   offset: number;
@@ -38,7 +35,7 @@ export class BagHeader extends RosbagRecord {
 
   constructor(offset: number, dataOffset: number, dataLength: number, fields: Record<string, Buffer>, _buffer: Buffer) {
     super(offset, dataOffset, dataLength);
-    this.indexPosition = readUInt64LE(fields.index_pos);
+    this.indexPosition = Number(fields.index_pos.readBigUInt64LE(0));
     this.connectionCount = fields.conn_count.readInt32LE(0);
     this.chunkCount = fields.chunk_count.readInt32LE(0);
   }
@@ -167,7 +164,7 @@ export class ChunkInfo extends RosbagRecord implements ChunkInfoInterface {
   constructor(offset: number, dataOffset: number, dataLength: number, fields: Record<string, Buffer>, buffer: Buffer) {
     super(offset, dataOffset, dataLength);
     this.ver = fields.ver.readUInt32LE(0);
-    this.chunkPosition = readUInt64LE(fields.chunk_pos);
+    this.chunkPosition = Number(fields.chunk_pos.readBigUInt64LE(0));
     this.startTime = extractTime(fields.start_time, 0);
     this.endTime = extractTime(fields.end_time, 0);
     this.count = fields.count.readUInt32LE(0);
